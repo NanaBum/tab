@@ -71,7 +71,7 @@ the command line; the fretting function accepts other tunings.
   Pitch, polyphonic fingering search that preserves sustained strings, 4/4 GP5
   with chords/rests/ties, MIDI/JSON/text, synthetic demo, and real-audio evaluation.
 - Separate environments: lightweight core Python 3.13 and tested ML Python 3.11.
-- Optional untested adapter: Demucs guitar separation.
+- Optional locally tested stage: Demucs guitar separation in its own CPU environment.
 - Remaining: automatic tempo, timbre-based string identification, expressive
   techniques, MusicXML export, and broader real-world musical review.
 
@@ -113,10 +113,28 @@ it to reduce weak detections or lower it to retain more notes. Confidence scores
 are model outputs, not calibrated probabilities. Original detected timings are
 preserved in JSON/MIDI; GP5 timing is quantized to the chosen grid.
 
-Demucs is not part of the tested ML lock. Its adapter uses `htdemucs_6s` with
-`--separate`, but requires a separately installed Demucs environment, FFmpeg for
-some formats, and a first-use weight download. Upstream is archived. This path
-has not yet been tested; do not assume mixed-band audio is solved.
+### Optional source separation
+
+Demucs is isolated from both the core and the transcription ML environment:
+
+```powershell
+uv venv .venv-separation --python 3.11
+uv pip sync --python .venv-separation/Scripts/python.exe requirements/separation-windows-py311.txt
+.venv-ml/Scripts/python.exe -m tabber mixed-audio.wav --backend basic-pitch --separate --output runs/separated --bpm 120
+```
+
+This is a tested Windows/Python 3.11 CPU-only lock with PyTorch wheels from the
+official PyTorch CPU index. The first run downloads about 52 MB of `htdemucs_6s`
+weights into ignored `models/torch/`; subsequent inference can work offline.
+The wrapper uses four CPU threads, no shift averaging, and seven-second segments.
+It decodes through soundfile and materializes a temporary stereo WAV, avoiding a
+mono expansion bug in Demucs 4.0.1 with modern PyTorch. The original is unchanged.
+Formats unsupported by soundfile still need external conversion to WAV/FLAC.
+
+The desktop app offers an experimental separation checkbox when this environment
+exists. Leave it off for isolated guitar. Source separation can add artifacts or
+remove guitar content, and the archived upstream model is not a guarantee for
+arbitrary full songs. See [SEPARATION.md](SEPARATION.md) for the controlled test.
 
 References: [Basic Pitch](https://github.com/spotify/basic-pitch),
 [Demucs](https://github.com/facebookresearch/demucs).

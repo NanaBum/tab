@@ -34,7 +34,7 @@ class TabberApp:
         self.result = None
         self.ml = ml_python(self.root)
         window.title("Tabber — guitar audio to editable tabs")
-        window.minsize(660, 550)
+        window.minsize(660, 590)
         window.protocol("WM_DELETE_WINDOW", self.close)
         frame = ttk.Frame(window, padding=24)
         frame.pack(fill="both", expand=True)
@@ -86,18 +86,30 @@ class TabberApp:
         ttk.Label(
             frame, text="More notes keeps weaker detections; fewer notes reduces extra notes."
         ).grid(row=9, column=1, columnspan=2, sticky="w", pady=(5, 16))
+        self.separate = tk.BooleanVar(value=False)
+        separation_python = (
+            self.root
+            / ".venv-separation"
+            / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+        )
+        if separation_python.exists():
+            ttk.Checkbutton(
+                frame,
+                text="Separate guitar from a full mix (experimental; slower)",
+                variable=self.separate,
+            ).grid(row=10, column=0, columnspan=3, sticky="w", pady=(0, 12))
         self.convert = ttk.Button(frame, text="Create guitar tab", command=self.start)
-        self.convert.grid(row=10, column=0, columnspan=3, sticky="ew", pady=(0, 12))
+        self.convert.grid(row=11, column=0, columnspan=3, sticky="ew", pady=(0, 12))
         self.progress = ttk.Progressbar(frame, mode="indeterminate")
-        self.progress.grid(row=11, column=0, columnspan=3, sticky="ew")
+        self.progress.grid(row=12, column=0, columnspan=3, sticky="ew")
         self.status = tk.StringVar(
             value="Choose a clean guitar recording. Results are drafts to review."
         )
         ttk.Label(frame, textvariable=self.status, wraplength=600).grid(
-            row=12, column=0, columnspan=3, sticky="w", pady=12
+            row=13, column=0, columnspan=3, sticky="w", pady=12
         )
         buttons = ttk.Frame(frame)
-        buttons.grid(row=13, column=0, columnspan=3, sticky="w")
+        buttons.grid(row=14, column=0, columnspan=3, sticky="w")
         self.open_tab = ttk.Button(
             buttons,
             text="Open editable tab",
@@ -156,6 +168,8 @@ class TabberApp:
             "--output",
             str(output),
         ]
+        if self.separate.get():
+            command.append("--separate")
         self.running = True
         self.result = None
         self.convert.configure(state="disabled")

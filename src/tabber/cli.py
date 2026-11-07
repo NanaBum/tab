@@ -65,6 +65,8 @@ def main():
         )
         metadata = {
             "input": str(path),
+            "original_input": str((args.audio or args.events).resolve()),
+            "separated": args.separate,
             "backend": "events" if args.events else args.backend,
             "min_confidence": None if args.events else args.min_confidence,
             "timing": "seconds, original detected timing before score quantization",
