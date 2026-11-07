@@ -1,5 +1,6 @@
 import argparse
 import subprocess
+from datetime import datetime
 from pathlib import Path
 
 from .export import write_outputs
@@ -11,7 +12,8 @@ from .transcribe import transcribe
 
 def main():
     parser = argparse.ArgumentParser(description="Experimental audio-to-guitar-tab converter")
-    parser.add_argument("audio", type=Path)
+    parser.add_argument("audio", type=Path, nargs="?")
+    parser.add_argument("--events", type=Path, help="Rebuild a tab from saved detected-notes.json")
     parser.add_argument("--output", type=Path, default=Path("runs/latest"))
     parser.add_argument("--bpm", type=float, default=120)
     parser.add_argument(
@@ -38,19 +40,41 @@ def main():
         "--separate", action="store_true", help="Run optional Demucs guitar separation"
     )
     args = parser.parse_args()
+    if (args.audio is None) == (args.events is None):
+        parser.error("Provide either an audio file or --events, not both")
+    if args.events and args.separate:
+        parser.error("--separate needs audio input")
     try:
         quantize(0, args.bpm)
-        path = args.audio.resolve()
+        path = (args.audio or args.events).resolve()
         if not path.is_file():
-            raise ValueError(f"Audio file does not exist: {path}")
+            raise ValueError(f"Input file does not exist: {path}")
         if args.separate:
             path = separate_guitar(path, args.output / "stems")
-        detected = transcribe(path, args.backend, args.min_confidence)
+        detected = (
+            load_events(path)
+            if args.events
+            else transcribe(path, args.backend, args.min_confidence)
+        )
+        metadata = {
+            "input": str(path),
+            "backend": "events" if args.events else args.backend,
+            "min_confidence": None if args.events else args.min_confidence,
+            "timing": "seconds, original detected timing before score quantization",
+        }
+        stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+        diagnostic = args.output / "diagnostics" / f"detected-{stamp}.json"
+        save_events(detected, diagnostic, metadata)
+        print(f"Detected note events saved to {diagnostic.resolve()}", flush=True)
         assign = assign_frets if args.fretting == "melodic" else assign_polyphonic_frets
         notes = assign(detected)
         if not notes:
             raise ValueError("No notes detected. Try a louder, clean single-note recording.")
         write_outputs(notes, args.output, args.bpm, args.grid)
+        save_events(detected, args.output / "detected-notes.json", metadata)
     except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f"Could not transcribe: {exc}\n")
     print(f"Wrote {len(notes)} notes to {args.output.resolve()}")
+
+
+from .events import load_events, save_events
