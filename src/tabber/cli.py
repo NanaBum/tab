@@ -1,5 +1,6 @@
 import argparse
 import subprocess
+from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 
@@ -7,6 +8,7 @@ from .export import write_outputs
 from .fretting import assign_frets, assign_polyphonic_frets
 from .rhythm import quantize
 from .separate import separate_guitar
+from .tempo import estimate_tempo, parse_bpm
 from .transcribe import transcribe
 
 
@@ -20,7 +22,12 @@ def main():
         help="Experimental local string-timbre NPZ model (audio input, polyphonic mode)",
     )
     parser.add_argument("--output", type=Path, default=Path("runs/latest"))
-    parser.add_argument("--bpm", type=float, default=120)
+    parser.add_argument(
+        "--bpm",
+        type=parse_bpm,
+        default=120.0,
+        help="Quarter-note BPM, or auto for a local estimate (review half/double time)",
+    )
     parser.add_argument(
         "--grid",
         type=int,
@@ -49,13 +56,22 @@ def main():
         parser.error("Provide either an audio file or --events, not both")
     if args.events and args.separate:
         parser.error("--separate needs audio input")
+    if args.events and args.bpm == "auto":
+        parser.error("--bpm auto needs audio input; supply BPM when rebuilding saved events")
     if args.string_model and (args.events or args.fretting != "polyphonic"):
         parser.error("--string-model needs audio input and polyphonic fretting")
     try:
-        quantize(0, args.bpm)
         path = (args.audio or args.events).resolve()
         if not path.is_file():
             raise ValueError(f"Input file does not exist: {path}")
+        tempo = estimate_tempo(path) if args.bpm == "auto" else None
+        bpm = tempo.bpm if tempo else args.bpm
+        quantize(0, bpm)
+        if tempo:
+            print(
+                f"Estimated tempo: {bpm:.1f} BPM (provisional; review rhythmic grouping)",
+                flush=True,
+            )
         if args.separate:
             path = separate_guitar(path, args.output / "stems")
         detected = (
@@ -67,6 +83,8 @@ def main():
             "input": str(path),
             "original_input": str((args.audio or args.events).resolve()),
             "separated": args.separate,
+            "tempo_source": "estimated" if tempo else "supplied",
+            "tempo_estimate": asdict(tempo) if tempo else None,
             "backend": "events" if args.events else args.backend,
             "min_confidence": None if args.events else args.min_confidence,
             "timing": "seconds, original detected timing before score quantization",
@@ -86,7 +104,7 @@ def main():
             notes = assign(detected)
         if not notes:
             raise ValueError("No notes detected. Try a louder, clean single-note recording.")
-        write_outputs(notes, args.output, args.bpm, args.grid)
+        write_outputs(notes, args.output, bpm, args.grid)
         save_events(detected, args.output / "detected-notes.json", metadata)
     except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f"Could not transcribe: {exc}\n")

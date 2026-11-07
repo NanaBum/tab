@@ -53,7 +53,11 @@ uv run tabber "C:/path/to/guitar.wav" --output runs/my-song --bpm 100
 ```
 
 Use WAV or FLAC first. Format support depends on the installed libsndfile.
-Tempo is supplied by you; automatic tempo estimation is not implemented.
+Supply a known quarter-note tempo, tap the beat in the app, or explicitly choose
+`--bpm auto` (type `auto` in the app). Automatic tempo is provisional and needs the
+ML environment. It analyzes at most the first 60 seconds and may follow half-time,
+double-time, or other rhythmic groupings. It does not identify the downbeat or
+changing tempo. The app keeps manual BPM as the default.
 One text-tab cell is a sixteenth note by default. Dashes mean no new onset, not a measured
 rest; exact durations are available in MIDI and JSON. GP5 uses 4/4 measures and
 snaps starts and ends to sixteenth notes, with at least one cell per note. Gaps
@@ -72,7 +76,7 @@ the command line; the fretting function accepts other tunings.
   with chords/rests/ties, MIDI/JSON/text, synthetic demo, and real-audio evaluation.
 - Separate environments: lightweight core Python 3.13 and tested ML Python 3.11.
 - Optional locally tested stage: Demucs guitar separation in its own CPU environment.
-- Remaining: automatic tempo, timbre-based string identification, expressive
+- Remaining: reliable beat/downbeat alignment, string identification on new guitars, expressive
   techniques, MusicXML export, and broader real-world musical review.
 
 An optional, locally trained string-tone experiment is now available through

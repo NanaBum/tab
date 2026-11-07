@@ -6,10 +6,13 @@ import queue
 import subprocess
 import sys
 import threading
+import time
 import tkinter as tk
 from datetime import datetime
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
+
+from .tempo import TapTempo
 
 
 def project_root() -> Path:
@@ -62,10 +65,16 @@ class TabberApp:
         )
         self.method.grid(row=3, column=1, sticky="ew", pady=12)
         self.tempo = tk.StringVar(value="120")
-        ttk.Label(frame, text="Tempo (BPM)").grid(row=4, column=0, sticky="w")
+        self.taps = TapTempo()
+        ttk.Label(frame, text="Tempo (BPM/auto)").grid(row=4, column=0, sticky="w")
         ttk.Entry(frame, textvariable=self.tempo, width=10).grid(row=4, column=1, sticky="w")
+        ttk.Button(frame, text="Tap tempo", command=self.tap_tempo).grid(
+            row=4, column=2, padx=(8, 0)
+        )
         ttk.Label(
-            frame, text="Use the song's tempo if known. Starts in 4/4, standard tuning."
+            frame,
+            text="Use known BPM, tap the beat, or type auto for a rough estimate. 4/4, standard tuning.",
+            wraplength=460,
         ).grid(row=5, column=1, columnspan=2, sticky="w", pady=(5, 12))
         self.grid = tk.StringVar(value="16")
         ttk.Label(frame, text="Rhythm detail").grid(row=6, column=0, sticky="w")
@@ -134,14 +143,26 @@ class TabberApp:
         if filename:
             self.audio.set(filename)
 
+    def tap_tempo(self):
+        bpm = self.taps.tap(time.monotonic())
+        if bpm is None:
+            self.status.set(f"Keep tapping with the beat ({len(self.taps.times)} taps).")
+        else:
+            self.tempo.set(f"{bpm:.1f}")
+            self.status.set(f"Tapped tempo: {bpm:.1f} BPM. Keep tapping to refine it.")
+
     def start(self):
         path = Path(self.audio.get().strip()).expanduser()
         try:
-            tempo = float(self.tempo.get())
-            if not 1 <= tempo <= 999:
-                raise ValueError
+            from .tempo import parse_bpm
+
+            tempo = parse_bpm(self.tempo.get())
+            if tempo == "auto" and self.ml is None:
+                raise ValueError("Automatic tempo needs the ML environment")
         except ValueError:
-            messagebox.showerror("Check tempo", "Enter a tempo between 1 and 999 BPM.")
+            messagebox.showerror(
+                "Check tempo", "Enter BPM from 1 to 999, or auto with the ML setup."
+            )
             return
         if not path.is_file():
             messagebox.showerror("Choose a recording", "Choose an existing audio file first.")
@@ -149,6 +170,8 @@ class TabberApp:
         stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
         output = self.root / "runs" / f"{path.stem}-{stamp}"
         interpreter = self.ml if self.backend.get() == "Machine learning" else Path(sys.executable)
+        if tempo == "auto":
+            interpreter = self.ml
         if interpreter.name.lower() == "pythonw.exe":
             interpreter = interpreter.with_name("python.exe")
         backend = "basic-pitch" if self.backend.get() == "Machine learning" else "baseline"
@@ -209,11 +232,19 @@ class TabberApp:
                 )
                 self.messages.put((False, output, error))
             else:
+                estimates = [
+                    line
+                    for line in process.stdout.splitlines()
+                    if line.startswith("Estimated tempo:")
+                ]
+                ready = "Your draft tab is ready. Open it in TuxGuitar to review and play."
+                if estimates:
+                    ready += " " + estimates[-1] + "."
                 self.messages.put(
                     (
                         True,
                         output,
-                        "Your draft tab is ready. Open it in TuxGuitar to review and play.",
+                        ready,
                     )
                 )
         except OSError as error:
