@@ -46,6 +46,43 @@ the pitch detector was unchanged. This is a conditional fingering measure; it
 does not count missed/extra notes as correct, and is not overall tab accuracy.
 Basic Pitch's own training overlap with GuitarSet has not been audited.
 
+## Rotating-performer audit
+
+The fixed model/features were also audited across six rotations. Each performer
+was tested once, the preceding performer was held for validation, and the other
+four supplied training notes. Scaling remained training-only and the parameters
+were not tuned per test fold. This is exploratory cross-validation in the same
+recording domain; it does not create a new-guitar test set or independent studies.
+
+| Test performer | Pitch-only string accuracy | Pitch and tone |
+| --- | ---: | ---: |
+| 00 | 62.1% | 82.1% |
+| 01 | 58.0% | 78.0% |
+| 02 | 67.7% | 78.3% |
+| 03 | 62.4% | 64.8% |
+| 04 | 54.7% | 73.3% |
+| 05 | 67.8% | 76.2% |
+| Mean across performers | 62.1% | 75.4% |
+
+Tone helped every rotation, but its held-out accuracy ranged from 64.8% to 82.1%.
+The best initial performer should not be presented as typical accuracy. Pooled
+note accuracy was 75.1% versus 61.8%; that weights performers by their different
+note counts. All figures still use isolated notes with oracle pitch/timing.
+
+The audit also records an open-versus-fretted diagnostic restricted to pitches
+that can be either an open string or fretted elsewhere. It excludes low E, whose
+string is forced, to avoid a misleading easy case. Those metrics are derived
+from string decisions and are not a separately trained binary classifier.
+The subset is imbalanced: held-out performers had only 0–47 reference open notes
+among 177–450 eligible notes. Performer 05 had no positive open examples; its
+reported binary F1 is zero by the configured convention, not a measured failure
+to recognize positive examples. These results do not establish a reliable
+open-versus-fretted classifier. Balanced same-pitch recordings are still needed.
+
+Detailed fixed-protocol results are in reports/string-cross-validation.json.
+Reproduce with `scripts/crossvalidate_string_model.py` after feature extraction.
+The audit does not replace or overwrite the original optional inference model.
+
 ## Reproduce locally
 
 Use the tested ML environment and downloaded GuitarSet archives:
