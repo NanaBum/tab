@@ -1,0 +1,215 @@
+{
+  "purpose": "Exploratory fixed-parameter rotating performer checks; oracle isolated-note windows",
+  "protocol": "Each performer tests once; preceding performer validates; remaining four train",
+  "parameters": "LogisticRegression C=1, max_iter=2000; scaling fits train only; no test tuning",
+  "source": "GuitarSet v1.1.0, CC BY 4.0, Xi et al., ISMIR 2018; same recording domain",
+  "feature_version": 1,
+  "folds": [
+    {
+      "test_performer": "00",
+      "validation_performer": "05",
+      "train_notes": 8752,
+      "test_notes": 1326,
+      "models": {
+        "pitch_only": {
+          "accuracy": 0.6206636500754148,
+          "balanced_accuracy": 0.5997504140099316,
+          "correct": 823,
+          "ambiguous_open_pitch_subset": {
+            "notes": 177,
+            "reference_open": 22,
+            "open_precision": 0.38461538461538464,
+            "open_recall": 0.45454545454545453,
+            "open_f1": 0.4166666666666667
+          }
+        },
+        "pitch_plus_timbre": {
+          "accuracy": 0.8205128205128205,
+          "balanced_accuracy": 0.8138122154128653,
+          "correct": 1088,
+          "ambiguous_open_pitch_subset": {
+            "notes": 177,
+            "reference_open": 22,
+            "open_precision": 0.5909090909090909,
+            "open_recall": 0.5909090909090909,
+            "open_f1": 0.5909090909090909
+          }
+        }
+      }
+    },
+    {
+      "test_performer": "01",
+      "validation_performer": "00",
+      "train_notes": 8070,
+      "test_notes": 2646,
+      "models": {
+        "pitch_only": {
+          "accuracy": 0.5801209372637944,
+          "balanced_accuracy": 0.6415110568761718,
+          "correct": 1535,
+          "ambiguous_open_pitch_subset": {
+            "notes": 357,
+            "reference_open": 13,
+            "open_precision": 0.6,
+            "open_recall": 0.23076923076923078,
+            "open_f1": 0.3333333333333333
+          }
+        },
+        "pitch_plus_timbre": {
+          "accuracy": 0.7804232804232805,
+          "balanced_accuracy": 0.7870416320075063,
+          "correct": 2065,
+          "ambiguous_open_pitch_subset": {
+            "notes": 357,
+            "reference_open": 13,
+            "open_precision": 0.6666666666666666,
+            "open_recall": 0.3076923076923077,
+            "open_f1": 0.42105263157894735
+          }
+        }
+      }
+    },
+    {
+      "test_performer": "02",
+      "validation_performer": "01",
+      "train_notes": 7459,
+      "test_notes": 1937,
+      "models": {
+        "pitch_only": {
+          "accuracy": 0.6773360867320599,
+          "balanced_accuracy": 0.5817933723944532,
+          "correct": 1312,
+          "ambiguous_open_pitch_subset": {
+            "notes": 450,
+            "reference_open": 47,
+            "open_precision": 0.0,
+            "open_recall": 0.0,
+            "open_f1": 0.0
+          }
+        },
+        "pitch_plus_timbre": {
+          "accuracy": 0.7831698502839443,
+          "balanced_accuracy": 0.6604600979443696,
+          "correct": 1517,
+          "ambiguous_open_pitch_subset": {
+            "notes": 450,
+            "reference_open": 47,
+            "open_precision": 0.75,
+            "open_recall": 0.44680851063829785,
+            "open_f1": 0.56
+          }
+        }
+      }
+    },
+    {
+      "test_performer": "03",
+      "validation_performer": "02",
+      "train_notes": 8062,
+      "test_notes": 2043,
+      "models": {
+        "pitch_only": {
+          "accuracy": 0.6235927557513461,
+          "balanced_accuracy": 0.595549853908904,
+          "correct": 1274,
+          "ambiguous_open_pitch_subset": {
+            "notes": 223,
+            "reference_open": 7,
+            "open_precision": 0.0,
+            "open_recall": 0.0,
+            "open_f1": 0.0
+          }
+        },
+        "pitch_plus_timbre": {
+          "accuracy": 0.6475770925110133,
+          "balanced_accuracy": 0.6628361279415305,
+          "correct": 1323,
+          "ambiguous_open_pitch_subset": {
+            "notes": 223,
+            "reference_open": 7,
+            "open_precision": 1.0,
+            "open_recall": 0.2857142857142857,
+            "open_f1": 0.4444444444444444
+          }
+        }
+      }
+    },
+    {
+      "test_performer": "04",
+      "validation_performer": "03",
+      "train_notes": 7873,
+      "test_notes": 2126,
+      "models": {
+        "pitch_only": {
+          "accuracy": 0.5465663217309501,
+          "balanced_accuracy": 0.48359374685230366,
+          "correct": 1162,
+          "ambiguous_open_pitch_subset": {
+            "notes": 264,
+            "reference_open": 5,
+            "open_precision": 1.0,
+            "open_recall": 0.2,
+            "open_f1": 0.3333333333333333
+          }
+        },
+        "pitch_plus_timbre": {
+          "accuracy": 0.7328316086547507,
+          "balanced_accuracy": 0.7727478050283557,
+          "correct": 1558,
+          "ambiguous_open_pitch_subset": {
+            "notes": 264,
+            "reference_open": 5,
+            "open_precision": 0.2857142857142857,
+            "open_recall": 0.4,
+            "open_f1": 0.3333333333333333
+          }
+        }
+      }
+    },
+    {
+      "test_performer": "05",
+      "validation_performer": "04",
+      "train_notes": 7952,
+      "test_notes": 1964,
+      "models": {
+        "pitch_only": {
+          "accuracy": 0.6782077393075356,
+          "balanced_accuracy": 0.5712843196263248,
+          "correct": 1332,
+          "ambiguous_open_pitch_subset": {
+            "notes": 294,
+            "reference_open": 0,
+            "open_precision": 0.0,
+            "open_recall": 0.0,
+            "open_f1": 0.0
+          }
+        },
+        "pitch_plus_timbre": {
+          "accuracy": 0.7622199592668024,
+          "balanced_accuracy": 0.6606204863249424,
+          "correct": 1497,
+          "ambiguous_open_pitch_subset": {
+            "notes": 294,
+            "reference_open": 0,
+            "open_precision": 0.0,
+            "open_recall": 0.0,
+            "open_f1": 0.0
+          }
+        }
+      }
+    }
+  ],
+  "summary": {
+    "pitch_only": {
+      "mean_performer_accuracy": 0.6210812484768502,
+      "min_performer_accuracy": 0.5465663217309501,
+      "max_performer_accuracy": 0.6782077393075356,
+      "pooled_accuracy": 0.6176714831423351
+    },
+    "pitch_plus_timbre": {
+      "mean_performer_accuracy": 0.7544557686087686,
+      "min_performer_accuracy": 0.6475770925110133,
+      "max_performer_accuracy": 0.8205128205128205,
+      "pooled_accuracy": 0.7513702042850025
+    }
+  }
+}
