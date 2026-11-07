@@ -28,6 +28,8 @@ def main():
     parser.add_argument("--min-confidence", type=float, default=0.5)
     parser.add_argument("--export-tabs", action="store_true")
     parser.add_argument("--grid", type=int, choices=(16, 32, 64), default=16)
+    parser.add_argument("--performer", choices=("00", "01", "02", "03", "04", "05"))
+    parser.add_argument("--string-model", type=Path)
     args = parser.parse_args()
     if args.limit < 1 or not 0 < args.seconds <= 600:
         parser.error("Use a positive limit and duration up to 600 seconds")
@@ -37,6 +39,8 @@ def main():
         "mode": args.mode,
         "seconds": args.seconds,
         "min_confidence": args.min_confidence,
+        "string_model": str(args.string_model) if args.string_model else None,
+        "performer": args.performer,
         "dataset": "GuitarSet v1.1.0 (Zenodo 3371780)",
         "purpose": "development smoke test, not a held-out benchmark",
         "metrics": "exact pitch; 50ms onset; offsets within max(50ms,20% duration)",
@@ -51,6 +55,8 @@ def main():
             for n in annotations.namelist()
             if n.endswith(".jams") and (args.mode == "all" or n.endswith(f"_{args.mode}.jams"))
         )
+        if args.performer:
+            names = [n for n in names if Path(n).name.startswith(args.performer + "_")]
         # Round-robin performers rather than choosing only performer 00.
         groups = {n[:2]: [] for n in names}
         for name in names:
@@ -77,6 +83,11 @@ def main():
                 path = Path(directory) / "excerpt.wav"
                 sf.write(path, waveform, rate, subtype="FLOAT")
                 predicted = transcribe(path, args.backend, args.min_confidence)
+                priors = None
+                if args.string_model:
+                    from tabber.string_model import string_priors
+
+                    priors = string_priors(path, predicted, args.string_model)
             elapsed = time.perf_counter() - start
             refs = [n.note for n in reference]
             row = {
@@ -87,7 +98,7 @@ def main():
                 "predictions": [asdict(n) for n in predicted],
             }
             try:
-                assigned = assign_polyphonic_frets(predicted)
+                assigned = assign_polyphonic_frets(predicted, string_priors=priors)
                 row["fretting_status"] = f"assigned {len(assigned)} notes"
                 positions = {id(n.note): n for n in assigned}
                 matches = match_notes(refs, predicted)

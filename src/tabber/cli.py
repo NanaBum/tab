@@ -14,6 +14,11 @@ def main():
     parser = argparse.ArgumentParser(description="Experimental audio-to-guitar-tab converter")
     parser.add_argument("audio", type=Path, nargs="?")
     parser.add_argument("--events", type=Path, help="Rebuild a tab from saved detected-notes.json")
+    parser.add_argument(
+        "--string-model",
+        type=Path,
+        help="Experimental local string-timbre NPZ model (audio input, polyphonic mode)",
+    )
     parser.add_argument("--output", type=Path, default=Path("runs/latest"))
     parser.add_argument("--bpm", type=float, default=120)
     parser.add_argument(
@@ -44,6 +49,8 @@ def main():
         parser.error("Provide either an audio file or --events, not both")
     if args.events and args.separate:
         parser.error("--separate needs audio input")
+    if args.string_model and (args.events or args.fretting != "polyphonic"):
+        parser.error("--string-model needs audio input and polyphonic fretting")
     try:
         quantize(0, args.bpm)
         path = (args.audio or args.events).resolve()
@@ -61,13 +68,20 @@ def main():
             "backend": "events" if args.events else args.backend,
             "min_confidence": None if args.events else args.min_confidence,
             "timing": "seconds, original detected timing before score quantization",
+            "experimental_string_model": str(args.string_model) if args.string_model else None,
         }
         stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
         diagnostic = args.output / "diagnostics" / f"detected-{stamp}.json"
         save_events(detected, diagnostic, metadata)
         print(f"Detected note events saved to {diagnostic.resolve()}", flush=True)
         assign = assign_frets if args.fretting == "melodic" else assign_polyphonic_frets
-        notes = assign(detected)
+        if args.string_model:
+            from .string_model import string_priors
+
+            priors = string_priors(path, detected, args.string_model)
+            notes = assign(detected, string_priors=priors)
+        else:
+            notes = assign(detected)
         if not notes:
             raise ValueError("No notes detected. Try a louder, clean single-note recording.")
         write_outputs(notes, args.output, args.bpm, args.grid)
