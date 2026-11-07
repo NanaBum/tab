@@ -14,6 +14,34 @@ from tkinter import filedialog, messagebox, ttk
 
 from .tempo import TapTempo
 
+SAVED_NOTES = "Rebuild saved notes"
+
+
+def conversion_command(interpreter, path, output, *, method, tempo, grid, confidence, separate):
+    """Route saved events directly to export, without another listening/filtering pass."""
+    interpreter = Path(interpreter)
+    if interpreter.name.lower() == "pythonw.exe":
+        interpreter = interpreter.with_name("python.exe")
+    command = [str(interpreter), "-m", "tabber"]
+    if method == SAVED_NOTES:
+        if tempo == "auto":
+            raise ValueError("Saved notes need a supplied BPM; enter a number or tap the tempo.")
+        if separate:
+            raise ValueError("Turn off guitar separation when rebuilding saved notes.")
+        from .events import load_events
+
+        load_events(path)
+        command.extend(("--events", str(path.resolve())))
+    else:
+        backend = "basic-pitch" if method == "Machine learning" else "baseline"
+        command.extend(
+            (str(path.resolve()), "--backend", backend, "--min-confidence", str(confidence))
+        )
+        if separate:
+            command.append("--separate")
+    command.extend(("--bpm", str(tempo), "--grid", str(grid), "--output", str(output)))
+    return command
+
 
 def project_root() -> Path:
     return Path(__file__).resolve().parents[2]
@@ -51,7 +79,7 @@ class TabberApp:
             row=1, column=0, columnspan=3, sticky="w", pady=(6, 22)
         )
         self.audio = tk.StringVar()
-        ttk.Label(frame, text="Recording").grid(row=2, column=0, sticky="w", padx=(0, 12))
+        ttk.Label(frame, text="Input file").grid(row=2, column=0, sticky="w", padx=(0, 12))
         ttk.Entry(frame, textvariable=self.audio).grid(row=2, column=1, sticky="ew")
         self.browse = ttk.Button(frame, text="Choose file…", command=self.choose_audio)
         self.browse.grid(row=2, column=2, padx=(8, 0))
@@ -59,6 +87,7 @@ class TabberApp:
             value="Machine learning" if self.ml else "Simple melody detector"
         )
         choices = ["Simple melody detector"] + (["Machine learning"] if self.ml else [])
+        choices.append(SAVED_NOTES)
         ttk.Label(frame, text="Method").grid(row=3, column=0, sticky="w", pady=12)
         self.method = ttk.Combobox(
             frame, textvariable=self.backend, values=choices, state="readonly"
@@ -93,7 +122,9 @@ class TabberApp:
             state="readonly",
         ).grid(row=8, column=1, sticky="ew")
         ttk.Label(
-            frame, text="More notes keeps weaker detections; fewer notes reduces extra notes."
+            frame,
+            text="Sensitivity applies when listening. Rebuild saved notes keeps every saved note.",
+            wraplength=460,
         ).grid(row=9, column=1, columnspan=2, sticky="w", pady=(5, 16))
         self.separate = tk.BooleanVar(value=False)
         separation_python = (
@@ -136,9 +167,15 @@ class TabberApp:
         self.window.after(150, self.poll)
 
     def choose_audio(self):
+        replay = self.backend.get() == SAVED_NOTES
         filename = filedialog.askopenfilename(
-            title="Choose a guitar recording",
-            filetypes=[("Audio recordings", "*.wav *.flac *.ogg *.mp3"), ("All files", "*.*")],
+            title="Choose saved detected notes" if replay else "Choose a guitar recording",
+            filetypes=(
+                [("Saved notes", "*.json")]
+                if replay
+                else [("Audio recordings", "*.wav *.flac *.ogg *.mp3")]
+            )
+            + [("All files", "*.*")],
         )
         if filename:
             self.audio.set(filename)
@@ -165,34 +202,29 @@ class TabberApp:
             )
             return
         if not path.is_file():
-            messagebox.showerror("Choose a recording", "Choose an existing audio file first.")
+            messagebox.showerror("Choose an input", "Choose an existing input file first.")
             return
         stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
         output = self.root / "runs" / f"{path.stem}-{stamp}"
         interpreter = self.ml if self.backend.get() == "Machine learning" else Path(sys.executable)
         if tempo == "auto":
             interpreter = self.ml
-        if interpreter.name.lower() == "pythonw.exe":
-            interpreter = interpreter.with_name("python.exe")
-        backend = "basic-pitch" if self.backend.get() == "Machine learning" else "baseline"
-        command = [
-            str(interpreter),
-            "-m",
-            "tabber",
-            str(path.resolve()),
-            "--bpm",
-            str(tempo),
-            "--grid",
-            self.grid.get(),
-            "--backend",
-            backend,
-            "--min-confidence",
-            str({"More notes": 0.3, "Balanced": 0.5, "Fewer notes": 0.7}[self.confidence.get()]),
-            "--output",
-            str(output),
-        ]
-        if self.separate.get():
-            command.append("--separate")
+        try:
+            command = conversion_command(
+                interpreter,
+                path,
+                output,
+                method=self.backend.get(),
+                tempo=tempo,
+                grid=self.grid.get(),
+                confidence={"More notes": 0.3, "Balanced": 0.5, "Fewer notes": 0.7}[
+                    self.confidence.get()
+                ],
+                separate=self.separate.get(),
+            )
+        except (ValueError, OSError) as error:
+            messagebox.showerror("Check saved notes", str(error))
+            return
         self.running = True
         self.result = None
         self.convert.configure(state="disabled")
@@ -201,7 +233,9 @@ class TabberApp:
         self.open_folder.configure(state="disabled")
         self.progress.start(12)
         self.status.set(
-            "Listening and building the tab… The first ML run may take a little longer."
+            "Rebuilding the tab from saved notes…"
+            if self.backend.get() == SAVED_NOTES
+            else "Listening and building the tab… The first ML run may take a little longer."
         )
         threading.Thread(target=self.worker, args=(command, output), daemon=True).start()
 
