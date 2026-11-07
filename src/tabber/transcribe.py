@@ -1,5 +1,7 @@
 """A monophonic autocorrelation baseline and optional Basic Pitch adapter."""
 
+import math
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -9,17 +11,31 @@ from scipy.signal import correlate, find_peaks
 from .models import Note
 
 
-def transcribe(path: Path, backend: str = "baseline") -> list[Note]:
+@lru_cache(maxsize=1)
+def _basic_pitch_model():
+    from basic_pitch import ICASSP_2022_MODEL_PATH
+    from basic_pitch.inference import Model
+
+    return Model(ICASSP_2022_MODEL_PATH)
+
+
+def transcribe(path: Path, backend: str = "baseline", min_confidence: float = 0.5) -> list[Note]:
+    if not math.isfinite(min_confidence) or not 0 <= min_confidence <= 1:
+        raise ValueError("Minimum confidence must be between 0 and 1")
     if backend == "basic-pitch":
         try:
             from basic_pitch.inference import predict
         except ImportError as exc:
-            raise ValueError("Basic Pitch is optional; see README.md for its environment") from exc
-        _, _, events = predict(str(path))
+            raise ValueError(
+                f"Basic Pitch dependencies could not load ({exc}); "
+                "install requirements/ml.in in the separate Python 3.11 environment"
+            ) from exc
+        _, _, events = predict(str(path), model_or_model_path=_basic_pitch_model())
         return sorted(
             [
                 Note(float(a), float(b), int(p), float(np.clip(c, 0, 1)))
                 for a, b, p, c, *_ in events
+                if c >= min_confidence
             ],
             key=lambda n: n.start,
         )
@@ -47,7 +63,7 @@ def transcribe(path: Path, backend: str = "baseline") -> list[Note]:
                 candidates = peaks + lo
                 lag = int(candidates[np.argmax(ac[candidates])])
                 confidence = float(np.clip(ac[lag] / ac[0], 0, 1))
-                if confidence >= 0.65:
+                if confidence >= max(0.65, min_confidence):
                     label = (round(69 + 12 * np.log2(rate / lag / 440)), confidence)
         labels.append(label)
     notes = []

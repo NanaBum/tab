@@ -77,3 +77,33 @@ def test_invalid_score_is_rejected_before_writing(tmp_path, notes):
     with pytest.raises(ValueError):
         write_outputs(notes, tmp_path / "invalid", 120)
     assert not (tmp_path / "invalid").exists()
+
+
+def test_finer_grid_preserves_fast_attacks(tmp_path):
+    notes = [FrettedNote(Note(0, 0.04, 64), 0, 0), FrettedNote(Note(0.05, 0.1, 65), 0, 1)]
+    with pytest.raises(ValueError, match="collide"):
+        build_song(notes, 120)
+    write_outputs(notes, tmp_path / "fast", 120, grid=32)
+    song = guitarpro.parse(str(tmp_path / "fast/tab.gp5"))
+    attacks = [
+        (b.start, n.value)
+        for b in song.tracks[0].measures[0].voices[0].beats
+        for n in b.notes
+        if n.type == gp.NoteType.normal
+    ]
+    assert attacks == [(960, 0), (1080, 1)]
+
+
+def test_export_render_failure_preserves_existing_outputs(tmp_path, monkeypatch):
+    target = tmp_path / "existing"
+    target.mkdir()
+    (target / "notes.json").write_text("previous result", encoding="utf-8")
+
+    def fail(*args):
+        raise ValueError("Cannot encode score")
+
+    monkeypatch.setattr("tabber.export.write_gp5", fail)
+    with pytest.raises(ValueError, match="Cannot encode"):
+        write_outputs([FrettedNote(Note(0, 1, 64), 0, 0)], target, 120)
+    assert (target / "notes.json").read_text() == "previous result"
+    assert sorted(p.name for p in target.iterdir()) == ["notes.json"]

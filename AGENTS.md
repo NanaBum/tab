@@ -20,5 +20,11 @@ Add meaningful tests for changes to transcription, timing, or fingering behavior
 Keep heavy ML dependencies optional and document their separate environments.
 Use local computing for now. Do not start paid cloud jobs or increase spending
 limits. Hosted CI is manual-only until the user chooses to use it.
-The baseline is monophonic; do not silently drop overlapping notes.
+The baseline detector is monophonic; the ML/fingering/GP5 path supports overlaps.
+Never silently drop notes to make a fingering or export succeed. Confidence
+thresholding must be explicit and documented. Polyphonic fingering is heuristic.
+Core tests must not import TensorFlow. Keep ML pins in requirements/ml.in and the
+Windows/Python 3.11 lock separate from uv.lock. These paths are tested locally.
+GuitarSet development scores are not held-out accuracy claims; audit the pretrained
+model's data splits before making any generalization claim.
 Do not train models or download large datasets without explaining size and purpose.

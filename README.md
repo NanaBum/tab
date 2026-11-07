@@ -1,10 +1,10 @@
 # Tabber
 
-A local audio-to-guitar-tab research prototype. The first working path takes a
-clean **single-note guitar melody** and writes text tablature, MIDI, and JSON with
-note timings and suggested string/fret positions, plus editable GP5 scores for
-TuxGuitar 2.1. This is an early baseline,
-not an accurate full-song or chord transcriber.
+A local audio-to-guitar-tab research prototype. Clean guitar audio becomes editable
+GP5 scores for TuxGuitar 2.1, MIDI playback, text tabs, and JSON with original note
+timings and suggested string/fret positions. The lightweight default detector is
+monophonic; optional local Basic Pitch ML can detect chords and overlapping notes.
+Fingering and transcription remain drafts requiring musical review.
 
 ## Quick start
 
@@ -27,30 +27,34 @@ uv run tabber "C:/path/to/guitar.wav" --output runs/my-song --bpm 100
 
 Use WAV or FLAC first. Format support depends on the installed libsndfile.
 Tempo is supplied by you; automatic tempo estimation is not implemented.
-One text-tab cell is a sixteenth note. Dashes mean no new onset, not a measured
+One text-tab cell is a sixteenth note by default. Dashes mean no new onset, not a measured
 rest; exact durations are available in MIDI and JSON. GP5 uses 4/4 measures and
 snaps starts and ends to sixteenth notes, with at least one cell per note. Gaps
 become rests, and sustained notes split into tied durations across measures.
 GP5 tempo is rounded to the nearest integer BPM (1-999). Original timings remain
 unchanged in MIDI and JSON. Grid collisions are rejected instead of discarding
-notes. Triplets, swing, other meters, and expressive techniques are not yet
+notes. For faster notes choose `--grid 32` or `--grid 64` (divisions per whole note).
+Triplets, swing, other meters, and expressive techniques are not yet
 represented. Standard tuning only in
 the command line; the fretting function accepts other tunings.
 
 ## What works and what remains
 
-- Implemented: autocorrelation melody baseline, dynamic-programming melodic
-  fingering, supplied-tempo grid, text/JSON/MIDI/GP5 export, synthetic demo, tests.
-- Optional adapters: Basic Pitch pitch detection and Demucs guitar separation.
-  These are not installed or validated by the core setup.
-- Remaining: chord-aware fingering, repeated-note onset detection, real GuitarSet
-  evaluation, automatic tempo, expressive techniques, MusicXML export, UI.
+- Implemented: autocorrelation melody baseline, optional locally tested Basic
+  Pitch, polyphonic fingering search that preserves sustained strings, 4/4 GP5
+  with chords/rests/ties, MIDI/JSON/text, synthetic demo, and real-audio evaluation.
+- Separate environments: lightweight core Python 3.13 and tested ML Python 3.11.
+- Optional untested adapter: Demucs guitar separation.
+- Remaining: automatic tempo, timbre-based string identification, expressive
+  techniques, MusicXML export, and broader real-world musical review.
 
 The baseline can confuse harmonics and octaves. Frame boundaries introduce timing
 error, and adjacent repeated notes may merge. Fingering optimizes a simple movement
-cost; it does not recover which string was actually played. Overlapping notes are
-rejected explicitly until chord-aware assignment exists. Synthetic tests verify
-plumbing and basic pitch recovery, not real-world accuracy.
+cost; it does not recover which string was actually played. The default fingering
+search supports overlaps, up to six strings and a five-fret span; it rejects
+conflicting detections rather than dropping notes. For strict melodic dynamic
+programming choose `--fretting melodic`. Synthetic tests verify plumbing; real-audio
+development results and their limitations are documented in [EVALUATION.md](EVALUATION.md).
 
 ## Optional ML environments
 
@@ -59,16 +63,27 @@ a separate Python 3.11 environment to avoid changing the core lockfile:
 
 ```powershell
 uv venv .venv-ml --python 3.11
-uv pip install --python .venv-ml/Scripts/python.exe -e . basic-pitch demucs
-.venv-ml/Scripts/tabber.exe guitar.wav --backend basic-pitch --output runs/ml
+uv pip sync --python .venv-ml/Scripts/python.exe requirements/ml-windows-py311.txt
+.venv-ml/Scripts/tabber.exe guitar.wav --backend basic-pitch --output runs/ml --bpm 120
 ```
 
-On Linux/macOS use `.venv-ml/bin/python` and `.venv-ml/bin/tabber` instead.
-These optional packages may require platform-specific dependency fixes. Demucs
-also needs FFmpeg for some input formats and downloads model weights on first use.
-To request separation, add `--separate`; it uses the experimental `htdemucs_6s`
-model's guitar stem. Demucs upstream is archived. Chord output from Basic Pitch
-still requires the planned chord-aware fingering stage.
+The lock above is for Windows/Python 3.11 and was installed and tested locally.
+Its model weights are included with Basic Pitch; inference runs on the CPU with no
+per-track service fee. ML needs hundreds of MB of installed dependencies. Keep
+NumPy below 2 and setuptools below 81 for the older TensorFlow/resampy stack.
+`requirements/ml.in` is the source for that lock. For other platforms resolve
+that source in a separate Python 3.11 environment and use its `bin` executables;
+those platforms have not been tested here.
+
+`--min-confidence 0.5` is the default explicit event-confidence filter. Increase
+it to reduce weak detections or lower it to retain more notes. Confidence scores
+are model outputs, not calibrated probabilities. Original detected timings are
+preserved in JSON/MIDI; GP5 timing is quantized to the chosen grid.
+
+Demucs is not part of the tested ML lock. Its adapter uses `htdemucs_6s` with
+`--separate`, but requires a separately installed Demucs environment, FFmpeg for
+some formats, and a first-use weight download. Upstream is archived. This path
+has not yet been tested; do not assume mixed-band audio is solved.
 
 References: [Basic Pitch](https://github.com/spotify/basic-pitch),
 [Demucs](https://github.com/facebookresearch/demucs).
