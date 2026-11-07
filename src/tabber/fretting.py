@@ -52,3 +52,56 @@ def assign_frets(notes: list[Note], tuning=STANDARD_TUNING, max_fret=24) -> list
         FrettedNote(n, *candidates[i])
         for n, candidates, i in zip(notes, positions, reversed(indices))
     ]
+
+
+def assign_polyphonic_frets(
+    notes: list[Note], tuning=STANDARD_TUNING, max_fret=24, max_span=5, beam_width=128
+) -> list[FrettedNote]:
+    """Beam-search positions while reserving strings for sustained notes.
+
+    Preserves every detected note. This is an approximate ergonomic heuristic,
+    not recovery of the guitarist's actual fingers or a guarantee of playability.
+    """
+    if not tuning or max_fret < 0 or max_span < 0 or beam_width < 1:
+        raise ValueError("Provide tuning and positive search limits")
+    ordered = sorted(notes, key=lambda n: (n.start, -n.pitch))
+    # cost, complete history, active positions, last hand position, last string
+    states = [(0.0, (), (), 0.0, 0)]
+    for index, note in enumerate(ordered):
+        candidates = [
+            (s, note.pitch - p) for s, p in enumerate(tuning) if 0 <= note.pitch - p <= max_fret
+        ]
+        if not candidates:
+            raise ValueError(f"MIDI pitch {note.pitch} is outside this guitar's playable range")
+        expanded = {}
+        for cost, history, active, hand, last_string in states:
+            active = tuple(n for n in active if n.note.end > note.start + 1e-6)
+            used = {n.string for n in active}
+            for string, fret in candidates:
+                if string in used:
+                    continue
+                fretted = FrettedNote(note, string, fret)
+                current = active + (fretted,)
+                frets = sorted(n.fret for n in current if n.fret)
+                span = frets[-1] - frets[0] if frets else 0
+                if span > max_span:
+                    continue
+                position = frets[len(frets) // 2] if frets else hand
+                movement = abs(position - hand) if hand and position else 0
+                new_cost = cost + movement + span * 0.3 + fret * 0.04
+                new_cost += abs(string - last_string) * 0.15
+                key = (
+                    tuple(sorted((n.string, n.fret, n.note.end) for n in current)),
+                    position,
+                    string,
+                )
+                state = (new_cost, history + (fretted,), current, position, string)
+                if key not in expanded or new_cost < expanded[key][0]:
+                    expanded[key] = state
+        if not expanded:
+            raise ValueError(
+                f"No fingering at {note.start:.3f}s for note {index + 1}: sustained strings "
+                f"or the {max_span}-fret span limit conflict. Review detections; no notes were dropped."
+            )
+        states = sorted(expanded.values(), key=lambda state: state[0])[:beam_width]
+    return list(states[0][1]) if ordered else []
