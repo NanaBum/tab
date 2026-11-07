@@ -173,5 +173,10 @@ modules for separation, transcription, fingering, timing, and export. Use a bran
 for each change and review before merging. Keep audio, data, weights, and secrets
 outside Git. No project license has been selected yet.
 
+Each GP5 export is reopened and compared with its intended quantized note events
+before output files are replaced. See [EXPORT_VALIDATION.md](EXPORT_VALIDATION.md)
+for the corpus check and the tied-note reader workaround. This does not replace
+checking the transcription musically in TuxGuitar.
+
 Hosted CI is manual-only for now because GitHub reported an account billing block.
 Run the checks above locally; pushes and pull requests do not start hosted jobs.

@@ -1,0 +1,13 @@
+{
+  "purpose": "Serialization correctness, not transcription accuracy",
+  "source": "Cached first-10-second ML detections for all 360 GuitarSet excerpts; development checks only",
+  "summary": {
+    "attempted": 360,
+    "passed": 353,
+    "fingering_failures": 7,
+    "export_failures": 0,
+    "mismatches": 0
+  },
+  "reader": "Chronological tie continuation corrects PyGuitarPro 0.11 reader equality bug",
+  "default_export": "Every normal GP5 export reopens and verifies its intended quantized note events"
+}

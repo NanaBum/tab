@@ -3,7 +3,7 @@ import pytest
 from guitarpro import models as gp
 
 from tabber.export import write_outputs
-from tabber.gp5 import build_song, write_gp5
+from tabber.gp5 import build_song, read_gp5, write_gp5
 from tabber.models import FrettedNote, Note
 
 
@@ -107,3 +107,35 @@ def test_export_render_failure_preserves_existing_outputs(tmp_path, monkeypatch)
         write_outputs([FrettedNote(Note(0, 1, 64), 0, 0)], target, 120)
     assert (target / "notes.json").read_text() == "previous result"
     assert sorted(p.name for p in target.iterdir()) == ["notes.json"]
+
+
+def test_tied_fretted_note_after_an_earlier_open_string_tie(tmp_path):
+    # The earlier open-string tied beat equals the partially read later beat in
+    # PyGuitarPro 0.11 (start is excluded from equality). Plain parse inherits 0.
+    notes = [
+        FrettedNote(Note(0, 0.25, 59), 1, 0),
+        FrettedNote(Note(0, 0.125, 64), 0, 0),
+        FrettedNote(Note(0.5, 1.125, 73), 1, 14),
+    ]
+    path = tmp_path / "tie-regression.gp5"
+    write_gp5(build_song(notes, 120), path)
+    score = read_gp5(path)
+    tied = [
+        (beat.start, n.string, n.value)
+        for beat in score.tracks[0].measures[0].voices[0].beats
+        for n in beat.notes
+        if n.type == gp.NoteType.tie
+    ]
+    assert tied == [(1200, 2, 0), (2880, 2, 14)]
+
+
+def test_export_rejects_a_valid_file_that_changed_the_intended_pitch(tmp_path, monkeypatch):
+    def wrong_writer(song, stream):
+        wrong = build_song([FrettedNote(Note(0, 1, 65), 0, 1)], 120)
+        write_gp5(wrong, stream)
+
+    monkeypatch.setattr("tabber.export.write_gp5", wrong_writer)
+    target = tmp_path / "corrupt"
+    with pytest.raises(ValueError, match="verification"):
+        write_outputs([FrettedNote(Note(0, 1, 64), 0, 0)], target, 120)
+    assert not target.exists()

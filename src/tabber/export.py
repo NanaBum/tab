@@ -7,7 +7,7 @@ from pathlib import Path
 
 import mido
 
-from .gp5 import build_song, write_gp5
+from .gp5 import build_song, read_gp5, verify_export, write_gp5
 from .models import FrettedNote
 from .rhythm import quantize
 
@@ -62,6 +62,8 @@ def write_outputs(notes: list[FrettedNote], output: Path, bpm: float, grid: int 
     # can still leave a mixture of old and new formats, so it is not a transaction.
     gp5_bytes = io.BytesIO()
     write_gp5(song, gp5_bytes)
+    gp5_bytes.seek(0)
+    verify_export(read_gp5(gp5_bytes), notes, bpm, grid)
     rendered = {
         "notes.json": (json.dumps(payload, indent=2) + "\n").encode("utf-8"),
         "tab.txt": "\n".join(text).encode("utf-8"),
