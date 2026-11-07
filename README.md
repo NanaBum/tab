@@ -8,6 +8,21 @@ Fingering and transcription remain drafts requiring musical review.
 
 ## Quick start
 
+### On this Windows computer
+
+Double-click **Start Tabber.cmd**. Choose an audio file, use Machine learning,
+enter its tempo if known, and click Create guitar tab. Each conversion gets its
+own results folder. Open the editable GP5 in TuxGuitar to play and correct it.
+The app runs locally, offers note sensitivity and rhythm detail, and saves a log
+when a conversion fails. It does not download dependencies or upload audio.
+
+The core and ML environments are already set up on the development computer.
+For a fresh clone, follow the commands below; `uv sync` sets up the core app and
+the separate ML recipe below enables Machine learning. Tkinter must be available
+in the Python installation. The simple detector remains available without ML.
+
+### Terminal setup
+
 Install Git and [uv](https://docs.astral.sh/uv/), then open a terminal in this folder:
 
 ```powershell
@@ -19,6 +34,18 @@ uv run tabber runs/demo.wav --output runs/demo --bpm 120
 Open `runs/demo/tab.gp5` in TuxGuitar (File > Open), then play or edit it and save
 as `.tg` if desired. `tab.txt` is a plain-text preview. `notes.mid` provides playback in a MIDI player or DAW;
 `notes.json` preserves detected timing, pitch, confidence, and fingering.
+`detected-notes.json` is a separate editable note-event file, before fingering and
+score quantization. To rebuild an edited detection without rerunning the audio:
+
+```powershell
+uv run tabber --events runs/demo/detected-notes.json --output runs/edited --bpm 120
+```
+
+Edit pitch, start, end, or confidence values in this event file; time units are
+seconds. It uses `format: tabber-note-events` and `schema_version: 1`. Rebuilding
+assigns fingerings again. It does not preserve manual TuxGuitar edits. Every audio
+run also saves timestamped detections under `diagnostics/` before trying to assign
+frets, so difficult outputs can be inspected without running ML again.
 For your own audio:
 
 ```powershell
