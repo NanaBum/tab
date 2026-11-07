@@ -1,6 +1,7 @@
 """Build editable GP5 scores on a sixteenth-note grid in 4/4."""
 
 import itertools
+from collections import Counter
 from pathlib import Path
 from typing import BinaryIO
 
@@ -115,3 +116,74 @@ def build_song(notes: list[FrettedNote], bpm: float, grid: int = 16) -> gp.Song:
 
 def write_gp5(song: gp.Song, path: Path | BinaryIO) -> None:
     guitarpro.write(song, str(path) if isinstance(path, Path) else path, version=(5, 1, 0))
+
+
+def read_gp5(path: Path | BinaryIO) -> gp.Song:
+    """Read exports with tie frets reconstructed by chronological string history.
+
+    GP5 ties store no independent fret. PyGuitarPro 0.11 locates a beat using
+    value equality (which excludes its time), so a partially read tied beat can
+    match an earlier open-string tie and inherit the wrong fret. Reconstructing
+    the format's continuation semantics avoids global patches to that library.
+    """
+    song = guitarpro.parse(str(path) if isinstance(path, Path) else path)
+    for track in song.tracks:
+        history = {}
+        for measure in track.measures:
+            for voice_index, voice in enumerate(measure.voices):
+                for beat in voice.beats:
+                    for note in beat.notes:
+                        key = voice_index, note.string
+                        if note.type == gp.NoteType.tie:
+                            if key not in history:
+                                raise ValueError("GP5 tie has no preceding note on its string")
+                            note.value = history[key]
+                        else:
+                            history[key] = note.value
+    return song
+
+
+def score_events(song: gp.Song) -> list[tuple[int, int, int, int]]:
+    """Canonical attack/end/string/fret events, including all tied segments."""
+    if len(song.tracks) != 1:
+        raise ValueError("Expected a single guitar track in this export")
+    events, active = [], {}
+    for measure in song.tracks[0].measures:
+        if (
+            measure.timeSignature.numerator != 4
+            or measure.timeSignature.denominator.value != 4
+            or any(beat.notes for voice in measure.voices[1:] for beat in voice.beats)
+        ):
+            raise ValueError("Unexpected meter or extra sounding voice in the GP5 export")
+        beats = measure.voices[0].beats
+        if sum(beat.duration.time for beat in beats) != 3840:
+            raise ValueError("GP5 export contains an incomplete or overfull 4/4 measure")
+        for beat in beats:
+            for note in beat.notes:
+                if note.type == gp.NoteType.normal:
+                    event = [beat.start, beat.start + beat.duration.time, note.string, note.value]
+                    events.append(event)
+                    active[note.string] = event
+                elif note.type == gp.NoteType.tie:
+                    previous = active.get(note.string)
+                    if previous is None or previous[1] != beat.start or previous[3] != note.value:
+                        raise ValueError("GP5 export contains a broken sustained-note tie")
+                    previous[1] += beat.duration.time
+                else:
+                    raise ValueError("Unexpected note type in the GP5 export")
+    return [tuple(event) for event in events]
+
+
+def verify_export(song: gp.Song, notes: list[FrettedNote], bpm: float, grid: int) -> None:
+    tempo = int(bpm + 0.5)
+    if len(song.tracks) != 1 or tuple(s.value for s in song.tracks[0].strings) != STANDARD_TUNING:
+        raise ValueError("GP5 verification found an unexpected track or tuning")
+    expected = []
+    for note in notes:
+        first = quantize(note.note.start, tempo, grid // 4)
+        last = max(first + 1, quantize(note.note.end, tempo, grid // 4))
+        expected.append(
+            (960 + first * (3840 // grid), 960 + last * (3840 // grid), note.string + 1, note.fret)
+        )
+    if song.tempo != tempo or Counter(score_events(song)) != Counter(expected):
+        raise ValueError("GP5 verification could not preserve the intended note events")
