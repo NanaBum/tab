@@ -2,7 +2,8 @@
 
 A local audio-to-guitar-tab research prototype. The first working path takes a
 clean **single-note guitar melody** and writes text tablature, MIDI, and JSON with
-note timings and suggested string/fret positions. This is an early baseline,
+note timings and suggested string/fret positions, plus editable GP5 scores for
+TuxGuitar 2.1. This is an early baseline,
 not an accurate full-song or chord transcriber.
 
 ## Quick start
@@ -15,7 +16,8 @@ uv run python scripts/make_demo.py
 uv run tabber runs/demo.wav --output runs/demo --bpm 120
 ```
 
-Open `runs/demo/tab.txt`. `notes.mid` provides playback in a MIDI player or DAW;
+Open `runs/demo/tab.gp5` in TuxGuitar (File > Open), then play or edit it and save
+as `.tg` if desired. `tab.txt` is a plain-text preview. `notes.mid` provides playback in a MIDI player or DAW;
 `notes.json` preserves detected timing, pitch, confidence, and fingering.
 For your own audio:
 
@@ -26,17 +28,23 @@ uv run tabber "C:/path/to/guitar.wav" --output runs/my-song --bpm 100
 Use WAV or FLAC first. Format support depends on the installed libsndfile.
 Tempo is supplied by you; automatic tempo estimation is not implemented.
 One text-tab cell is a sixteenth note. Dashes mean no new onset, not a measured
-rest; exact durations are available in MIDI and JSON. Standard tuning only in
+rest; exact durations are available in MIDI and JSON. GP5 uses 4/4 measures and
+snaps starts and ends to sixteenth notes, with at least one cell per note. Gaps
+become rests, and sustained notes split into tied durations across measures.
+GP5 tempo is rounded to the nearest integer BPM (1-999). Original timings remain
+unchanged in MIDI and JSON. Grid collisions are rejected instead of discarding
+notes. Triplets, swing, other meters, and expressive techniques are not yet
+represented. Standard tuning only in
 the command line; the fretting function accepts other tunings.
 
 ## What works and what remains
 
 - Implemented: autocorrelation melody baseline, dynamic-programming melodic
-  fingering, supplied-tempo grid, text/JSON/MIDI export, synthetic demo, tests.
+  fingering, supplied-tempo grid, text/JSON/MIDI/GP5 export, synthetic demo, tests.
 - Optional adapters: Basic Pitch pitch detection and Demucs guitar separation.
   These are not installed or validated by the core setup.
 - Remaining: chord-aware fingering, repeated-note onset detection, real GuitarSet
-  evaluation, automatic tempo, expressive techniques, MusicXML/GP5 export, UI.
+  evaluation, automatic tempo, expressive techniques, MusicXML export, UI.
 
 The baseline can confuse harmonics and octaves. Frame boundaries introduce timing
 error, and adjacent repeated notes may merge. Fingering optimizes a simple movement
@@ -94,3 +102,6 @@ See AGENTS.md for conventions. The pipeline lives in `src/tabber/`, with separat
 modules for separation, transcription, fingering, timing, and export. Use a branch
 for each change and review before merging. Keep audio, data, weights, and secrets
 outside Git. No project license has been selected yet.
+
+Hosted CI is manual-only for now because GitHub reported an account billing block.
+Run the checks above locally; pushes and pull requests do not start hosted jobs.

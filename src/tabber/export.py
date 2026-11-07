@@ -4,12 +4,14 @@ from pathlib import Path
 
 import mido
 
+from .gp5 import build_song, write_gp5
 from .models import FrettedNote
 from .rhythm import quantize
 
 
 def write_outputs(notes: list[FrettedNote], output: Path, bpm: float) -> None:
     quantize(0, bpm)
+    song = build_song(notes, bpm)
     output.mkdir(parents=True, exist_ok=True)
     payload = {"bpm": bpm, "string_order": "high E to low E", "notes": [asdict(n) for n in notes]}
     (output / "notes.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
@@ -55,3 +57,4 @@ def write_outputs(notes: list[FrettedNote], output: Path, bpm: float) -> None:
         )
         previous = tick
     midi.save(output / "notes.mid")
+    write_gp5(song, output / "tab.gp5")
