@@ -27,4 +27,8 @@ Core tests must not import TensorFlow. Keep ML pins in requirements/ml.in and th
 Windows/Python 3.11 lock separate from uv.lock. These paths are tested locally.
 GuitarSet development scores are not held-out accuracy claims; audit the pretrained
 model's data splits before making any generalization claim.
+The optional string-tone model uses fixed performer splits (01-04 train, 05 val,
+00 test). Never fit scaling on test notes or tune parameters on test results.
+Its oracle-note classification and conditional end-to-end fingering scores are
+different metrics. Keep it off by default until testing on the user's guitar.
 Do not train models or download large datasets without explaining size and purpose.

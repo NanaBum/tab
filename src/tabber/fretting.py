@@ -1,6 +1,7 @@
 """Dynamic programming over playable positions for a single melodic voice."""
 
 import itertools
+import math
 
 from .models import STANDARD_TUNING, FrettedNote, Note
 
@@ -55,7 +56,13 @@ def assign_frets(notes: list[Note], tuning=STANDARD_TUNING, max_fret=24) -> list
 
 
 def assign_polyphonic_frets(
-    notes: list[Note], tuning=STANDARD_TUNING, max_fret=24, max_span=5, beam_width=128
+    notes: list[Note],
+    tuning=STANDARD_TUNING,
+    max_fret=24,
+    max_span=5,
+    beam_width=128,
+    string_priors=None,
+    prior_weight=2.0,
 ) -> list[FrettedNote]:
     """Beam-search positions while reserving strings for sustained notes.
 
@@ -64,6 +71,24 @@ def assign_polyphonic_frets(
     """
     if not tuning or max_fret < 0 or max_span < 0 or beam_width < 1:
         raise ValueError("Provide tuning and positive search limits")
+    if not math.isfinite(prior_weight) or prior_weight < 0:
+        raise ValueError("String-prior weight must be finite and nonnegative")
+    priors = {}
+    if string_priors is not None:
+        if len(string_priors) != len(notes):
+            raise ValueError("Provide one string-prior row per note")
+        for note, row in zip(notes, string_priors):
+            if (
+                len(row) != len(tuning)
+                or not all(math.isfinite(p) and p >= 0 for p in row)
+                or sum(row) <= 0
+            ):
+                raise ValueError(
+                    "String priors must be finite, nonnegative rows with positive sums"
+                )
+            total = sum(row)
+            if max(row) - min(row) > 1e-12:
+                priors[id(note)] = tuple(p / total for p in row)
     ordered = sorted(notes, key=lambda n: (n.start, -n.pitch))
     # cost, complete history, active positions, last hand position, last string
     states = [(0.0, (), (), 0.0, 0)]
@@ -90,6 +115,8 @@ def assign_polyphonic_frets(
                 movement = abs(position - hand) if hand and position else 0
                 new_cost = cost + movement + span * 0.3 + fret * 0.04
                 new_cost += abs(string - last_string) * 0.15
+                if id(note) in priors:
+                    new_cost -= prior_weight * math.log(max(1e-8, priors[id(note)][string]))
                 key = (
                     tuple(sorted((n.string, n.fret, n.note.end) for n in current)),
                     position,

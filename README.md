@@ -75,6 +75,12 @@ the command line; the fretting function accepts other tunings.
 - Remaining: automatic tempo, timbre-based string identification, expressive
   techniques, MusicXML export, and broader real-world musical review.
 
+An optional, locally trained string-tone experiment is now available through
+`--string-model`. It is off by default and has only been evaluated within the
+GuitarSet domain. See [STRING_EXPERIMENT.md](STRING_EXPERIMENT.md) for the fixed
+performer split, limitations, and training/reproduction commands. Weights are not
+committed; they remain under ignored `models/`.
+
 The baseline can confuse harmonics and octaves. Frame boundaries introduce timing
 error, and adjacent repeated notes may merge. Fingering optimizes a simple movement
 cost; it does not recover which string was actually played. The default fingering
