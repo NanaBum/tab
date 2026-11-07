@@ -1,0 +1,1 @@
+"""Local guitar transcription prototype."""

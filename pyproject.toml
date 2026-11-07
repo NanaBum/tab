@@ -1,0 +1,23 @@
+[project]
+name = "tabber"
+version = "0.1.0"
+description = "An experimental, local audio-to-guitar-tab pipeline"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+dependencies = ["numpy>=1.26,<3", "scipy>=1.12,<2", "soundfile>=0.12,<1", "mido>=1.3,<2"]
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "ruff>=0.11,<1"]
+
+[project.scripts]
+tabber = "tabber.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
