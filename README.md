@@ -72,6 +72,10 @@ become rests, and sustained notes split into tied durations across measures.
 GP5 tempo is rounded to the nearest integer BPM (1-999). Original timings remain
 unchanged in MIDI and JSON. Grid collisions are rejected instead of discarding
 notes. For faster notes choose `--grid 32` or `--grid 64` (divisions per whole note).
+Exports record score-timing movement in `notes.json` and show a notice if any
+note starts moved by over 50 ms. A finer grid can preserve timing better but
+make notation busier. See [SCORE_TIMING.md](SCORE_TIMING.md) for the measured
+tradeoff; saved detections can be rebuilt without another ML pass.
 Triplets, swing, other meters, and expressive techniques are not yet
 represented. Standard tuning only in
 the command line; the fretting function accepts other tunings.

@@ -269,11 +269,11 @@ class TabberApp:
                 estimates = [
                     line
                     for line in process.stdout.splitlines()
-                    if line.startswith("Estimated tempo:")
+                    if line.startswith(("Estimated tempo:", "Timing note:"))
                 ]
                 ready = "Your draft tab is ready. Open it in TuxGuitar to review and play."
                 if estimates:
-                    ready += " " + estimates[-1] + "."
+                    ready += " " + " ".join(estimates)
                 self.messages.put(
                     (
                         True,
