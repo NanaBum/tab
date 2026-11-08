@@ -6,6 +6,7 @@ They do not measure perceived playability or prove string identification.
 """
 
 import math
+import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 
@@ -42,7 +43,7 @@ def idmt_recording(xml: str) -> IDMTRecording:
     )
     tuning = tuple(
         int(value.strip())
-        for value in metadata.get("instrumentTuning", "").split(",")
+        for value in re.split(r"[\s,]+", metadata.get("instrumentTuning", ""))
         if value.strip()
     )
     if tuning != tuple(reversed(STANDARD_TUNING)):

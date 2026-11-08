@@ -29,10 +29,11 @@ The review sequence is stacked, with one PR based on its predecessor:
 14. Fresh installed-wheel and local setup validation.
 15. Optional guitar-specific CPU model, pinned checkpoint and separate environment.
 16. Fixed clean electric-guitar comparison, small-subset download and reference audit.
+17. Fixed picked-lick comparison on a second electric guitar and tuning-format support.
 
-Current local work is on `codex/electric-riff-validation`, based on local
-`2a085be` / remote `18f2bd57ba9ef2161a6a4aeb11358abe8a031972` (PR #15,
-`codex/guitar-model-comparison`, tree `c041dbdb4112a554bac1ee80dd2786792255c7af`).
+Current local work is on `codex/electric-lick-check`, based on local
+`5e2bb09` / remote `ec9824f4fcc08b3fa16ba8e539b6598d9b12957c` (PR #16,
+`codex/electric-riff-validation`, tree `6feb7f574ee0d4abeb4d76df6166deb47ed0414c`).
 Keep the guitar model experimental. The immediate user target is electric riffs,
 then full-band recordings. User audio and comparisons remain outside this repo.
 

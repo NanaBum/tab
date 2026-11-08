@@ -32,6 +32,12 @@ def test_idmt_chords_keep_simultaneous_attacks_and_independent_releases():
     assert result.positions == [(0, 0), (5, 0)]
 
 
+def test_idmt_accepts_the_space_delimited_tuning_in_lick_annotations():
+    source = annotation(event(45, 2, 0)).replace("40,45,50,55,59,64", "40  45  50  55  59  64")
+    result = idmt_recording(source)
+    assert result.positions == [(4, 0)]
+
+
 def test_idmt_invalid_timing_does_not_silently_disappear():
     with pytest.raises(ValueError, match="event 0"):
         idmt_recording(annotation(event(64, 6, 0, 1, 0)))

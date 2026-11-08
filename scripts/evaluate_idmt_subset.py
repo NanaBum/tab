@@ -1,4 +1,4 @@
-"""Evaluate all five IDMT subset-3 electric recordings locally, without training."""
+"""Evaluate a fixed IDMT electric-guitar selection locally, without training."""
 
 import argparse
 import hashlib
@@ -22,15 +22,25 @@ def digest(path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data", type=Path, default=Path("data/idmt/dataset3"))
-    parser.add_argument("--output", type=Path, default=Path("runs/idmt-guitar-gaps"))
+    parser.add_argument("--selection", choices=("pieces", "licks"), default="pieces")
+    parser.add_argument("--data", type=Path)
+    parser.add_argument("--output", type=Path)
     parser.add_argument(
         "--backend", choices=("baseline", "basic-pitch", "guitar-gaps"), default="guitar-gaps"
     )
     args = parser.parse_args()
-    names = ("nocturneNr2", "pathetique_mono", "pathetique_poly", "promenade_mono", "quintfall")
+    names = (
+        ("nocturneNr2", "pathetique_mono", "pathetique_poly", "promenade_mono", "quintfall")
+        if args.selection == "pieces"
+        else ("AR_Lick1_KN", "AR_Lick6_KN", "AR_Lick12_KN")
+    )
+    args.data = args.data or Path("data/idmt") / (
+        "dataset3" if args.selection == "pieces" else "dataset2"
+    )
+    args.output = args.output or Path("runs") / f"idmt-{args.selection}-{args.backend}"
     report = {
-        "purpose": "Fixed five-recording electric-guitar development check; checkpoint training overlap unresolved",
+        "purpose": "Fixed electric-guitar development check; checkpoint training overlap unresolved",
+        "selection": args.selection,
         "source": "https://zenodo.org/records/7544110",
         "backend": args.backend,
         "settings": {
