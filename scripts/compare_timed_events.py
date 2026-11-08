@@ -69,6 +69,8 @@ def main():
                         "approximate_techniques",
                         "technique_flags",
                         "timing",
+                        "repeat_unfolding_requested",
+                        "playback_measure_count",
                     )
                     if key in source_metadata
                 }

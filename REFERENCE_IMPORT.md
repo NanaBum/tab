@@ -32,9 +32,25 @@ under any particular license.
 
 ## Score features requiring further work
 
-The importer rejects unexpanded repeats, alternate endings, navigation jumps,
-swing/triplet-feel playback and gradual tempo ramps. These need correct playback
-ordering or timing before a whole-track comparison can be meaningful. Broken
+Repeats and alternate endings are refused by default. To expand supported repeat
+structures into playback order, explicitly request:
+
+```powershell
+uv run python scripts/import_reference_tab.py path/to/reference.gp5 --track 1 --unfold-repeats --max-playback-measures 10000 --output runs/reference-events.json
+```
+
+This handles simple repeats, nested plain repeats and explicit nonnested ending
+bitmasks. The first closing repeat may imply the score beginning; later repeats
+need an opening marker. Every played measure retains its source measure and pass
+provenance. Skipped endings consume no time. Instant tempo changes are replayed,
+including restoration of the source-entry tempo when a repeat starts again.
+
+Nested repeats with alternate endings, unlabeled ending continuations, ambiguous
+repeat structures, tempo changes combined with alternate endings, navigation
+jumps, swing/triplet-feel playback and gradual tempo ramps are still refused.
+Conditional ties with different pitches on different playback branches also fail
+rather than guessing their meaning. Expansion is bounded by the requested limit
+(10,000 played measures by default). Broken
 ties, invalid string/fret positions and conflicting tempo declarations also fail
 explicitly. It does not silently choose a repeat count or flatten a tempo ramp.
 
@@ -78,6 +94,12 @@ the user's licensing inquiry is awaiting a response.
   round trip), mixed meters, independent voices, capo and alternate tuning pass.
 - Repeat/swing rejection, technique opt-in, gradual tempo refusal, broken ties
   and malformed-file failure are checked explicitly.
+- GP3/GP4/GP5 repeat and ending serialization checks cover playback order, tempo
+  resets and ties. A generated two-bar repeat was also exported to MIDI by the
+  installed TuxGuitar 2.1: all four imported pitch/onset pairs matched its playback
+  at 0, 2, 6 and 8 seconds. This checks one simple repeat/tempo example, not all
+  third-party repeat notation or release behavior. Evidence is in
+  [repeat-native-check.json](reports/repeat-native-check.json).
 - All 92 saved generated GP5 outputs were imported with the same 2,858 canonical
   note events, pitches and score times. This is structural readback, not accuracy
   against audio or arbitrary third-party score coverage.
