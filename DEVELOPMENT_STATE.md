@@ -31,10 +31,11 @@ The review sequence is stacked, with one PR based on its predecessor:
 16. Fixed clean electric-guitar comparison, small-subset download and reference audit.
 17. Fixed picked-lick comparison on a second electric guitar and tuning-format support.
 18. Audited opt-in range filtering, wider-span rebuilding and clearer fingering errors.
+19. Single-global-shift event comparison and sparse full-song note matching.
 
-Current local work is on `codex/explicit-guitar-range`, based on local
-`060dca6` / remote `3376f45ae5f02c0ecc29339585e385b067769c57` (PR #17,
-`codex/electric-lick-check`, tree `a7cb59bf5c9ccb3140e116092b22f0eef8627cab`).
+Current local work is on `codex/global-time-alignment`, based on local
+`be9683a` / remote `89923cbdfbb3e6bb97bbc76d133d91886f9d8221` (PR #18,
+`codex/explicit-guitar-range`, tree `8e3a424df421727e98729a38e74802f879c0e59e`).
 Keep the guitar model experimental. The immediate user target is electric riffs,
 then full-band recordings. User audio and comparisons remain outside this repo.
 
@@ -47,12 +48,13 @@ milestone is `codex/audio-input-checks`: local commit `68bd31d`, remote commit
 Hosted tests remain manual-only.
 
 Development data, audio, weights and run results are under ignored data/, models/
-and runs/. Four separate environments exist on the development machine:
+and runs/. Five separate environments exist on the development machine:
 
 - `.venv`: core Python 3.13; `uv.lock`.
 - `.venv-ml`: Basic Pitch/features, Python 3.11; `requirements/ml-windows-py311.txt`.
 - `.venv-separation`: CPU Demucs, Python 3.11; separate requirements lock.
 - `.venv-audio`: FFmpeg codec only, Python 3.13; `requirements/audio-windows-py313.txt`.
+- `.venv-guitar`: experimental GAPS guitar model, Python 3.11; `requirements/guitar-windows-py311.txt`.
 
 Core tests must run without importing TensorFlow or downloading models. Package
 recipes do not bundle datasets, weights, audio or environments. The exported

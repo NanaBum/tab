@@ -1,0 +1,76 @@
+"""Compare local timed note files with raw and one-global-shift metrics."""
+
+import argparse
+import hashlib
+import json
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+from tabber.alignment import compare_with_global_shift
+from tabber.evaluation import idmt_recording
+from tabber.events import load_events
+from tabber.models import Note
+
+
+def read_notes(path):
+    if path.suffix.lower() == ".xml":
+        try:
+            return idmt_recording(path.read_text(encoding="utf-8-sig")).notes
+        except ET.ParseError as error:
+            raise ValueError(f"Invalid IDMT XML: {error}") from error
+    payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    if not isinstance(payload, dict):
+        raise TypeError("Expected a note-file object")
+    if payload.get("format") == "tabber-note-events":
+        return load_events(path)
+    if payload.get("string_order") == "high E to low E" and isinstance(payload.get("notes"), list):
+        return [Note(**entry["note"]) for entry in payload["notes"]]
+    raise ValueError("Use detected-note JSON, an exported notes.json, or IDMT annotation XML")
+
+
+def file_hash(path):
+    with path.open("rb") as stream:
+        return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("reference", type=Path)
+    parser.add_argument("predicted", type=Path)
+    parser.add_argument("--output", type=Path, default=Path("runs/timed-comparison.json"))
+    parser.add_argument("--max-shift", type=float, default=5.0)
+    parser.add_argument("--step", type=float, default=0.01)
+    parser.add_argument("--onset-tolerance", type=float, default=0.05)
+    args = parser.parse_args()
+    try:
+        if args.output.resolve() in (args.reference.resolve(), args.predicted.resolve()):
+            raise ValueError("The output report must not overwrite an input file")
+        report = compare_with_global_shift(
+            read_notes(args.reference),
+            read_notes(args.predicted),
+            max_shift=args.max_shift,
+            step=args.step,
+            onset_tolerance=args.onset_tolerance,
+        )
+        report["inputs"] = {
+            label: {"path": str(path.resolve()), "sha256": file_hash(path)}
+            for label, path in (("reference", args.reference), ("predicted", args.predicted))
+        }
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    except (OSError, ValueError, TypeError, KeyError) as error:
+        parser.exit(1, f"Could not compare timed events: {error}\n")
+    print(f"Raw pitch/onset F1: {report['raw']['onsets']['f1']:.3f}")
+    print(f"Global prediction shift: {report['prediction_shift_seconds']:+.3f}s")
+    print(
+        f"Shifted pitch/onset F1: {report['shifted']['onsets']['f1']:.3f} (reference-assisted diagnostic)"
+    )
+    if report["ambiguous_shift"]:
+        print("Alignment note: More than one separated shift fits equally well.")
+    if report["at_search_boundary"]:
+        print("Alignment note: The selected shift is at the search boundary.")
+    print(f"Report: {args.output.resolve()}")
+
+
+if __name__ == "__main__":
+    main()
