@@ -41,6 +41,9 @@ uv run tabber runs/demo.wav --output runs/demo --bpm 120
 Open `runs/demo/tab.gp5` in TuxGuitar (File > Open), then play or edit it and save
 as `.tg` if desired. `tab.txt` is a plain-text preview. `notes.mid` provides playback in a MIDI player or DAW;
 `notes.json` preserves detected timing, pitch, confidence, and fingering.
+MIDI uses one channel per guitar string so overlapping unisons have independent
+releases. Times round to 480 ticks per quarter note, with a minimum one-tick
+duration. See [MIDI_VALIDATION.md](MIDI_VALIDATION.md) for the checks and limits.
 `detected-notes.json` is a separate editable note-event file, before fingering and
 score quantization. To rebuild an edited detection without rerunning the audio:
 
@@ -70,7 +73,7 @@ rest; exact durations are available in MIDI and JSON. GP5 uses 4/4 measures and
 snaps starts and ends to sixteenth notes, with at least one cell per note. Gaps
 become rests, and sustained notes split into tied durations across measures.
 GP5 tempo is rounded to the nearest integer BPM (1-999). Original timings remain
-unchanged in MIDI and JSON. Grid collisions are rejected instead of discarding
+unchanged in JSON and are approximated at MIDI tick resolution. Grid collisions are rejected instead of discarding
 notes. For faster notes choose `--grid 32` or `--grid 64` (divisions per whole note).
 Exports record score-timing movement in `notes.json` and show a notice if any
 note starts moved by over 50 ms. A finer grid can preserve timing better but
