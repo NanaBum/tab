@@ -15,6 +15,7 @@ from tkinter import filedialog, messagebox, ttk
 from .tempo import TapTempo
 
 SAVED_NOTES = "Rebuild saved notes"
+GUITAR_MODEL = "Guitar model (experimental)"
 
 
 def conversion_command(interpreter, path, output, *, method, tempo, grid, confidence, separate):
@@ -33,10 +34,16 @@ def conversion_command(interpreter, path, output, *, method, tempo, grid, confid
         load_events(path)
         command.extend(("--events", str(path.resolve())))
     else:
-        backend = "basic-pitch" if method == "Machine learning" else "baseline"
-        command.extend(
-            (str(path.resolve()), "--backend", backend, "--min-confidence", str(confidence))
-        )
+        if method == GUITAR_MODEL:
+            onset = {0.3: 0.2, 0.5: 0.3, 0.7: 0.5}[confidence]
+            command.extend(
+                (str(path.resolve()), "--backend", "guitar-gaps", "--onset-threshold", str(onset))
+            )
+        else:
+            backend = "basic-pitch" if method == "Machine learning" else "baseline"
+            command.extend(
+                (str(path.resolve()), "--backend", backend, "--min-confidence", str(confidence))
+            )
         if separate:
             command.append("--separate")
     command.extend(("--bpm", str(tempo), "--grid", str(grid), "--output", str(output)))
@@ -64,6 +71,14 @@ class TabberApp:
         self.running = False
         self.result = None
         self.ml = ml_python(self.root)
+        from .guitar_gaps import default_checkpoint
+
+        guitar_python = (
+            self.root / ".venv-guitar" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+        )
+        self.guitar = (
+            guitar_python if guitar_python.is_file() and default_checkpoint().is_file() else None
+        )
         window.title("Tabber — guitar audio to editable tabs")
         window.minsize(660, 590)
         window.protocol("WM_DELETE_WINDOW", self.close)
@@ -87,6 +102,8 @@ class TabberApp:
             value="Machine learning" if self.ml else "Simple melody detector"
         )
         choices = ["Simple melody detector"] + (["Machine learning"] if self.ml else [])
+        if self.guitar:
+            choices.append(GUITAR_MODEL)
         choices.append(SAVED_NOTES)
         ttk.Label(frame, text="Method").grid(row=3, column=0, sticky="w", pady=12)
         self.method = ttk.Combobox(
@@ -194,7 +211,11 @@ class TabberApp:
             from .tempo import parse_bpm
 
             tempo = parse_bpm(self.tempo.get())
-            if tempo == "auto" and self.ml is None:
+            if (
+                tempo == "auto"
+                and self.ml is None
+                and not (self.backend.get() == GUITAR_MODEL and self.guitar)
+            ):
                 raise ValueError("Automatic tempo needs the ML environment")
         except ValueError:
             messagebox.showerror(
@@ -207,7 +228,9 @@ class TabberApp:
         stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
         output = self.root / "runs" / f"{path.stem}-{stamp}"
         interpreter = self.ml if self.backend.get() == "Machine learning" else Path(sys.executable)
-        if tempo == "auto":
+        if self.backend.get() == GUITAR_MODEL:
+            interpreter = self.guitar
+        elif tempo == "auto":
             interpreter = self.ml
         try:
             command = conversion_command(

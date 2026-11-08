@@ -6,6 +6,9 @@ timings and suggested string/fret positions. The lightweight default detector is
 monophonic; optional local Basic Pitch ML can detect chords and overlapping notes.
 Fingering and transcription remain drafts requiring musical review.
 
+An optional [guitar-specific model](GUITAR_MODEL.md) is also available in its own
+CPU environment. It is experimental and keeps the existing defaults unchanged.
+
 ## Quick start
 
 ### On this Windows computer

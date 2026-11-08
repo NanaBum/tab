@@ -7,8 +7,24 @@ pytest.importorskip("tkinter")
 from tabber.cli import main
 from tabber.events import load_events, save_events
 from tabber.gp5 import read_gp5, score_events
-from tabber.gui import SAVED_NOTES, conversion_command
+from tabber.gui import GUITAR_MODEL, SAVED_NOTES, conversion_command
 from tabber.models import Note
+
+
+def test_guitar_method_uses_its_own_sensitivity_scale(tmp_path):
+    command = conversion_command(
+        sys.executable,
+        tmp_path / "riff.ogg",
+        tmp_path / "out",
+        method=GUITAR_MODEL,
+        tempo=140,
+        grid=32,
+        confidence=0.5,
+        separate=False,
+    )
+    assert command[command.index("--backend") + 1] == "guitar-gaps"
+    assert command[command.index("--onset-threshold") + 1] == "0.3"
+    assert "--min-confidence" not in command
 
 
 def test_app_rebuild_preserves_weak_notes_without_listening_again(tmp_path, monkeypatch):
