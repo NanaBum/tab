@@ -1,6 +1,7 @@
 import queue
 import sys
 import threading
+from types import SimpleNamespace
 
 import pytest
 
@@ -67,6 +68,70 @@ def test_app_routes_selected_tuning_through_saved_note_rebuild(tmp_path):
         tuning="drop-d",
     )
     assert command[command.index("--tuning") + 1] == "drop-d"
+
+
+def test_app_notes_only_replay_has_no_fret_stretch_request(tmp_path):
+    source = tmp_path / "notes.json"
+    save_events([Note(0, 1, 38)], source)
+    command = conversion_command(
+        sys.executable,
+        source,
+        tmp_path / "out",
+        method=SAVED_NOTES,
+        tempo=120,
+        grid=16,
+        confidence=0.5,
+        separate=False,
+        notes_only=True,
+        max_span=7,
+    )
+    assert "--notes-only" in command and "--max-span" not in command
+
+
+@pytest.mark.parametrize("success,tab_exists", [(True, False), (False, True)])
+def test_notes_only_or_cancelled_result_never_enables_a_missing_or_partial_tab(
+    tmp_path, success, tab_exists
+):
+    states = {}
+    app = object.__new__(TabberApp)
+    app.messages = queue.Queue()
+    app.messages.put((success, tmp_path, "result"))
+    (tmp_path / "notes.mid").write_bytes(b"test output")
+    if tab_exists:
+        (tmp_path / "tab.gp5").write_bytes(b"cancelled partial file")
+    app.window = SimpleNamespace(after=lambda *args: None)
+    app.progress = SimpleNamespace(stop=lambda: None)
+    app.status = SimpleNamespace(set=lambda value: states.update(message=value))
+    for field in ("convert", "stop_conversion", "browse", "open_folder", "open_tab", "open_midi"):
+        setattr(
+            app,
+            field,
+            SimpleNamespace(configure=lambda key=field, **kwargs: states.update({key: kwargs})),
+        )
+    app.poll()
+    assert app.running is False
+    assert states["open_tab"]["state"] == "disabled"
+    assert states["open_midi"]["state"] == ("normal" if success else "disabled")
+    assert states["convert"]["state"] == "normal"
+
+
+@pytest.mark.parametrize("notes_only", [True, False])
+def test_output_mode_disables_and_restores_score_only_controls(notes_only):
+    states = {}
+    app = object.__new__(TabberApp)
+    app.notes_only = SimpleNamespace(get=lambda: notes_only)
+    for name in ("rhythm_detail", "stretch_control", "convert"):
+        setattr(
+            app,
+            name,
+            SimpleNamespace(configure=lambda key=name, **kwargs: states.update({key: kwargs})),
+        )
+    app.update_output_mode()
+    assert states["rhythm_detail"]["state"] == ("disabled" if notes_only else "readonly")
+    assert states["stretch_control"]["state"] == ("disabled" if notes_only else "normal")
+    assert states["convert"]["text"] == (
+        "Detect notes and create MIDI" if notes_only else "Create guitar tab"
+    )
 
 
 def test_worker_shows_filter_notice_even_when_export_fails(tmp_path, monkeypatch):
