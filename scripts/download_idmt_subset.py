@@ -35,6 +35,14 @@ LICK_FILES = {
     "annotation/AR_Lick12_KN.xml": "5d342d786c5d47eeca1dd5954177306ab7b29ad6c19a13c2c2ea2c5595d158d4",
     "audio/AR_Lick12_KN.wav": "e7f786c769cff6438db8f1225d15db2e0c0e1e97f75f92d8bb71de3beed57e9c",
 }
+MUTED_FILES = {
+    "annotation/AR_Lick1_MN.xml": "92c128e0e99db04bba2c8d88bc5d57fb0b52722f81a5971afb5c5177340ddaa1",
+    "audio/AR_Lick1_MN.wav": "f53d237d237f5655004ea729e52f2cdff3c2b31ff4e6494fd1bdbcc99da76815",
+    "annotation/AR_Lick6_MN.xml": "d33974db4eb8930e31d452a8e14db14c845a2f875b5ae2e62cc35703956dd09a",
+    "audio/AR_Lick6_MN.wav": "c04e7d591e17358377a54b34b590e3410ce25abb598be4b8c8e2922f54b36cd0",
+    "annotation/AR_Lick12_MN.xml": "b3ca268d37114f858b415db2343f5db1ec932878f828c987d5c2a261423ff265",
+    "audio/AR_Lick12_MN.wav": "79d46b455ad0454b013172c83661dec985f3abd705433d50b275968a6d2191c9",
+}
 
 
 class RangeArchive(io.RawIOBase):
@@ -84,12 +92,14 @@ class RangeArchive(io.RawIOBase):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--selection", choices=("pieces", "licks"), default="pieces")
+    parser.add_argument("--selection", choices=("pieces", "licks", "muted"), default="pieces")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     subset = "dataset3" if args.selection == "pieces" else "dataset2"
-    selected = FILES if args.selection == "pieces" else LICK_FILES
-    args.output = args.output or Path("data/idmt") / subset
+    selected = {"pieces": FILES, "licks": LICK_FILES, "muted": MUTED_FILES}[args.selection]
+    args.output = args.output or Path("data/idmt") / (
+        "muted" if args.selection == "muted" else subset
+    )
     args.output.mkdir(parents=True, exist_ok=True)
     remote = RangeArchive()
     files = []
