@@ -1,0 +1,802 @@
+{
+  "purpose": "Reference-assisted global-shift development diagnostic; not a new transcription-accuracy benchmark",
+  "settings": {
+    "max_shift_seconds": 1,
+    "step_seconds": 0.01,
+    "onset_tolerance_seconds": 0.05
+  },
+  "selection": "All eight previously fixed IDMT pieces/licks, each model unchanged; no new inference or source edits",
+  "limits": "Same-pitch onset matching selects the shift using this reference; raw scores preserved. No tempo warp or note removal. Checkpoint training overlap unresolved.",
+  "models": [
+    {
+      "backend": "guitar-gaps",
+      "aggregates": {
+        "raw": {
+          "onsets": {
+            "reference_notes": 157,
+            "predicted_notes": 161,
+            "matched_notes": 138,
+            "f1": 0.8679245283018868
+          },
+          "onsets_offsets": {
+            "reference_notes": 157,
+            "predicted_notes": 161,
+            "matched_notes": 107,
+            "f1": 0.6729559748427673
+          }
+        },
+        "shifted": {
+          "onsets": {
+            "reference_notes": 157,
+            "predicted_notes": 161,
+            "matched_notes": 146,
+            "f1": 0.9182389937106918
+          },
+          "onsets_offsets": {
+            "reference_notes": 157,
+            "predicted_notes": 161,
+            "matched_notes": 114,
+            "f1": 0.7169811320754716
+          }
+        }
+      },
+      "tracks": [
+        {
+          "track": "nocturneNr2",
+          "selection": "pieces",
+          "prediction_shift_seconds": -0.02,
+          "raw": {
+            "onsets": {
+              "reference_notes": 20,
+              "predicted_notes": 20,
+              "matched_notes": 17,
+              "precision": 0.85,
+              "recall": 0.85,
+              "f1": 0.85
+            },
+            "onsets_offsets": {
+              "reference_notes": 20,
+              "predicted_notes": 20,
+              "matched_notes": 14,
+              "precision": 0.7,
+              "recall": 0.7,
+              "f1": 0.7
+            }
+          },
+          "shifted": {
+            "onsets": {
+              "reference_notes": 20,
+              "predicted_notes": 20,
+              "matched_notes": 17,
+              "precision": 0.85,
+              "recall": 0.85,
+              "f1": 0.85
+            },
+            "onsets_offsets": {
+              "reference_notes": 20,
+              "predicted_notes": 20,
+              "matched_notes": 14,
+              "precision": 0.7,
+              "recall": 0.7,
+              "f1": 0.7
+            }
+          },
+          "ambiguous_shift": false,
+          "at_search_boundary": false,
+          "annotation_sha256": "8395037434bfd3af2cb9b0a52cac2bd7a965ecff13e904f0400e4773c9060cfe",
+          "audio_sha256": "8333a6d3d224e35193defcd9724aa42085c6b71d0ba24ff1045f6f1c58acc25a"
+        },
+        {
+          "track": "pathetique_mono",
+          "selection": "pieces",
+          "prediction_shift_seconds": -0.01,
+          "raw": {
+            "onsets": {
+              "reference_notes": 9,
+              "predicted_notes": 9,
+              "matched_notes": 9,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "onsets_offsets": {
+              "reference_notes": 9,
+              "predicted_notes": 9,
+              "matched_notes": 9,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          },
+          "shifted": {
+            "onsets": {
+              "reference_notes": 9,
+              "predicted_notes": 9,
+              "matched_notes": 9,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "onsets_offsets": {
+              "reference_notes": 9,
+              "predicted_notes": 9,
+              "matched_notes": 9,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          },
+          "ambiguous_shift": false,
+          "at_search_boundary": false,
+          "annotation_sha256": "fcb1226bebf2571c220bdf84d47e3f8bbaf31782b3be4cd8d0665b772cae88b3",
+          "audio_sha256": "c8f56672faadf3062e8cee33ddef77a71d3eb975c8a8a5d92292e64eb6383184"
+        },
+        {
+          "track": "pathetique_poly",
+          "selection": "pieces",
+          "prediction_shift_seconds": -0.02,
+          "raw": {
+            "onsets": {
+              "reference_notes": 19,
+              "predicted_notes": 18,
+              "matched_notes": 15,
+              "precision": 0.8333333333333334,
+              "recall": 0.7894736842105263,
+              "f1": 0.8108108108108109
+            },
+            "onsets_offsets": {
+              "reference_notes": 19,
+              "predicted_notes": 18,
+              "matched_notes": 14,
+              "precision": 0.7777777777777778,
+              "recall": 0.7368421052631579,
+              "f1": 0.7567567567567568
+            }
+          },
+          "shifted": {
+            "onsets": {
+              "reference_notes": 19,
+              "predicted_notes": 18,
+              "matched_notes": 15,
+              "precision": 0.8333333333333334,
+              "recall": 0.7894736842105263,
+              "f1": 0.8108108108108109
+            },
+            "onsets_offsets": {
+              "reference_notes": 19,
+              "predicted_notes": 18,
+              "matched_notes": 14,
+              "precision": 0.7777777777777778,
+              "recall": 0.7368421052631579,
+              "f1": 0.7567567567567568
+            }
+          },
+          "ambiguous_shift": false,
+          "at_search_boundary": false,
+          "annotation_sha256": "fcbd58e526b1bf899cec178f13472766a6eaa2b23346f571cb92ae780268582f",
+          "audio_sha256": "f4611abb9be67b67a4cf80c5e0225bb4a129e12a5c4278d90b648b92b922d854"
+        },
+        {
+          "track": "promenade_mono",
+          "selection": "pieces",
+          "prediction_shift_seconds": -0.02,
+          "raw": {
+            "onsets": {
+              "reference_notes": 13,
+              "predicted_notes": 13,
+              "matched_notes": 12,
+              "precision": 0.9230769230769231,
+              "recall": 0.9230769230769231,
+              "f1": 0.9230769230769231
+            },
+            "onsets_offsets": {
+              "reference_notes": 13,
+              "predicted_notes": 13,
+              "matched_notes": 11,
+              "precision": 0.8461538461538461,
+              "recall": 0.8461538461538461,
+              "f1": 0.8461538461538461
+            }
+          },
+          "shifted": {
+            "onsets": {
+              "reference_notes": 13,
+              "predicted_notes": 13,
+              "matched_notes": 13,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "onsets_offsets": {
+              "reference_notes": 13,
+              "predicted_notes": 13,
+              "matched_notes": 13,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          },
+          "ambiguous_shift": false,
+          "at_search_boundary": false,
+          "annotation_sha256": "07a2d03eb0f25a89b5d51e214f9662ef4b6a61ce73af103cff70d3a9be57d17c",
+          "audio_sha256": "b33b99b1d88319cc141b78ea58a4da4c507923d3e2af366e898ce55c9ad4f47e"
+        },
+        {
+          "track": "quintfall",
+          "selection": "pieces",
+          "prediction_shift_seconds": 0.01,
+          "raw": {
+            "onsets": {
+              "reference_notes": 29,
+              "predicted_notes": 33,
+              "matched_notes": 25,
+              "precision": 0.7575757575757576,
+              "recall": 0.8620689655172413,
+              "f1": 0.8064516129032258
+            },
+            "onsets_offsets": {
+              "reference_notes": 29,
+              "predicted_notes": 33,
+              "matched_notes": 14,
+              "precision": 0.42424242424242425,
+              "recall": 0.4827586206896552,
+              "f1": 0.45161290322580644
+            }
+          },
+          "shifted": {
+            "onsets": {
+              "reference_notes": 29,
+              "predicted_notes": 33,
+              "matched_notes": 26,
+              "precision": 0.7878787878787878,
+              "recall": 0.896551724137931,
+              "f1": 0.8387096774193549
+            },
+            "onsets_offsets": {
+              "reference_notes": 29,
+              "predicted_notes": 33,
+              "matched_notes": 10,
+              "precision": 0.30303030303030304,
+              "recall": 0.3448275862068966,
+              "f1": 0.3225806451612903
+            }
+          },
+          "ambiguous_shift": false,
+          "at_search_boundary": false,
+          "annotation_sha256": "f17b23e85b954908bf65d08e35eca14b61e6c6982fc5f2f635275762ab1b422a",
+          "audio_sha256": "0863de6b236f12d1d2d82131132939d6bbe2bc8f126e7c2aadb71d962c58586b"
+        },
+        {
+          "track": "AR_Lick1_KN",
+          "selection": "licks",
+          "prediction_shift_seconds": -0.04,
+          "raw": {
+            "onsets": {
+              "reference_notes": 13,
+              "predicted_notes": 13,
+              "matched_notes": 12,
+              "precision": 0.9230769230769231,
+              "recall": 0.9230769230769231,
+              "f1": 0.9230769230769231
+            },
+            "onsets_offsets": {
+              "reference_notes": 13,
+              "predicted_notes": 13,
+              "matched_notes": 11,
+              "precision": 0.8461538461538461,
+              "recall": 0.8461538461538461,
+              "f1": 0.8461538461538461
+            }
+          },
+          "shifted": {
+            "onsets": {
+              "reference_notes": 13,
+              "predicted_notes": 13,
+              "matched_notes": 13,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "onsets_offsets": {
+              "reference_notes": 13,
+              "predicted_notes": 13,
+              "matched_notes": 12,
+              "precision": 0.9230769230769231,
+              "recall": 0.9230769230769231,
+              "f1": 0.9230769230769231
+            }
+          },
+          "ambiguous_shift": false,
+          "at_search_boundary": false,
+          "annotation_sha256": "412d30e12a1e79f4fa64f69854f7f08de65a814a308b7dc46a023f40fe602af6",
+          "audio_sha256": "18597b2dc85aff01395a638ef848e529ef789796a9be7ff5a904165b0ab61ce6"
+        },
+        {
+          "track": "AR_Lick6_KN",
+          "selection": "licks",
+          "prediction_shift_seconds": -0.03,
+          "raw": {
+            "onsets": {
+              "reference_notes": 10,
+              "predicted_notes": 11,
+              "matched_notes": 10,
+              "precision": 0.9090909090909091,
+              "recall": 1.0,
+              "f1": 0.9523809523809523
+            },
+            "onsets_offsets": {
+              "reference_notes": 10,
+              "predicted_notes": 11,
+              "matched_notes": 10,
+              "precision": 0.9090909090909091,
+              "recall": 1.0,
+              "f1": 0.9523809523809523
+            }
+          },
+          "shifted": {
+            "onsets": {
+              "reference_notes": 10,
+              "predicted_notes": 11,
+              "matched_notes": 10,
+              "precision": 0.9090909090909091,
+              "recall": 1.0,
+              "f1": 0.9523809523809523
+            },
+            "onsets_offsets": {
+              "reference_notes": 10,
+              "predicted_notes": 11,
+              "matched_notes": 10,
+              "precision": 0.9090909090909091,
+              "recall": 1.0,
+              "f1": 0.9523809523809523
+            }
+          },
+          "ambiguous_shift": false,
+          "at_search_boundary": false,
+          "annotation_sha256": "be6438c7a17d7112fc0014c2e8fc18fd93b3f354c4456e03029287f4ea8cda55",
+          "audio_sha256": "3b757b97faf92ac6b925dce69a918a694c6794553e27e7b8ae2b10e2cf09d9dc"
+        },
+        {
+          "track": "AR_Lick12_KN",
+          "selection": "licks",
+          "prediction_shift_seconds": -0.03,
+          "raw": {
+            "onsets": {
+              "reference_notes": 44,
+              "predicted_notes": 44,
+              "matched_notes": 38,
+              "precision": 0.8636363636363636,
+              "recall": 0.8636363636363636,
+              "f1": 0.8636363636363636
+            },
+            "onsets_offsets": {
+              "reference_notes": 44,
+              "predicted_notes": 44,
+              "matched_notes": 24,
+              "precision": 0.5454545454545454,
+              "recall": 0.5454545454545454,
+              "f1": 0.5454545454545454
+            }
+          },
+          "shifted": {
+            "onsets": {
+              "reference_notes": 44,
+              "predicted_notes": 44,
+              "matched_notes": 43,
+              "precision": 0.9772727272727273,
+              "recall": 0.9772727272727273,
+              "f1": 0.9772727272727273
+            },
+            "onsets_offsets": {
+              "reference_notes": 44,
+              "predicted_notes": 44,
+              "matched_notes": 32,
+              "precision": 0.7272727272727273,
+              "recall": 0.7272727272727273,
+              "f1": 0.7272727272727273
+            }
+          },
+          "ambiguous_shift": false,
+          "at_search_boundary": false,
+          "annotation_sha256": "5d342d786c5d47eeca1dd5954177306ab7b29ad6c19a13c2c2ea2c5595d158d4",
+          "audio_sha256": "e7f786c769cff6438db8f1225d15db2e0c0e1e97f75f92d8bb71de3beed57e9c"
+        }
+      ]
+    },
+    {
+      "backend": "basic-pitch",
+      "aggregates": {
+        "raw": {
+          "onsets": {
+            "reference_notes": 157,
+            "predicted_notes": 186,
+            "matched_notes": 138,
+            "f1": 0.8046647230320699
+          },
+          "onsets_offsets": {
+            "reference_notes": 157,
+            "predicted_notes": 186,
+            "matched_notes": 103,
+            "f1": 0.6005830903790087
+          }
+        },
+        "shifted": {
+          "onsets": {
+            "reference_notes": 157,
+            "predicted_notes": 186,
+            "matched_notes": 141,
+            "f1": 0.8221574344023324
+          },
+          "onsets_offsets": {
+            "reference_notes": 157,
+            "predicted_notes": 186,
+            "matched_notes": 111,
+            "f1": 0.6472303206997084
+          }
+        }
+      },
+      "tracks": [
+        {
+          "track": "nocturneNr2",
+          "selection": "pieces",
+          "prediction_shift_seconds": -0.01,
+          "raw": {
+            "onsets": {
+              "reference_notes": 20,
+              "predicted_notes": 21,
+              "matched_notes": 17,
+              "precision": 0.8095238095238095,
+              "recall": 0.85,
+              "f1": 0.8292682926829268
+            },
+            "onsets_offsets": {
+              "reference_notes": 20,
+              "predicted_notes": 21,
+              "matched_notes": 14,
+              "precision": 0.6666666666666666,
+              "recall": 0.7,
+              "f1": 0.6829268292682927
+            }
+          },
+          "shifted": {
+            "onsets": {
+              "reference_notes": 20,
+              "predicted_notes": 21,
+              "matched_notes": 17,
+              "precision": 0.8095238095238095,
+              "recall": 0.85,
+              "f1": 0.8292682926829268
+            },
+            "onsets_offsets": {
+              "reference_notes": 20,
+              "predicted_notes": 21,
+              "matched_notes": 16,
+              "precision": 0.7619047619047619,
+              "recall": 0.8,
+              "f1": 0.7804878048780488
+            }
+          },
+          "ambiguous_shift": false,
+          "at_search_boundary": false,
+          "annotation_sha256": "8395037434bfd3af2cb9b0a52cac2bd7a965ecff13e904f0400e4773c9060cfe",
+          "audio_sha256": "8333a6d3d224e35193defcd9724aa42085c6b71d0ba24ff1045f6f1c58acc25a"
+        },
+        {
+          "track": "pathetique_mono",
+          "selection": "pieces",
+          "prediction_shift_seconds": 0.0,
+          "raw": {
+            "onsets": {
+              "reference_notes": 9,
+              "predicted_notes": 10,
+              "matched_notes": 9,
+              "precision": 0.9,
+              "recall": 1.0,
+              "f1": 0.9473684210526315
+            },
+            "onsets_offsets": {
+              "reference_notes": 9,
+              "predicted_notes": 10,
+              "matched_notes": 9,
+              "precision": 0.9,
+              "recall": 1.0,
+              "f1": 0.9473684210526315
+            }
+          },
+          "shifted": {
+            "onsets": {
+              "reference_notes": 9,
+              "predicted_notes": 10,
+              "matched_notes": 9,
+              "precision": 0.9,
+              "recall": 1.0,
+              "f1": 0.9473684210526315
+            },
+            "onsets_offsets": {
+              "reference_notes": 9,
+              "predicted_notes": 10,
+              "matched_notes": 9,
+              "precision": 0.9,
+              "recall": 1.0,
+              "f1": 0.9473684210526315
+            }
+          },
+          "ambiguous_shift": false,
+          "at_search_boundary": false,
+          "annotation_sha256": "fcb1226bebf2571c220bdf84d47e3f8bbaf31782b3be4cd8d0665b772cae88b3",
+          "audio_sha256": "c8f56672faadf3062e8cee33ddef77a71d3eb975c8a8a5d92292e64eb6383184"
+        },
+        {
+          "track": "pathetique_poly",
+          "selection": "pieces",
+          "prediction_shift_seconds": -0.01,
+          "raw": {
+            "onsets": {
+              "reference_notes": 19,
+              "predicted_notes": 21,
+              "matched_notes": 15,
+              "precision": 0.7142857142857143,
+              "recall": 0.7894736842105263,
+              "f1": 0.75
+            },
+            "onsets_offsets": {
+              "reference_notes": 19,
+              "predicted_notes": 21,
+              "matched_notes": 14,
+              "precision": 0.6666666666666666,
+              "recall": 0.7368421052631579,
+              "f1": 0.7
+            }
+          },
+          "shifted": {
+            "onsets": {
+              "reference_notes": 19,
+              "predicted_notes": 21,
+              "matched_notes": 15,
+              "precision": 0.7142857142857143,
+              "recall": 0.7894736842105263,
+              "f1": 0.75
+            },
+            "onsets_offsets": {
+              "reference_notes": 19,
+              "predicted_notes": 21,
+              "matched_notes": 14,
+              "precision": 0.6666666666666666,
+              "recall": 0.7368421052631579,
+              "f1": 0.7
+            }
+          },
+          "ambiguous_shift": false,
+          "at_search_boundary": false,
+          "annotation_sha256": "fcbd58e526b1bf899cec178f13472766a6eaa2b23346f571cb92ae780268582f",
+          "audio_sha256": "f4611abb9be67b67a4cf80c5e0225bb4a129e12a5c4278d90b648b92b922d854"
+        },
+        {
+          "track": "promenade_mono",
+          "selection": "pieces",
+          "prediction_shift_seconds": -0.01,
+          "raw": {
+            "onsets": {
+              "reference_notes": 13,
+              "predicted_notes": 13,
+              "matched_notes": 13,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "onsets_offsets": {
+              "reference_notes": 13,
+              "predicted_notes": 13,
+              "matched_notes": 13,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          },
+          "shifted": {
+            "onsets": {
+              "reference_notes": 13,
+              "predicted_notes": 13,
+              "matched_notes": 13,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "onsets_offsets": {
+              "reference_notes": 13,
+              "predicted_notes": 13,
+              "matched_notes": 13,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          },
+          "ambiguous_shift": false,
+          "at_search_boundary": false,
+          "annotation_sha256": "07a2d03eb0f25a89b5d51e214f9662ef4b6a61ce73af103cff70d3a9be57d17c",
+          "audio_sha256": "b33b99b1d88319cc141b78ea58a4da4c507923d3e2af366e898ce55c9ad4f47e"
+        },
+        {
+          "track": "quintfall",
+          "selection": "pieces",
+          "prediction_shift_seconds": -0.01,
+          "raw": {
+            "onsets": {
+              "reference_notes": 29,
+              "predicted_notes": 31,
+              "matched_notes": 23,
+              "precision": 0.7419354838709677,
+              "recall": 0.7931034482758621,
+              "f1": 0.7666666666666667
+            },
+            "onsets_offsets": {
+              "reference_notes": 29,
+              "predicted_notes": 31,
+              "matched_notes": 16,
+              "precision": 0.5161290322580645,
+              "recall": 0.5517241379310345,
+              "f1": 0.5333333333333333
+            }
+          },
+          "shifted": {
+            "onsets": {
+              "reference_notes": 29,
+              "predicted_notes": 31,
+              "matched_notes": 24,
+              "precision": 0.7741935483870968,
+              "recall": 0.8275862068965517,
+              "f1": 0.8
+            },
+            "onsets_offsets": {
+              "reference_notes": 29,
+              "predicted_notes": 31,
+              "matched_notes": 20,
+              "precision": 0.6451612903225806,
+              "recall": 0.6896551724137931,
+              "f1": 0.6666666666666666
+            }
+          },
+          "ambiguous_shift": false,
+          "at_search_boundary": false,
+          "annotation_sha256": "f17b23e85b954908bf65d08e35eca14b61e6c6982fc5f2f635275762ab1b422a",
+          "audio_sha256": "0863de6b236f12d1d2d82131132939d6bbe2bc8f126e7c2aadb71d962c58586b"
+        },
+        {
+          "track": "AR_Lick1_KN",
+          "selection": "licks",
+          "prediction_shift_seconds": -0.02,
+          "raw": {
+            "onsets": {
+              "reference_notes": 13,
+              "predicted_notes": 15,
+              "matched_notes": 12,
+              "precision": 0.8,
+              "recall": 0.9230769230769231,
+              "f1": 0.8571428571428571
+            },
+            "onsets_offsets": {
+              "reference_notes": 13,
+              "predicted_notes": 15,
+              "matched_notes": 10,
+              "precision": 0.6666666666666666,
+              "recall": 0.7692307692307693,
+              "f1": 0.7142857142857143
+            }
+          },
+          "shifted": {
+            "onsets": {
+              "reference_notes": 13,
+              "predicted_notes": 15,
+              "matched_notes": 13,
+              "precision": 0.8666666666666667,
+              "recall": 1.0,
+              "f1": 0.9285714285714286
+            },
+            "onsets_offsets": {
+              "reference_notes": 13,
+              "predicted_notes": 15,
+              "matched_notes": 11,
+              "precision": 0.7333333333333333,
+              "recall": 0.8461538461538461,
+              "f1": 0.7857142857142857
+            }
+          },
+          "ambiguous_shift": false,
+          "at_search_boundary": false,
+          "annotation_sha256": "412d30e12a1e79f4fa64f69854f7f08de65a814a308b7dc46a023f40fe602af6",
+          "audio_sha256": "18597b2dc85aff01395a638ef848e529ef789796a9be7ff5a904165b0ab61ce6"
+        },
+        {
+          "track": "AR_Lick6_KN",
+          "selection": "licks",
+          "prediction_shift_seconds": -0.02,
+          "raw": {
+            "onsets": {
+              "reference_notes": 10,
+              "predicted_notes": 10,
+              "matched_notes": 10,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "onsets_offsets": {
+              "reference_notes": 10,
+              "predicted_notes": 10,
+              "matched_notes": 10,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          },
+          "shifted": {
+            "onsets": {
+              "reference_notes": 10,
+              "predicted_notes": 10,
+              "matched_notes": 10,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            },
+            "onsets_offsets": {
+              "reference_notes": 10,
+              "predicted_notes": 10,
+              "matched_notes": 10,
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1": 1.0
+            }
+          },
+          "ambiguous_shift": false,
+          "at_search_boundary": false,
+          "annotation_sha256": "be6438c7a17d7112fc0014c2e8fc18fd93b3f354c4456e03029287f4ea8cda55",
+          "audio_sha256": "3b757b97faf92ac6b925dce69a918a694c6794553e27e7b8ae2b10e2cf09d9dc"
+        },
+        {
+          "track": "AR_Lick12_KN",
+          "selection": "licks",
+          "prediction_shift_seconds": -0.01,
+          "raw": {
+            "onsets": {
+              "reference_notes": 44,
+              "predicted_notes": 65,
+              "matched_notes": 39,
+              "precision": 0.6,
+              "recall": 0.8863636363636364,
+              "f1": 0.7155963302752294
+            },
+            "onsets_offsets": {
+              "reference_notes": 44,
+              "predicted_notes": 65,
+              "matched_notes": 17,
+              "precision": 0.26153846153846155,
+              "recall": 0.38636363636363635,
+              "f1": 0.3119266055045872
+            }
+          },
+          "shifted": {
+            "onsets": {
+              "reference_notes": 44,
+              "predicted_notes": 65,
+              "matched_notes": 40,
+              "precision": 0.6153846153846154,
+              "recall": 0.9090909090909091,
+              "f1": 0.7339449541284404
+            },
+            "onsets_offsets": {
+              "reference_notes": 44,
+              "predicted_notes": 65,
+              "matched_notes": 18,
+              "precision": 0.27692307692307694,
+              "recall": 0.4090909090909091,
+              "f1": 0.3302752293577982
+            }
+          },
+          "ambiguous_shift": false,
+          "at_search_boundary": false,
+          "annotation_sha256": "5d342d786c5d47eeca1dd5954177306ab7b29ad6c19a13c2c2ea2c5595d158d4",
+          "audio_sha256": "e7f786c769cff6438db8f1225d15db2e0c0e1e97f75f92d8bb71de3beed57e9c"
+        }
+      ]
+    }
+  ]
+}

@@ -8,6 +8,7 @@ They do not measure perceived playability or prove string identification.
 import math
 import re
 import xml.etree.ElementTree as ET
+from bisect import bisect_left, bisect_right
 from dataclasses import dataclass
 
 import numpy as np
@@ -92,19 +93,36 @@ def match_notes(
         raise ValueError("Onset tolerance must be finite and nonnegative")
     if not reference or not predicted:
         return []
-    valid = np.array(
-        [
-            [
-                r.pitch == p.pitch
-                and abs(r.start - p.start) <= onset_tolerance + 1e-9
-                and (not offsets or abs(r.end - p.end) <= max(0.05, 0.2 * (r.end - r.start)) + 1e-9)
-                for p in predicted
-            ]
-            for r in reference
-        ],
-        dtype=bool,
+    # Only nearby attacks of the same pitch can match. Avoid the old dense
+    # reference x prediction array, which grows quadratically for full songs.
+    groups = {}
+    for index, note in enumerate(predicted):
+        groups.setdefault(note.pitch, []).append((note.start, index))
+    groups = {pitch: sorted(values) for pitch, values in groups.items()}
+    starts = {pitch: [time for time, _ in values] for pitch, values in groups.items()}
+    rows, columns = [], []
+    tolerance = onset_tolerance + 1e-9
+    for index, note in enumerate(reference):
+        candidates = groups.get(note.pitch, [])
+        times = starts.get(note.pitch, [])
+        first = bisect_left(times, note.start - tolerance)
+        last = bisect_right(times, note.start + tolerance)
+        for _, other in candidates[first:last]:
+            if (
+                not offsets
+                or abs(note.end - predicted[other].end)
+                <= max(0.05, 0.2 * (note.end - note.start)) + 1e-9
+            ):
+                rows.append(index)
+                columns.append(other)
+                if len(rows) > 2_000_000:
+                    raise ValueError(
+                        "Too many simultaneous candidate matches; inspect duplicate events"
+                    )
+    graph = csr_matrix(
+        (np.ones(len(rows), dtype=bool), (rows, columns)), shape=(len(reference), len(predicted))
     )
-    matches = maximum_bipartite_matching(csr_matrix(valid), perm_type="column")
+    matches = maximum_bipartite_matching(graph, perm_type="column")
     return [(i, int(j)) for i, j in enumerate(matches) if j >= 0]
 
 
