@@ -35,6 +35,11 @@ remain in that run's results folder; partial outputs are not a completed tab.
 Wait for the stopped message before starting another run or closing the app.
 See [CANCELLATION.md](CANCELLATION.md) for behavior and verification limits.
 
+To inspect note detection independently of fingering, select **Save notes and
+MIDI only (no tab)**. Use **Open MIDI** to audition the detected pitches and
+timings; no guitar positions or score grid are applied. The normal editable-tab
+mode remains the default. See [NOTES_ONLY.md](NOTES_ONLY.md).
+
 To change tempo or rhythm detail after listening once, choose **Rebuild saved
 notes** under Method, then choose `detected-notes.json` from the earlier results
 folder (or a timestamped detected file under `diagnostics/` after a fingering

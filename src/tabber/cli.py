@@ -9,6 +9,7 @@ from .audio import inspect_audio, prepare_audio
 from .export import write_outputs
 from .fretting import assign_frets, assign_polyphonic_frets
 from .models import STANDARD_TUNING
+from .pitch_midi import check_notes_only_output, write_pitch_midi
 from .rhythm import quantize
 from .separate import separate_guitar
 from .tempo import estimate_tempo, parse_bpm
@@ -26,6 +27,11 @@ def main():
         help="Experimental local string-timbre NPZ model (audio input, polyphonic mode)",
     )
     parser.add_argument("--output", type=Path, default=Path("runs/latest"))
+    parser.add_argument(
+        "--notes-only",
+        action="store_true",
+        help="Save detected events and original-timing MIDI without fingering or GP5/grid export",
+    )
     parser.add_argument(
         "--tuning",
         type=parse_tuning,
@@ -93,6 +99,8 @@ def main():
         parser.error("--max-span applies to polyphonic fretting")
     if args.string_model and (args.events or args.fretting != "polyphonic"):
         parser.error("--string-model needs audio input and polyphonic fretting")
+    if args.notes_only and args.string_model:
+        parser.error("--string-model does not apply to --notes-only output")
     if args.string_model and args.tuning != STANDARD_TUNING:
         parser.error(
             "The experimental string-tone model has only been evaluated in standard tuning"
@@ -102,6 +110,8 @@ def main():
     ):
         parser.error("Guitar-model options need --backend guitar-gaps and audio input")
     try:
+        if args.notes_only:
+            check_notes_only_output(args.output, source=args.audio or args.events)
         path = (args.audio or args.events).resolve()
         if not path.is_file():
             raise ValueError(f"Input file does not exist: {path}")
@@ -171,7 +181,11 @@ def main():
             else None,
             "timing": "seconds, original detected timing before score quantization",
             "experimental_string_model": str(args.string_model) if args.string_model else None,
-            "max_span": args.max_span if args.fretting == "polyphonic" else None,
+            "max_span": args.max_span
+            if args.fretting == "polyphonic" and not args.notes_only
+            else None,
+            "output_mode": "notes-only" if args.notes_only else "editable-tab",
+            "fingering_requested": not args.notes_only,
             "guitar_range_filter_requested": args.guitar_range,
             "baseline_minimum_search_hz": baseline_frequency_floor(min(args.tuning))
             if args.audio and args.backend == "baseline"
@@ -200,7 +214,7 @@ def main():
         diagnostic = args.output / "diagnostics" / f"detected-{stamp}.json"
         save_events(detected, diagnostic, metadata)
         print(f"Detected note events saved to {diagnostic.resolve()}", flush=True)
-        if args.fretting == "polyphonic" and args.max_span != 5:
+        if args.fretting == "polyphonic" and args.max_span != 5 and not args.notes_only:
             print(
                 f"Fingering note: Using a {args.max_span}-fret span limit; review the stretches before playing.",
                 flush=True,
@@ -242,6 +256,21 @@ def main():
                 raise ValueError(
                     "The requested range filter excluded every detection. Review the raw notes in diagnostics."
                 )
+        if args.notes_only:
+            if not selected:
+                raise ValueError(
+                    "No notes detected. Check that the guitar is clearly audible in the recording."
+                )
+            write_pitch_midi(selected, args.output, bpm)
+            metadata["fingering_applied"] = False
+            metadata["midi_timing"] = (
+                "Original seconds rounded to 480 ticks per quarter note; minimum one tick duration. No score-grid snapping or string channels."
+            )
+            save_events(selected, args.output / "detected-notes.json", metadata)
+            print(
+                f"Wrote {len(selected)} detected events and MIDI to {args.output.resolve()} without fingering or score-grid snapping."
+            )
+            return
         assign = assign_frets if args.fretting == "melodic" else assign_polyphonic_frets
         assignment_options = {} if args.fretting == "melodic" else {"max_span": args.max_span}
         if args.string_model:

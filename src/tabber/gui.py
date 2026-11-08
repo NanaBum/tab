@@ -32,6 +32,7 @@ def conversion_command(
     guitar_range=False,
     max_span=5,
     tuning="standard",
+    notes_only=False,
 ):
     """Route saved events directly to export; filtering requires explicit opt-in."""
     interpreter = Path(interpreter)
@@ -42,6 +43,8 @@ def conversion_command(
 
     parse_tuning(tuning)
     command.extend(("--tuning", tuning))
+    if notes_only:
+        command.append("--notes-only")
     if method == SAVED_NOTES:
         if tempo == "auto":
             raise ValueError("Saved notes need a supplied BPM; enter a number or tap the tempo.")
@@ -66,7 +69,7 @@ def conversion_command(
             command.append("--separate")
     if guitar_range:
         command.append("--guitar-range")
-    if max_span != 5:
+    if max_span != 5 and not notes_only:
         command.extend(("--max-span", str(max_span)))
     command.extend(("--bpm", str(tempo), "--grid", str(grid), "--output", str(output)))
     return command
@@ -155,9 +158,10 @@ class TabberApp:
         ).grid(row=6, column=1, sticky="ew", pady=(0, 12))
         self.grid = tk.StringVar(value="16")
         ttk.Label(frame, text="Rhythm detail").grid(row=7, column=0, sticky="w")
-        ttk.Combobox(
+        self.rhythm_detail = ttk.Combobox(
             frame, textvariable=self.grid, values=("16", "32", "64"), width=8, state="readonly"
-        ).grid(row=7, column=1, sticky="w")
+        )
+        self.rhythm_detail.grid(row=7, column=1, sticky="w")
         ttk.Label(frame, text="16 is easier to read; 32 or 64 keeps faster notes.").grid(
             row=8, column=1, columnspan=2, sticky="w", pady=(5, 16)
         )
@@ -177,16 +181,24 @@ class TabberApp:
         self.separate = tk.BooleanVar(value=False)
         self.guitar_range = tk.BooleanVar(value=False)
         self.wider_span = tk.BooleanVar(value=False)
+        self.notes_only = tk.BooleanVar(value=False)
         options = ttk.Frame(frame)
         options.grid(row=11, column=0, columnspan=3, sticky="w", pady=(0, 12))
         ttk.Checkbutton(
             options,
-            text="Exclude notes outside selected tuning / 24 frets (save originals)",
-            variable=self.guitar_range,
+            text="Save notes and MIDI only (no tab)",
+            variable=self.notes_only,
+            command=self.update_output_mode,
         ).grid(row=0, column=0, sticky="w")
         ttk.Checkbutton(
-            options, text="Allow wider fret stretches (7 frets)", variable=self.wider_span
+            options,
+            text="Exclude notes outside selected tuning / 24 frets (save originals)",
+            variable=self.guitar_range,
         ).grid(row=1, column=0, sticky="w")
+        self.stretch_control = ttk.Checkbutton(
+            options, text="Allow wider fret stretches (7 frets)", variable=self.wider_span
+        )
+        self.stretch_control.grid(row=2, column=0, sticky="w")
         separation_python = (
             self.root
             / ".venv-separation"
@@ -197,7 +209,7 @@ class TabberApp:
                 options,
                 text="Separate guitar from a full mix (experimental; slower)",
                 variable=self.separate,
-            ).grid(row=2, column=0, sticky="w")
+            ).grid(row=3, column=0, sticky="w")
         actions = ttk.Frame(frame)
         actions.grid(row=12, column=0, columnspan=3, sticky="ew", pady=(0, 12))
         self.convert = ttk.Button(actions, text="Create guitar tab", command=self.start)
@@ -223,6 +235,13 @@ class TabberApp:
             command=lambda: self.open_result("tab.gp5"),
         )
         self.open_tab.pack(side="left")
+        self.open_midi = ttk.Button(
+            buttons,
+            text="Open MIDI",
+            state="disabled",
+            command=lambda: self.open_result("notes.mid"),
+        )
+        self.open_midi.pack(side="left", padx=(8, 0))
         self.open_folder = ttk.Button(
             buttons,
             text="Open results folder",
@@ -231,6 +250,14 @@ class TabberApp:
         )
         self.open_folder.pack(side="left", padx=8)
         self.window.after(150, self.poll)
+
+    def update_output_mode(self):
+        notes_only = self.notes_only.get()
+        self.rhythm_detail.configure(state="disabled" if notes_only else "readonly")
+        self.stretch_control.configure(state="disabled" if notes_only else "normal")
+        self.convert.configure(
+            text="Detect notes and create MIDI" if notes_only else "Create guitar tab"
+        )
 
     def choose_audio(self):
         replay = self.backend.get() == SAVED_NOTES
@@ -296,6 +323,7 @@ class TabberApp:
                 guitar_range=self.guitar_range.get(),
                 max_span=7 if self.wider_span.get() else 5,
                 tuning=self.tuning.get(),
+                notes_only=self.notes_only.get(),
             )
         except (ValueError, OSError) as error:
             messagebox.showerror("Check saved notes", str(error))
@@ -307,6 +335,7 @@ class TabberApp:
         self.stop_conversion.configure(state="normal")
         self.browse.configure(state="disabled")
         self.open_tab.configure(state="disabled")
+        self.open_midi.configure(state="disabled")
         self.open_folder.configure(state="disabled")
         self.progress.start(12)
         self.status.set(
@@ -314,6 +343,12 @@ class TabberApp:
             if self.backend.get() == SAVED_NOTES
             else "Listening and building the tab… The first ML run may take a little longer."
         )
+        if self.notes_only.get():
+            self.status.set(
+                "Preparing MIDI from saved notes…"
+                if self.backend.get() == SAVED_NOTES
+                else "Listening and preparing detected notes and MIDI…"
+            )
         threading.Thread(target=self.worker, args=(command, output), daemon=True).start()
 
     def worker(self, command, output):
@@ -366,6 +401,8 @@ class TabberApp:
                     )
                 ]
                 ready = "Your draft tab is ready. Open it in TuxGuitar to review and play."
+                if "--notes-only" in command:
+                    ready = "Your detected notes and MIDI are ready. Open MIDI to listen; no editable tab was created."
                 if estimates:
                     ready += " " + " ".join(estimates)
                 self.messages.put(
@@ -391,7 +428,12 @@ class TabberApp:
             self.stop_conversion.configure(state="disabled")
             self.browse.configure(state="normal")
             self.open_folder.configure(state="normal" if output.exists() else "disabled")
-            self.open_tab.configure(state="normal" if success else "disabled")
+            self.open_tab.configure(
+                state="normal" if success and (output / "tab.gp5").is_file() else "disabled"
+            )
+            self.open_midi.configure(
+                state="normal" if success and (output / "notes.mid").is_file() else "disabled"
+            )
             self.status.set(message)
         self.window.after(150, self.poll)
 

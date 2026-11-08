@@ -15,6 +15,10 @@ String 0 is physical string 1 (normally high E); standard tuning defaults to
 (64, 59, 55, 50, 45, 40). Explicit tuning must flow through fretting, range audits,
 GP5 validation and JSON/text labeling. Never infer tuning or transpose detections.
 Frets are zero-based (0 means open). Always preserve the original event timings.
+Prioritize note/timing quality; retain the current fretting solver for tab export
+and defer additional fingering-model work. Notes-only output must bypass fretting
+and score-grid snapping, preserve all delivered events, and keep range exclusion
+explicit. Original recordings remain valuable for later string-timbre inference.
 
 Keep data/, models/, runs/, audio, weights and credentials out of Git.
 Use branches for changes; never force-push. Preserve existing remote work.

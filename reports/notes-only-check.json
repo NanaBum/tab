@@ -1,0 +1,27 @@
+{
+  "purpose": "Notes-only output checks, independent of fingering and score-grid quantization",
+  "real_audio": "Existing fixed IDMT AR_Lick1_KN; actual guitar-GAPS audio run at unchanged settings",
+  "real_audio_sha256": "18597b2dc85aff01395a638ef848e529ef789796a9be7ff5a904165b0ab61ce6",
+  "runs": [
+    {
+      "run": "notes-only-guitar-check",
+      "note_count": 13,
+      "all_midi_pitch_start_end_ticks_match": true,
+      "gp5_created": false,
+      "event_sha256": "9711481ec094171e9d0583f4961748defa315afaa865c3c5592bacc0fb3d1819",
+      "midi_sha256": "41e539ec01469ac7ecb8da88166d6cadeeceadb0e2d0ca0c8650ec9421f155e0"
+    },
+    {
+      "run": "notes-only-fretting-failure",
+      "note_count": 57,
+      "all_midi_pitch_start_end_ticks_match": true,
+      "gp5_created": false,
+      "event_sha256": "bd4e4a1c74738085fea111021b10f385a0c385622cd1095c0cf0da6f06402caf",
+      "midi_sha256": "f876d440ea55badc7943fbdd05716d8395ac75aa13d9dd0b917320c23e33bdc7"
+    }
+  ],
+  "saved_events_source_sha256": "16a3ec1bf8a1aebe3e100e4b442892a591b055ae5dbe7d45a3f9745989a6abe1",
+  "saved_events_unchanged": true,
+  "default_five_fret_failure_reproduced": true,
+  "limits": "This verifies preserved detections/tick mapping and bypassed fretting, not new note or rhythm accuracy. MIDI needs a player association or manual import. GUI command/state logic is tested; new layout not visually checked in this milestone."
+}

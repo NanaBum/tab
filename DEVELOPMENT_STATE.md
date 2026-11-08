@@ -40,10 +40,11 @@ The review sequence is stacked, with one PR based on its predecessor:
 25. Tuning-aware simple-detector lower search band, preserving standard behavior.
 26. Fixed eleven-recording baseline control and three-backend paired comparison.
 27. Cancellable owned conversion processes, retained live logs and partial-output status.
+28. Optional notes-only MIDI/event output independent of fretting and score grids.
 
-Current local work is on `codex/cancel-local-conversion`, based on local
-`f8e5117` / remote `2d2ade58cdfc14317c85691fa4a60f0a89619697` (PR #26,
-`codex/electric-baseline-control`, tree `091b371758ba2a14f3ac1289040420c9b736e674`).
+Current local work is on `codex/notes-only-output`, based on local
+`57e7092` / remote `a55a52ffd5254bb0730b820be61977e77b002429` (PR #27,
+`codex/cancel-local-conversion`, tree `74cf0004d6fbd87e9fd6ac1b48128c0dc8c96b9f`).
 Keep the guitar model experimental. The immediate user target is electric riffs,
 then full-band recordings. User audio and comparisons remain outside this repo.
 
