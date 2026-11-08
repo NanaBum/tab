@@ -22,20 +22,28 @@ def digest(path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--selection", choices=("pieces", "licks"), default="pieces")
+    parser.add_argument("--selection", choices=("pieces", "licks", "muted"), default="pieces")
     parser.add_argument("--data", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument(
         "--backend", choices=("baseline", "basic-pitch", "guitar-gaps"), default="guitar-gaps"
     )
     args = parser.parse_args()
-    names = (
-        ("nocturneNr2", "pathetique_mono", "pathetique_poly", "promenade_mono", "quintfall")
-        if args.selection == "pieces"
-        else ("AR_Lick1_KN", "AR_Lick6_KN", "AR_Lick12_KN")
-    )
-    args.data = args.data or Path("data/idmt") / (
-        "dataset3" if args.selection == "pieces" else "dataset2"
+    names = {
+        "pieces": (
+            "nocturneNr2",
+            "pathetique_mono",
+            "pathetique_poly",
+            "promenade_mono",
+            "quintfall",
+        ),
+        "licks": ("AR_Lick1_KN", "AR_Lick6_KN", "AR_Lick12_KN"),
+        "muted": ("AR_Lick1_MN", "AR_Lick6_MN", "AR_Lick12_MN"),
+    }[args.selection]
+    args.data = (
+        args.data
+        or Path("data/idmt")
+        / {"pieces": "dataset3", "licks": "dataset2", "muted": "muted"}[args.selection]
     )
     args.output = args.output or Path("runs") / f"idmt-{args.selection}-{args.backend}"
     report = {

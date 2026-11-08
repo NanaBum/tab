@@ -59,6 +59,48 @@ whole-tab accuracy. The summary is [reports/idmt-lick-comparison.json](reports/i
 Default thresholds and model choices remain unchanged. These development results
 do not establish general performance on other guitars, distortion or bands.
 
+## Muted counterparts
+
+A second fixed selection uses `AR_Lick1_MN`, `AR_Lick6_MN` and `AR_Lick12_MN`.
+Each annotation labels every event `MU` (muted excitation) and `NO` (normal
+expression), on the same Aristides 010. Their 67 pitch sequences match the
+corresponding picked performances; these are separate recordings with their own
+attack/release times. All source string/fret positions agree with supplied pitches.
+These related performances belong in the same song groups in any future split.
+
+| Model | Detections | Pitch/attack matches | Pitch/attack F1 | With release timing |
+| --- | ---: | ---: | ---: | ---: |
+| Basic Pitch | 67 | 52 / 67 | 77.6% | 50.7% |
+| Experimental guitar-GAPS | 58 | 54 / 67 | 86.4% | 54.4% |
+
+The aggregate hides an important failure: on the ten-note `AR_Lick6_MN`, Basic
+Pitch detected/matched one event and guitar-GAPS detected/matched four. A fitted
+single start shift did not recover those missing attacks. On `AR_Lick1_MN`, the
+guitar model exported 13 detections with 12 raw pitch/attack matches; after a
+reference-fitted -40 ms shift all 13 matched. The latter is an alignment diagnostic,
+not an independent accuracy improvement. Per-track raw/shifted results and source
+identities are in [reports/idmt-muted-comparison.json](reports/idmt-muted-comparison.json).
+
+All six model/recording combinations exported every detected event and reopened
+their GP5 outputs successfully. This establishes file validity, not a complete
+transcription: missing detections remain missing. Guitar-GAPS matched the listed
+fingering on 36 of its 54 raw pitch/attack matches; Basic Pitch on 33 of 52.
+Release behavior and fingering remain limitations. A local listenable example is
+at `Demos/Electric-muted-lick/` beside the other user-facing demos.
+
+```powershell
+.venv/Scripts/python.exe scripts/download_idmt_subset.py --selection muted
+.venv-guitar/Scripts/python.exe scripts/evaluate_idmt_subset.py --selection muted
+.venv-ml/Scripts/python.exe scripts/evaluate_idmt_subset.py --selection muted --backend basic-pitch
+```
+
+Initial selective retrieval transferred 4,357,796 bytes. A cached checksum check
+transferred only the 703,197-byte archive directory. Files are under ignored
+`data/idmt/muted/`, separately from the picked selection. No thresholds, gain,
+model weights, fingering constraints or rhythmic preferences were changed. These
+are muted clean-electric development recordings, not distorted or full-band audio;
+training overlap for the checkpoints is still unresolved.
+
 ```powershell
 .venv/Scripts/python.exe scripts/download_idmt_subset.py --selection licks
 .venv-guitar/Scripts/python.exe scripts/evaluate_idmt_subset.py --selection licks

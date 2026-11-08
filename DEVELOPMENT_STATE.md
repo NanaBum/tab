@@ -35,10 +35,11 @@ The review sequence is stacked, with one PR based on its predecessor:
 20. Local GP3/GP4/GP5 candidate-reference import with tempo maps and source metadata.
 21. Opt-in bounded repeat playback, ending masks and repeat tempo reset checks.
 22. Pinned local audio/reference/prediction manifests and grouped batch evaluation.
+23. Fixed muted-electric counterparts, explicit per-lick failures and unchanged models.
 
-Current local work is on `codex/paired-evaluation-manifest`, based on local
-`b517670` / remote `2ee256ad6704647ea9ad1546b7e15688c1960b9c` (PR #21,
-`codex/reference-repeat-playback`, tree `bf00acf42801152edb8196abe4c08ff7812d8c10`).
+Current local work is on `codex/muted-electric-validation`, based on local
+`8aab740` / remote `02c6c612d6715b21165b6ebedd620ef57e07f11b` (PR #22,
+`codex/paired-evaluation-manifest`, tree `c37e2308beea56e04b472b8b9db6b6454253b7af`).
 Keep the guitar model experimental. The immediate user target is electric riffs,
 then full-band recordings. User audio and comparisons remain outside this repo.
 
