@@ -36,10 +36,11 @@ The review sequence is stacked, with one PR based on its predecessor:
 21. Opt-in bounded repeat playback, ending masks and repeat tempo reset checks.
 22. Pinned local audio/reference/prediction manifests and grouped batch evaluation.
 23. Fixed muted-electric counterparts, explicit per-lick failures and unchanged models.
+24. Explicit six-string tunings through the desktop, fretting, audits and GP5 export.
 
-Current local work is on `codex/muted-electric-validation`, based on local
-`8aab740` / remote `02c6c612d6715b21165b6ebedd620ef57e07f11b` (PR #22,
-`codex/paired-evaluation-manifest`, tree `c37e2308beea56e04b472b8b9db6b6454253b7af`).
+Current local work is on `codex/explicit-guitar-tuning`, based on local
+`dad0502` / remote `9e30d3fa746689f2314017426f4fed29f68ffad7` (PR #23,
+`codex/muted-electric-validation`, tree `042e6b2ed1e4d96185d3edf8576a7286df2eb7f4`).
 Keep the guitar model experimental. The immediate user target is electric riffs,
 then full-band recordings. User audio and comparisons remain outside this repo.
 

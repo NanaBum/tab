@@ -11,7 +11,9 @@ Pipeline: separate.py -> transcribe.py -> fretting.py -> rhythm.py -> export.py.
 gp5.py builds editable 4/4 scores on a sixteenth-note grid; test saved files by
 parsing them again and verifying attacks, ties, rests, tuning, and bar lengths.
 Core records live in models.py. All times are seconds; pitches are MIDI integers.
-String 0 is high E; standard tuning is (64, 59, 55, 50, 45, 40).
+String 0 is physical string 1 (normally high E); standard tuning defaults to
+(64, 59, 55, 50, 45, 40). Explicit tuning must flow through fretting, range audits,
+GP5 validation and JSON/text labeling. Never infer tuning or transpose detections.
 Frets are zero-based (0 means open). Always preserve the original event timings.
 
 Keep data/, models/, runs/, audio, weights and credentials out of Git.

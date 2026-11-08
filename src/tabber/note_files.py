@@ -34,6 +34,8 @@ def read_notes(path):
         raise TypeError("Expected a note-file object")
     if payload.get("format") == "tabber-note-events":
         return load_events(path)
-    if payload.get("string_order") == "high E to low E" and isinstance(payload.get("notes"), list):
+    if payload.get("string_order") in {"high E to low E", "string 1 to string 6"} and isinstance(
+        payload.get("notes"), list
+    ):
         return [Note(**entry["note"]) for entry in payload["notes"]]
     raise ValueError("Use detected-note JSON, an exported notes.json, or IDMT annotation XML")

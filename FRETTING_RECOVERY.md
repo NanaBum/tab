@@ -6,12 +6,14 @@ unchanged. Rebuild saved detections to try a setting without rerunning ML.
 
 ## Notes outside the instrument range
 
-**Exclude notes outside standard tuning / 24 frets** adds `--guitar-range`.
-It retains MIDI pitches 40 through 88 inclusive, the range of this project's
-standard-tuned six-string, 24-fret instrument. It can exclude low noise or another
-instrument, but cannot identify every false note. Do not use it for alternate
-tunings or a different instrument range. It does not distinguish two possible
-fingerings of an in-range pitch.
+**Exclude notes outside selected tuning / 24 frets** adds `--guitar-range`.
+In default standard tuning it retains MIDI pitches 40 through 88 inclusive.
+With explicit `--tuning drop-d`, it retains 38 through 88 instead. Bounds follow
+the selected six-string tuning and 24 frets, capped at MIDI 127. It can exclude
+low noise or another instrument, but cannot identify every false note or distinguish
+two fingerings. For unusual tunings the bounding interval can contain unplayable
+gaps; fretting still fails explicitly rather than dropping those notes. See
+[TUNING.md](TUNING.md) before changing this setting.
 
 ```powershell
 uv run tabber --events runs/failed/diagnostics/detected-TIMESTAMP.json --guitar-range --bpm 120 --grid 32 --output runs/range-review

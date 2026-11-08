@@ -13,6 +13,7 @@ from .rhythm import quantize
 from .separate import separate_guitar
 from .tempo import estimate_tempo, parse_bpm
 from .transcribe import transcribe
+from .tuning import parse_tuning
 
 
 def main():
@@ -25,6 +26,12 @@ def main():
         help="Experimental local string-timbre NPZ model (audio input, polyphonic mode)",
     )
     parser.add_argument("--output", type=Path, default=Path("runs/latest"))
+    parser.add_argument(
+        "--tuning",
+        type=parse_tuning,
+        default=STANDARD_TUNING,
+        help="standard (default), drop-d, eb-standard, d-standard, or six MIDI pitches, string 1 to 6",
+    )
     parser.add_argument(
         "--bpm",
         type=parse_bpm,
@@ -65,7 +72,7 @@ def main():
     parser.add_argument(
         "--guitar-range",
         action="store_true",
-        help="Explicitly exclude pitches outside standard tuning / 24 frets; retain raw diagnostics",
+        help="Explicitly exclude pitches outside selected tuning / 24 frets; retain raw diagnostics",
     )
     parser.add_argument(
         "--max-span",
@@ -86,6 +93,10 @@ def main():
         parser.error("--max-span applies to polyphonic fretting")
     if args.string_model and (args.events or args.fretting != "polyphonic"):
         parser.error("--string-model needs audio input and polyphonic fretting")
+    if args.string_model and args.tuning != STANDARD_TUNING:
+        parser.error(
+            "The experimental string-tone model has only been evaluated in standard tuning"
+        )
     if (args.onset_threshold is not None or args.guitar_checkpoint) and (
         args.events or args.backend != "guitar-gaps"
     ):
@@ -107,6 +118,15 @@ def main():
         tempo = estimate_tempo(path) if args.bpm == "auto" else None
         bpm = tempo.bpm if tempo else args.bpm
         quantize(0, bpm)
+        if (
+            args.audio
+            and args.backend == "baseline"
+            and 440 * 2 ** ((min(args.tuning) - 69) / 12) < 75
+        ):
+            print(
+                "Detector note: The simple melody detector searches above 75 Hz; low open strings in this tuning may be missed.",
+                flush=True,
+            )
         if tempo:
             print(
                 f"Estimated tempo: {bpm:.1f} BPM (provisional; review rhythmic grouping)",
@@ -149,6 +169,8 @@ def main():
             "experimental_string_model": str(args.string_model) if args.string_model else None,
             "max_span": args.max_span if args.fretting == "polyphonic" else None,
             "guitar_range_filter_requested": args.guitar_range,
+            "tuning_midi": list(args.tuning),
+            "tuning_string_order": "string 1 (thin) to string 6 (thick)",
         }
         if args.backend == "guitar-gaps" and not args.events:
             from .guitar_gaps import (
@@ -178,7 +200,7 @@ def main():
             )
         selected = detected
         if args.guitar_range:
-            minimum, maximum = min(STANDARD_TUNING), max(STANDARD_TUNING) + 24
+            minimum, maximum = min(args.tuning), min(127, max(args.tuning) + 24)
             selected = [note for note in detected if minimum <= note.pitch <= maximum]
             excluded = [
                 {"source_index": index, "note": asdict(note)}
@@ -187,7 +209,8 @@ def main():
             ]
             report_path = args.output / "diagnostics" / f"range-filter-{stamp}.json"
             audit = {
-                "purpose": "Explicitly requested standard-tuning / 24-fret pitch filter",
+                "purpose": "Explicitly requested selected-tuning / 24-fret pitch filter",
+                "tuning_midi": list(args.tuning),
                 "min_pitch": minimum,
                 "max_pitch": maximum,
                 "source_note_count": len(detected),
@@ -205,7 +228,7 @@ def main():
             save_events(selected, args.output / "diagnostics" / f"selected-{stamp}.json", metadata)
             print(
                 f"Range note: Excluded {len(excluded)} of {len(detected)} detections outside "
-                f"standard guitar range ({minimum}-{maximum}). Raw notes and exclusions are saved in diagnostics.",
+                f"selected guitar range ({minimum}-{maximum}). Raw notes and exclusions are saved in diagnostics.",
                 flush=True,
             )
             if detected and not selected:
@@ -218,12 +241,12 @@ def main():
             from .string_model import string_priors
 
             assignment_options["string_priors"] = string_priors(path, selected, args.string_model)
-        notes = assign(selected, **assignment_options)
+        notes = assign(selected, tuning=args.tuning, **assignment_options)
         if not notes:
             raise ValueError(
                 "No notes detected. Check that the guitar is clearly audible in the recording."
             )
-        timing = write_outputs(notes, args.output, bpm, args.grid)
+        timing = write_outputs(notes, args.output, bpm, args.grid, tuning=args.tuning)
         save_events(selected, args.output / "detected-notes.json", metadata)
     except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f"Could not transcribe: {exc}\n")

@@ -1,0 +1,39 @@
+{
+  "purpose": "Separate synthetic audio-detection result and known-event Drop D routing check; not real-guitar accuracy",
+  "audio_sha256": "121d9fbc52ca4c2d954010b9b9ca5239077b3821ac3721f5bb981b9ad3d33ca7",
+  "expected_pitches": [
+    38,
+    40,
+    45,
+    50,
+    55,
+    59,
+    64
+  ],
+  "detected_pitches": [
+    40,
+    45,
+    50,
+    55,
+    59,
+    64
+  ],
+  "saved_tuning_string_1_to_6": [
+    64,
+    59,
+    55,
+    50,
+    45,
+    38
+  ],
+  "audio_detection_saved_attack_count": 6,
+  "audio_detection_missed_pitches": [
+    38
+  ],
+  "known_event_rebuild_attack_count": 7,
+  "known_event_low_d_string": 6,
+  "known_event_low_d_fret": 0,
+  "gui_check": "Updated desktop tuning selector visually checked; all four presets present, standard selected, full layout visible",
+  "baseline_check": "Earlier baseline pass missed MIDI 38 and exported the other six notes; its existing 75 Hz search floor excludes the 73.42 Hz low D. Basic Pitch also missed the synthetic low D at unchanged defaults; its cause is not established. Detectors unchanged.",
+  "limits": "No automatic tuning recognition; no real alternate-tuned guitar recording evaluated. Model/threshold/rhythm behavior unchanged."
+}

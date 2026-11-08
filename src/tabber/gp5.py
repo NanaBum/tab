@@ -10,14 +10,18 @@ from guitarpro import models as gp
 
 from .models import STANDARD_TUNING, FrettedNote
 from .rhythm import quantize
+from .tuning import validate_tuning
 
 
-def build_song(notes: list[FrettedNote], bpm: float, grid: int = 16) -> gp.Song:
+def build_song(
+    notes: list[FrettedNote], bpm: float, grid: int = 16, *, tuning=STANDARD_TUNING
+) -> gp.Song:
     """Quantize a performance without changing the source records.
 
     GP5 stores integer tempo. Snap the score using that same rounded tempo,
     reject onsets that collide, and give short notes at least one grid cell.
     """
+    tuning = validate_tuning(tuning)
     quantize(0, bpm)
     if grid not in (16, 32, 64):
         raise ValueError("GP5 grid must be 16, 32, or 64 divisions per whole note")
@@ -49,8 +53,8 @@ def build_song(notes: list[FrettedNote], bpm: float, grid: int = 16) -> gp.Song:
             or not 0 <= n.fret <= 24
         ):
             raise ValueError("GP5 export needs a valid string and fret from 0 to 24")
-        if STANDARD_TUNING[n.string] + n.fret != n.note.pitch:
-            raise ValueError("Fingering does not match the pitch in standard tuning")
+        if tuning[n.string] + n.fret != n.note.pitch:
+            raise ValueError("Fingering does not match the pitch in the selected tuning")
         start = quantize(n.note.start, tempo, grid // 4)
         end = max(start + 1, quantize(n.note.end, tempo, grid // 4))
         previous = ends_by_string.get(n.string)
@@ -68,7 +72,7 @@ def build_song(notes: list[FrettedNote], bpm: float, grid: int = 16) -> gp.Song:
     track = song.tracks[0]
     track.name = "Guitar"
     track.channel.instrument = 24
-    track.strings = [gp.GuitarString(i + 1, pitch) for i, pitch in enumerate(STANDARD_TUNING)]
+    track.strings = [gp.GuitarString(i + 1, pitch) for i, pitch in enumerate(tuning)]
     track.measures.clear()
     song.measureHeaders.clear()
     final_cell = max((event[1] for event in events), default=1)
@@ -174,9 +178,12 @@ def score_events(song: gp.Song) -> list[tuple[int, int, int, int]]:
     return [tuple(event) for event in events]
 
 
-def verify_export(song: gp.Song, notes: list[FrettedNote], bpm: float, grid: int) -> None:
+def verify_export(
+    song: gp.Song, notes: list[FrettedNote], bpm: float, grid: int, *, tuning=STANDARD_TUNING
+) -> None:
+    tuning = validate_tuning(tuning)
     tempo = int(bpm + 0.5)
-    if len(song.tracks) != 1 or tuple(s.value for s in song.tracks[0].strings) != STANDARD_TUNING:
+    if len(song.tracks) != 1 or tuple(s.value for s in song.tracks[0].strings) != tuning:
         raise ValueError("GP5 verification found an unexpected track or tuning")
     expected = []
     for note in notes:
@@ -200,7 +207,7 @@ def timing_summary(song: gp.Song, notes: list[FrettedNote]) -> dict:
         if len(original) != len(saved):
             raise ValueError("Cannot compare timing when score note counts differ")
         for note, (first, last, _, fret) in zip(original, saved):
-            if note.pitch != STANDARD_TUNING[string] + fret:
+            if note.pitch != song.tracks[0].strings[string].value + fret:
                 raise ValueError("Cannot compare timing when score pitches differ")
             starts.append(abs((first - 960) * tick_seconds - note.start) * 1000)
             ends.append(abs((last - 960) * tick_seconds - note.end) * 1000)
