@@ -28,7 +28,7 @@ def write_outputs(notes: list[FrettedNote], output: Path, bpm: float, grid: int 
         rows[n.string][column] = f"{n.fret:-^4}"
     text = [
         f"Tempo: {bpm:g} BPM | one cell = 1/{grid} note; dashes show no new onset",
-        "Timing and durations are preserved in notes.json and notes.mid.",
+        "Original timing is in notes.json; MIDI rounds it to 480 ticks per quarter note.",
         "",
     ]
     for first in range(0, cells, 32):
@@ -41,17 +41,29 @@ def write_outputs(notes: list[FrettedNote], output: Path, bpm: float, grid: int 
     track = mido.MidiTrack()
     midi.tracks.append(track)
     track.append(mido.MetaMessage("set_tempo", tempo=mido.bpm2tempo(bpm)))
-    track.append(mido.Message("program_change", program=24))
+    # One channel per string keeps overlapping unisons independently releasable.
+    # Channels 0-5 avoid the conventional percussion channel (9).
+    for channel in range(6):
+        track.append(mido.Message("program_change", program=24, channel=channel))
     events = []
-    for n in notes:
-        for time, kind in ((n.note.start, "note_on"), (n.note.end, "note_off")):
-            tick = round(time * bpm / 60 * 480)
-            events.append((tick, kind, n.note.pitch))
+    ends_by_string = {}
+    for n in sorted(notes, key=lambda n: n.note.start):
+        start = round(n.note.start * bpm / 60 * 480)
+        end = max(start + 1, round(n.note.end * bpm / 60 * 480))
+        if start < ends_by_string.get(n.string, 0):
+            raise ValueError("Notes on one string collide at MIDI timing resolution")
+        ends_by_string[n.string] = end
+        for tick, kind in ((start, "note_on"), (end, "note_off")):
+            events.append((tick, kind, n.note.pitch, n.string))
     previous = 0
-    for tick, kind, pitch in sorted(events, key=lambda e: (e[0], e[1] == "note_on")):
+    for tick, kind, pitch, channel in sorted(events, key=lambda e: (e[0], e[1] == "note_on")):
         track.append(
             mido.Message(
-                kind, note=pitch, velocity=80 if kind == "note_on" else 0, time=tick - previous
+                kind,
+                note=pitch,
+                velocity=80 if kind == "note_on" else 0,
+                time=tick - previous,
+                channel=channel,
             )
         )
         previous = tick
