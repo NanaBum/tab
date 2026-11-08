@@ -26,6 +26,14 @@ The review sequence is stacked, with one PR based on its predecessor:
 11. Independent MIDI string voices and positive durations.
 12. Untimed reference-sequence comparison.
 13. Local M4A decoding and input diagnostics.
+14. Fresh installed-wheel and local setup validation.
+15. Optional guitar-specific CPU model, pinned checkpoint and separate environment.
+
+Current local work is on `codex/guitar-model-comparison`, based on local
+`79dd5c3` / remote `5d36c98ba56667922ae290e1917339d985275aad` (PR #14,
+`codex/install-handoff-check`, tree `d7c32f2353df70987b43852dec9edd799b8387a0`).
+Keep the guitar model experimental. The immediate user target is electric riffs,
+then full-band recordings. User audio and comparisons remain outside this repo.
 
 Inspect current PRs and branch heads before continuing. These changes remain
 unmerged; main is still the initial bootstrap. To get the complete code before

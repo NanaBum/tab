@@ -1,0 +1,71 @@
+# Optional guitar-specific model
+
+The experimental `guitar-gaps` backend runs a published guitar transcription
+checkpoint locally on CPU. It predicts pitches, attacks and releases, then uses
+the existing fingering and export stages. It does not directly predict strings,
+frets, bends or a native TuxGuitar file. GP5 opens in TuxGuitar for editing.
+Basic Pitch remains the desktop default; the simple detector remains the CLI default.
+
+## Reproduce on Windows / Python 3.11
+
+```powershell
+uv venv .venv-guitar --python 3.11
+uv pip sync --python .venv-guitar/Scripts/python.exe requirements/guitar-windows-py311.txt
+.venv-guitar/Scripts/python.exe scripts/download_guitar_model.py
+.venv-guitar/Scripts/python.exe -m tabber path/to/riff.wav --backend guitar-gaps --bpm 120 --grid 32 --output runs/guitar-test
+```
+
+The explicit download is 99,256,753 bytes (about 99 MB). Inference never downloads
+weights automatically or uploads recordings. Dependencies, audio and weights stay
+outside Git. The desktop offers **Guitar model (experimental)** when its separate
+environment and checkpoint exist. No training or fine-tuning is performed.
+
+`--onset-threshold` defaults to the author's 0.3; lower values admit weaker
+attacks. Desktop More notes/Balanced/Fewer notes use 0.2/0.3/0.5. Other decoding
+thresholds retain author defaults: offset 0.3, frame 0.1, pedal offset 0.2.
+Every decoded note is retained, including false detections. Unplayable notes
+cause an explicit export failure with saved diagnostics rather than silent removal.
+
+This model's saved `confidence` is a nearby peak onset regression activation,
+not a calibrated probability or the same quantity as Basic Pitch confidence.
+`--min-confidence` values other than the neutral CLI default are rejected for
+this backend. Use the attack threshold rather than comparing scores across models.
+
+## Identity and loading
+
+- Published weights: [xavriley/midi-transcription-models](https://huggingface.co/xavriley/midi-transcription-models),
+  revision `b7bec65a2b860aca72856b0feef58b5df407b777`.
+- File: `guitar-gaps-paper-version-12200_iterations.pth`.
+- SHA-256: `94a7c936ec9fde83686d29007dc256274384e832739cadece39e92cee3b69a7e`.
+- Architecture/postprocessor dependency: [author's pinned fork](https://github.com/xavriley/piano_transcription_inference/tree/7568dc7f78b625e40cf9776e2806d164006610e3)
+  of Kong's piano transcription implementation, using the guitar-trained weights.
+
+Loading verifies the exact checksum before importing optional model code and
+uses PyTorch's restricted `weights_only` loader, a scoped set of numeric NumPy
+constructors for the checkpoint's sampler state, and strict model-key matching.
+Input is converted to 16 kHz mono. Half-overlapping ten-second windows are
+stitched using the upstream policy, then cropped in **frames** to the recording
+duration before decoding. Original source audio is unchanged.
+
+## Evaluation limits
+
+The initial fixed six-solo/six-accompaniment smoke check (first ten seconds,
+performer round-robin) is saved in [reports/gaps-smoke.json](reports/gaps-smoke.json).
+Pitch/onset F1 was 94.7% solo and 95.4% accompaniment; including release timing
+gave 88.2% and 78.7%. Eleven clips exported all detections. The remaining clip
+included an unplayable MIDI-39 detection and failed explicitly; no note was dropped.
+These small checks do not establish performance on other recordings.
+
+With the existing GuitarSet archives, reproduce each mode using:
+
+```powershell
+.venv-guitar/Scripts/python.exe scripts/evaluate_guitarset.py --backend guitar-gaps --mode solo --limit 6 --seconds 10 --grid 32 --export-tabs --output runs/gaps-six-solo.json
+.venv-guitar/Scripts/python.exe scripts/evaluate_guitarset.py --backend guitar-gaps --mode comp --limit 6 --seconds 10 --grid 32 --export-tabs --output runs/gaps-six-comp.json
+```
+
+A favorable result on a development riff is not proof of general accuracy on
+electric guitars, distortion or full bands. Training-recording overlap for this
+checkpoint has not been established. GuitarSet checks are development checks,
+not an independent held-out benchmark. Timing, sustain, string assignment and
+playability remain separate from an ordered pitch-sequence match. No private
+recording or reference sequence is included in this repository.

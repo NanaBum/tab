@@ -37,7 +37,15 @@ def main():
         default=16,
         help="Score divisions per whole note; finer grids preserve faster notes",
     )
-    parser.add_argument("--backend", choices=("baseline", "basic-pitch"), default="baseline")
+    parser.add_argument(
+        "--backend", choices=("baseline", "basic-pitch", "guitar-gaps"), default="baseline"
+    )
+    parser.add_argument(
+        "--onset-threshold", type=float, help="Guitar-model attack threshold (default 0.3)"
+    )
+    parser.add_argument(
+        "--guitar-checkpoint", type=Path, help="Location of the pinned published guitar checkpoint"
+    )
     parser.add_argument(
         "--fretting",
         choices=("melodic", "polyphonic"),
@@ -62,6 +70,10 @@ def main():
         parser.error("--bpm auto needs audio input; supply BPM when rebuilding saved events")
     if args.string_model and (args.events or args.fretting != "polyphonic"):
         parser.error("--string-model needs audio input and polyphonic fretting")
+    if (args.onset_threshold is not None or args.guitar_checkpoint) and (
+        args.events or args.backend != "guitar-gaps"
+    ):
+        parser.error("Guitar-model options need --backend guitar-gaps and audio input")
     try:
         path = (args.audio or args.events).resolve()
         if not path.is_file():
@@ -86,11 +98,18 @@ def main():
             )
         if args.separate:
             path = separate_guitar(path, args.output / "stems")
-        detected = (
-            load_events(path)
-            if args.events
-            else transcribe(path, args.backend, args.min_confidence)
-        )
+        if args.events:
+            detected = load_events(path)
+        elif args.backend == "guitar-gaps":
+            detected = transcribe(
+                path,
+                args.backend,
+                args.min_confidence,
+                guitar_onset=args.onset_threshold if args.onset_threshold is not None else 0.3,
+                guitar_checkpoint=args.guitar_checkpoint,
+            )
+        else:
+            detected = transcribe(path, args.backend, args.min_confidence)
         metadata = {
             "input": str(path),
             "audio_check": health,
@@ -99,10 +118,37 @@ def main():
             "tempo_source": "estimated" if tempo else "supplied",
             "tempo_estimate": asdict(tempo) if tempo else None,
             "backend": "events" if args.events else args.backend,
-            "min_confidence": None if args.events else args.min_confidence,
+            "min_confidence": None
+            if args.events or args.backend == "guitar-gaps"
+            else args.min_confidence,
+            "guitar_model_onset_threshold": (
+                args.onset_threshold if args.onset_threshold is not None else 0.3
+            )
+            if args.backend == "guitar-gaps" and not args.events
+            else None,
+            "guitar_model_confidence": "Onset regression activation, not calibrated probability"
+            if args.backend == "guitar-gaps" and not args.events
+            else None,
             "timing": "seconds, original detected timing before score quantization",
             "experimental_string_model": str(args.string_model) if args.string_model else None,
         }
+        if args.backend == "guitar-gaps" and not args.events:
+            from .guitar_gaps import (
+                CHECKPOINT_NAME,
+                CHECKPOINT_SHA256,
+                MODEL_REPOSITORY,
+                MODEL_REVISION,
+                default_checkpoint,
+            )
+
+            metadata["guitar_model"] = {
+                "repository": MODEL_REPOSITORY,
+                "revision": MODEL_REVISION,
+                "filename": CHECKPOINT_NAME,
+                "sha256": CHECKPOINT_SHA256,
+                "checkpoint": str((args.guitar_checkpoint or default_checkpoint()).resolve()),
+                "verification": "Pinned checksum verified before loading weights",
+            }
         stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
         diagnostic = args.output / "diagnostics" / f"detected-{stamp}.json"
         save_events(detected, diagnostic, metadata)
@@ -116,7 +162,9 @@ def main():
         else:
             notes = assign(detected)
         if not notes:
-            raise ValueError("No notes detected. Try a louder, clean single-note recording.")
+            raise ValueError(
+                "No notes detected. Check that the guitar is clearly audible in the recording."
+            )
         timing = write_outputs(notes, args.output, bpm, args.grid)
         save_events(detected, args.output / "detected-notes.json", metadata)
     except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError) as exc:

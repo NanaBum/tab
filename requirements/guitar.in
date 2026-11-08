@@ -1,0 +1,8 @@
+# Experimental CPU guitar-specific inference, Windows/Python 3.11.
+# Isolated from Basic Pitch, core, codec and separation environments.
+-e .
+torch @ https://download.pytorch.org/whl/cpu/torch-2.5.1%2Bcpu-cp311-cp311-win_amd64.whl
+numpy==1.26.4
+librosa==0.11.0
+torchlibrosa==0.1.0
+piano-transcription-inference @ git+https://github.com/xavriley/piano_transcription_inference.git@7568dc7f78b625e40cf9776e2806d164006610e3

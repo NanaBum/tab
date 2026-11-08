@@ -19,9 +19,22 @@ def _basic_pitch_model():
     return Model(ICASSP_2022_MODEL_PATH)
 
 
-def transcribe(path: Path, backend: str = "baseline", min_confidence: float = 0.5) -> list[Note]:
+def transcribe(
+    path: Path,
+    backend: str = "baseline",
+    min_confidence: float = 0.5,
+    *,
+    guitar_onset: float = 0.3,
+    guitar_checkpoint: Path | None = None,
+) -> list[Note]:
     if not math.isfinite(min_confidence) or not 0 <= min_confidence <= 1:
         raise ValueError("Minimum confidence must be between 0 and 1")
+    if backend == "guitar-gaps":
+        if min_confidence != 0.5:
+            raise ValueError("Guitar model uses --onset-threshold instead of --min-confidence")
+        from .guitar_gaps import transcribe_gaps
+
+        return transcribe_gaps(path, checkpoint=guitar_checkpoint, onset_threshold=guitar_onset)
     if backend == "basic-pitch":
         try:
             from basic_pitch.inference import predict

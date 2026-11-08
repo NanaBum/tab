@@ -21,7 +21,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data", type=Path, default=Path("data/guitarset"))
     parser.add_argument("--output", type=Path, default=Path("runs/evaluation.json"))
-    parser.add_argument("--backend", choices=("baseline", "basic-pitch"), default="baseline")
+    parser.add_argument(
+        "--backend", choices=("baseline", "basic-pitch", "guitar-gaps"), default="baseline"
+    )
     parser.add_argument("--mode", choices=("solo", "comp", "all"), default="solo")
     parser.add_argument("--limit", type=int, default=6)
     parser.add_argument("--seconds", type=float, default=10)
@@ -38,7 +40,8 @@ def main():
         "backend": args.backend,
         "mode": args.mode,
         "seconds": args.seconds,
-        "min_confidence": args.min_confidence,
+        "min_confidence": None if args.backend == "guitar-gaps" else args.min_confidence,
+        "guitar_onset_threshold": 0.3 if args.backend == "guitar-gaps" else None,
         "string_model": str(args.string_model) if args.string_model else None,
         "performer": args.performer,
         "dataset": "GuitarSet v1.1.0 (Zenodo 3371780)",
