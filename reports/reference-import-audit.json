@@ -1,0 +1,523 @@
+{
+  "purpose": "Generated GP5 structural import audit, compared with existing canonical serialized events",
+  "scope": "Saved public-source/synthetic development outputs; private recording files excluded",
+  "comparison": "Attack/release seconds rounded to 9 decimals, exact MIDI pitches and counts",
+  "files": [
+    {
+      "file": "tuxguitar-demo.gp5",
+      "sha256": "18de9ab6803690d9ffbb822c06a3c44b87a5e490fac5c72f91efbd253fa1223c",
+      "status": "matched canonical GP5 events",
+      "notes": 8
+    },
+    {
+      "file": "Demos/Chords/tab.gp5",
+      "sha256": "9b0359051c25251c6e4c5e503926b31a9e7c1e83f8ed73cd27894fc8587132fa",
+      "status": "matched canonical GP5 events",
+      "notes": 59
+    },
+    {
+      "file": "Demos/Electric-picked-lick/tab.gp5",
+      "sha256": "cca73944ff662e33a2e23583df32ced989fbd3aa7dd4642e247c2398bb13ab2d",
+      "status": "matched canonical GP5 events",
+      "notes": 13
+    },
+    {
+      "file": "Demos/Melody/tab.gp5",
+      "sha256": "a2557f0618d08fcc05ddef733f1aa37e5d747823110e88bb6ae91f31b1116d40",
+      "status": "matched canonical GP5 events",
+      "notes": 25
+    },
+    {
+      "file": "Demos/Separation/tab.gp5",
+      "sha256": "8eb33cf023d71f3a69ca8715415e0b522368bb19566878679cfa55d8b715a283",
+      "status": "matched canonical GP5 events",
+      "notes": 26
+    },
+    {
+      "file": "tab/runs/demo/tab.gp5",
+      "sha256": "18de9ab6803690d9ffbb822c06a3c44b87a5e490fac5c72f91efbd253fa1223c",
+      "status": "matched canonical GP5 events",
+      "notes": 8
+    },
+    {
+      "file": "tab/runs/demo-auto-tempo/tab.gp5",
+      "sha256": "5d8cdee086f270ed243dec9391e1963258afc9962ce7ad73df55ec17c8707286",
+      "status": "matched canonical GP5 events",
+      "notes": 8
+    },
+    {
+      "file": "tab/runs/demo-auto-tempo-final/tab.gp5",
+      "sha256": "8bc737c4bcbe065ecc8fa466bc174a315e53c771032c4ff4e3a07b850a16fd2e",
+      "status": "matched canonical GP5 events",
+      "notes": 8
+    },
+    {
+      "file": "tab/runs/demo-events-replay/tab.gp5",
+      "sha256": "18de9ab6803690d9ffbb822c06a3c44b87a5e490fac5c72f91efbd253fa1223c",
+      "status": "matched canonical GP5 events",
+      "notes": 8
+    },
+    {
+      "file": "tab/runs/demo-gui-check/tab.gp5",
+      "sha256": "18de9ab6803690d9ffbb822c06a3c44b87a5e490fac5c72f91efbd253fa1223c",
+      "status": "matched canonical GP5 events",
+      "notes": 8
+    },
+    {
+      "file": "tab/runs/demo-ml/tab.gp5",
+      "sha256": "8bc737c4bcbe065ecc8fa466bc174a315e53c771032c4ff4e3a07b850a16fd2e",
+      "status": "matched canonical GP5 events",
+      "notes": 8
+    },
+    {
+      "file": "tab/runs/demo-string-model/tab.gp5",
+      "sha256": "ad88fc128d29fb6e859ecc8484fadf608843dd41bea6501cbb572489f28bf9ea",
+      "status": "matched canonical GP5 events",
+      "notes": 8
+    },
+    {
+      "file": "tab/runs/demo-verified/tab.gp5",
+      "sha256": "18de9ab6803690d9ffbb822c06a3c44b87a5e490fac5c72f91efbd253fa1223c",
+      "status": "matched canonical GP5 events",
+      "notes": 8
+    },
+    {
+      "file": "tab/runs/detected-notes-20261107-100609-750969/tab.gp5",
+      "sha256": "60a82d098975a57ae4402c9f0712b7e796d8ebd6279764a1275d155078bcda28",
+      "status": "matched canonical GP5 events",
+      "notes": 25
+    },
+    {
+      "file": "tab/runs/eval-ml-chords-tabs/00_BN1-129-Eb_comp/tab.gp5",
+      "sha256": "666319b50850c56f6e0860758d6fecf4bf20a2440cfac059ec2141b99d99ea31",
+      "status": "matched canonical GP5 events",
+      "notes": 59
+    },
+    {
+      "file": "tab/runs/eval-ml-chords-tabs/01_BN1-129-Eb_comp/tab.gp5",
+      "sha256": "b84b09b87097546b1e0dc3d81d202d5e7cda59a95f77ab587e49c9d4e4908a75",
+      "status": "matched canonical GP5 events",
+      "notes": 40
+    },
+    {
+      "file": "tab/runs/eval-ml-chords-tabs/02_BN1-129-Eb_comp/tab.gp5",
+      "sha256": "eaba9f21a21d45480e058ce0053346783eee367dc9945a790da65fc0e8dbb3fc",
+      "status": "matched canonical GP5 events",
+      "notes": 59
+    },
+    {
+      "file": "tab/runs/eval-ml-chords-tabs/03_BN1-129-Eb_comp/tab.gp5",
+      "sha256": "a41b2eac10cfbba818334c0d4fd3e7019a59e0d6eb770cf024ace086bb628298",
+      "status": "matched canonical GP5 events",
+      "notes": 69
+    },
+    {
+      "file": "tab/runs/eval-ml-chords-tabs/04_BN1-129-Eb_comp/tab.gp5",
+      "sha256": "de81f2fadaab4a05ce64aa26baceecfc54c789994e8e051d87004fcb48a25ce0",
+      "status": "matched canonical GP5 events",
+      "notes": 60
+    },
+    {
+      "file": "tab/runs/eval-ml-chords-tabs/05_BN1-129-Eb_comp/tab.gp5",
+      "sha256": "db3f95523cf31d7db1e3e3cea53df8f9a275d4200e4327591112064dfaec2f73",
+      "status": "matched canonical GP5 events",
+      "notes": 70
+    },
+    {
+      "file": "tab/runs/eval-ml-polyphonic-tabs/00_BN1-129-Eb_solo/tab.gp5",
+      "sha256": "52fe13d03cc2da14f148b3a9c43e4c86ae099a9a6ca95db32a237132619e1cb6",
+      "status": "matched canonical GP5 events",
+      "notes": 38
+    },
+    {
+      "file": "tab/runs/eval-ml-polyphonic-tabs/01_BN1-129-Eb_solo/tab.gp5",
+      "sha256": "89f6eba4e24b827ea04c583c7539231f234da7259dc9db587daf8fc9b22e13f3",
+      "status": "matched canonical GP5 events",
+      "notes": 28
+    },
+    {
+      "file": "tab/runs/eval-ml-polyphonic-tabs/02_BN1-129-Eb_solo/tab.gp5",
+      "sha256": "14eaa98f13818c9f2cd8a74d8a22bcdbb294e78e868d82ada82044bb3553bea3",
+      "status": "matched canonical GP5 events",
+      "notes": 24
+    },
+    {
+      "file": "tab/runs/eval-ml-polyphonic-tabs/03_BN1-129-Eb_solo/tab.gp5",
+      "sha256": "018147a5725693f4f9d7e330b9605eb25437ea935cf592a53038ed30cf98b8d3",
+      "status": "matched canonical GP5 events",
+      "notes": 25
+    },
+    {
+      "file": "tab/runs/eval-ml-polyphonic-tabs/04_BN1-129-Eb_solo/tab.gp5",
+      "sha256": "f89820ed49154f8b7a4a8ac3310e6604c50ed19ddfaccbc86dd668c736085d32",
+      "status": "matched canonical GP5 events",
+      "notes": 17
+    },
+    {
+      "file": "tab/runs/eval-ml-polyphonic-tabs/05_BN1-129-Eb_solo/tab.gp5",
+      "sha256": "e2f5b75bbf97c86675544bf188648985874436563e1c4b2888ea1e6ad4c6641c",
+      "status": "matched canonical GP5 events",
+      "notes": 23
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_BN1-129-Eb_solo/tab.gp5",
+      "sha256": "1dd7d426e117130634f0bcbd8374551b370e460628b12235fb7beb26c65911d9",
+      "status": "matched canonical GP5 events",
+      "notes": 38
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_BN1-147-Gb_solo/tab.gp5",
+      "sha256": "a7b4a79afc0ed1606367aace325ef0e55bde89b81ddade93570df4a4eb7b150b",
+      "status": "matched canonical GP5 events",
+      "notes": 50
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_BN2-131-B_solo/tab.gp5",
+      "sha256": "c481e0bc2dacb000aff68b8b284ceb59ba40f8b4eab418661dfdbb41f6a0f9f5",
+      "status": "matched canonical GP5 events",
+      "notes": 38
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_BN2-166-Ab_solo/tab.gp5",
+      "sha256": "fc1a59d23ece99152c562e604c79848cf41ad3d97a537481f76324ce02988f76",
+      "status": "matched canonical GP5 events",
+      "notes": 36
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_BN3-119-G_solo/tab.gp5",
+      "sha256": "098537a1d5c28cbd52052956abd0f3fc3c532c953771510204abfdefdd371450",
+      "status": "matched canonical GP5 events",
+      "notes": 35
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_BN3-154-E_solo/tab.gp5",
+      "sha256": "971ed59989c9450a87daccd22a22d7701509025e469d3e8b7c476b6b15aad343",
+      "status": "matched canonical GP5 events",
+      "notes": 36
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_Funk1-114-Ab_solo/tab.gp5",
+      "sha256": "6b6c0e108fca9c9ceac3b7159f3bdb60135535acaca099c96447356b348a9a10",
+      "status": "matched canonical GP5 events",
+      "notes": 29
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_Funk1-97-C_solo/tab.gp5",
+      "sha256": "ca437189c1621f4e8cf1fe510b2c3989ef20be7aeea7990baa25b0d9933988a2",
+      "status": "matched canonical GP5 events",
+      "notes": 23
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_Funk2-108-Eb_solo/tab.gp5",
+      "sha256": "0481db8f4f28e6cb8978163659f08bc6f6626f358e18ccbd5593b043be35fec8",
+      "status": "matched canonical GP5 events",
+      "notes": 21
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_Funk2-119-G_solo/tab.gp5",
+      "sha256": "e9074160c0274b3b90d55d433a3a039d1eb64acbae613cc93fc28fdca2a7939b",
+      "status": "matched canonical GP5 events",
+      "notes": 28
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_Funk3-112-C#_solo/tab.gp5",
+      "sha256": "ac67e77c70f03d4d490bdcc66eff58b4a4a83813684f98eb50cb1b25f7a4497d",
+      "status": "matched canonical GP5 events",
+      "notes": 36
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_Funk3-98-A_solo/tab.gp5",
+      "sha256": "3d60feb5968bcdee2ef11cc7ff98bf8697cc2d3da37a88e08f97940a9958f885",
+      "status": "matched canonical GP5 events",
+      "notes": 26
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_Jazz1-130-D_solo/tab.gp5",
+      "sha256": "c897b437617059e7fa17553999192b99958336156d6162e59073e634fe4f0778",
+      "status": "matched canonical GP5 events",
+      "notes": 36
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_Jazz1-200-B_solo/tab.gp5",
+      "sha256": "03d96326d51e18aad67a41bbbdafd337d09175baf3212d56018f78495b94d3f4",
+      "status": "matched canonical GP5 events",
+      "notes": 33
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_Jazz2-110-Bb_solo/tab.gp5",
+      "sha256": "19203bb622813d793a93f68f0d2afbaf8d242f1ffa12fc2c5ec8ea05fb240487",
+      "status": "matched canonical GP5 events",
+      "notes": 26
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_Jazz2-187-F#_solo/tab.gp5",
+      "sha256": "b7c891df5e94ee6907b8e29c8a5c69daa20a20282e3e5b2f87db33f80347b95c",
+      "status": "matched canonical GP5 events",
+      "notes": 51
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_Jazz3-150-C_solo/tab.gp5",
+      "sha256": "9684019c578200483f6665311db1166fc4edf480e1c85f17014d9f65ed791944",
+      "status": "matched canonical GP5 events",
+      "notes": 46
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_Rock1-130-A_solo/tab.gp5",
+      "sha256": "b99c06c0bfd2800f5fd09acb6f6edf4a8b0aec32bb575814ed7e43f12bee8219",
+      "status": "matched canonical GP5 events",
+      "notes": 41
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_Rock1-90-C#_solo/tab.gp5",
+      "sha256": "c09ff501bb0535bd89ee1f35e05f2a8f3dcdc833959eac4f894de3c21c36c7e1",
+      "status": "matched canonical GP5 events",
+      "notes": 109
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_Rock2-142-D_solo/tab.gp5",
+      "sha256": "88daae43f2fc488c3fe007b8e67030d6b7911a54d52e953d46e8444a2a3b70f6",
+      "status": "matched canonical GP5 events",
+      "notes": 62
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_Rock2-85-F_solo/tab.gp5",
+      "sha256": "79f3e9bfe98fcfabcdd90c13d2a5504be8461dcc3a504ec7a0280e082334a348",
+      "status": "matched canonical GP5 events",
+      "notes": 22
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_Rock3-117-Bb_solo/tab.gp5",
+      "sha256": "59153ea8a2656698239f5ac531b2f6af993025e9d6f447ef10c48eb5c3d99d9f",
+      "status": "matched canonical GP5 events",
+      "notes": 40
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_Rock3-148-C_solo/tab.gp5",
+      "sha256": "dfd343c2255967b28691504748b0fa5b45e9c9dd22da536bd378d2f5239e2ddc",
+      "status": "matched canonical GP5 events",
+      "notes": 54
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_SS1-100-C#_solo/tab.gp5",
+      "sha256": "d8a212a1ec909839e9204a69291583a2598fb7257eed8a7ff08c1e84c6cdda8e",
+      "status": "matched canonical GP5 events",
+      "notes": 24
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_SS1-68-E_solo/tab.gp5",
+      "sha256": "4f1471ddba8a7e714b3a8863654f4725ac3a4c5dfa96b193590c0330627a5a2a",
+      "status": "matched canonical GP5 events",
+      "notes": 22
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_SS2-107-Ab_solo/tab.gp5",
+      "sha256": "80e3dac816ea141d44d33bc85472b1a5fddb893a4127fede413277c23834d06f",
+      "status": "matched canonical GP5 events",
+      "notes": 29
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_SS2-88-F_solo/tab.gp5",
+      "sha256": "a9fdb207f75c0c08c7040fd911c345fdc4733d98bb00ec400e56213933cc9476",
+      "status": "matched canonical GP5 events",
+      "notes": 26
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_SS3-84-Bb_solo/tab.gp5",
+      "sha256": "cf4f9e93a215a8b36f84ad3b0d2e583bbede815863513ee3119c2152fbd8f7f4",
+      "status": "matched canonical GP5 events",
+      "notes": 48
+    },
+    {
+      "file": "tab/runs/eval-string-held00-tabs/00_SS3-98-C_solo/tab.gp5",
+      "sha256": "7be990ad5ca2451792bfb4f69746402d86a6bcc77303dc27f68aec2d759e67fe",
+      "status": "matched canonical GP5 events",
+      "notes": 23
+    },
+    {
+      "file": "tab/runs/gaps-six-comp-tabs/01_BN1-129-Eb_comp/tab.gp5",
+      "sha256": "b68d0acab69eb9820d0140713d10e60e7441d7ec67109d19f88208c3d9208211",
+      "status": "matched canonical GP5 events",
+      "notes": 42
+    },
+    {
+      "file": "tab/runs/gaps-six-comp-tabs/02_BN1-129-Eb_comp/tab.gp5",
+      "sha256": "37fecf4b65146eab8f236949607873c57ba2e38c041401fe65faf4076dcc0742",
+      "status": "matched canonical GP5 events",
+      "notes": 72
+    },
+    {
+      "file": "tab/runs/gaps-six-comp-tabs/03_BN1-129-Eb_comp/tab.gp5",
+      "sha256": "ea6f0f8b78b64b914a9a23eb032abd1c42954939b85da66e2c4f2ce1b6dbb0ca",
+      "status": "matched canonical GP5 events",
+      "notes": 76
+    },
+    {
+      "file": "tab/runs/gaps-six-comp-tabs/04_BN1-129-Eb_comp/tab.gp5",
+      "sha256": "a98422bd58aa6fd51b0f51fb64cfe122eb1cf526ecbc6506ad1702157295bee0",
+      "status": "matched canonical GP5 events",
+      "notes": 57
+    },
+    {
+      "file": "tab/runs/gaps-six-comp-tabs/05_BN1-129-Eb_comp/tab.gp5",
+      "sha256": "8a334c5d7e966f19ba4d83491e320fe8c371fce2bf20fecd4b74024699d37ea1",
+      "status": "matched canonical GP5 events",
+      "notes": 68
+    },
+    {
+      "file": "tab/runs/gaps-six-solo-tabs/00_BN1-129-Eb_solo/tab.gp5",
+      "sha256": "3a67010c907c57dd2905570dd77640fb5fc4969e24c18e096d6d3e825ed2456f",
+      "status": "matched canonical GP5 events",
+      "notes": 30
+    },
+    {
+      "file": "tab/runs/gaps-six-solo-tabs/01_BN1-129-Eb_solo/tab.gp5",
+      "sha256": "48b37a0d4ac8405513e9b4f9f5e55dbb2f5099380041e251f71ece252e6c40ff",
+      "status": "matched canonical GP5 events",
+      "notes": 28
+    },
+    {
+      "file": "tab/runs/gaps-six-solo-tabs/02_BN1-129-Eb_solo/tab.gp5",
+      "sha256": "ed89cf25207e054b6f55427d96177eb1821bedb8b8f53ccc824a7def709eb5de",
+      "status": "matched canonical GP5 events",
+      "notes": 23
+    },
+    {
+      "file": "tab/runs/gaps-six-solo-tabs/03_BN1-129-Eb_solo/tab.gp5",
+      "sha256": "4c2dd5cb0cc8f32074b2e9572159eff15bb30a469bb6f851a85135db3820142d",
+      "status": "matched canonical GP5 events",
+      "notes": 30
+    },
+    {
+      "file": "tab/runs/gaps-six-solo-tabs/04_BN1-129-Eb_solo/tab.gp5",
+      "sha256": "4138033e7a488a8739c2ae58040aad9011f6164c4317bf69fd61e05d45bec58c",
+      "status": "matched canonical GP5 events",
+      "notes": 17
+    },
+    {
+      "file": "tab/runs/gaps-six-solo-tabs/05_BN1-129-Eb_solo/tab.gp5",
+      "sha256": "140ee4a76861a803b2af7f6b4cbea83d8f56844a54c4f06ea92baeb85801c37a",
+      "status": "matched canonical GP5 events",
+      "notes": 23
+    },
+    {
+      "file": "tab/runs/gaps-span-seven/tab.gp5",
+      "sha256": "d4937ee282173cd0c50c51429ac3a0dd2160cd34d482412dd2a1bcaef23b6acd",
+      "status": "matched canonical GP5 events",
+      "notes": 57
+    },
+    {
+      "file": "tab/runs/gui-worker-baseline/tab.gp5",
+      "sha256": "18de9ab6803690d9ffbb822c06a3c44b87a5e490fac5c72f91efbd253fa1223c",
+      "status": "matched canonical GP5 events",
+      "notes": 8
+    },
+    {
+      "file": "tab/runs/gui-worker-basic-pitch/tab.gp5",
+      "sha256": "8bc737c4bcbe065ecc8fa466bc174a315e53c771032c4ff4e3a07b850a16fd2e",
+      "status": "matched canonical GP5 events",
+      "notes": 8
+    },
+    {
+      "file": "tab/runs/idmt-basic-pitch/nocturneNr2/tab.gp5",
+      "sha256": "2e0182ff85a2a8aeda76cca801a871b66b9fde02f33748ec6beab994e92ca3b9",
+      "status": "matched canonical GP5 events",
+      "notes": 21
+    },
+    {
+      "file": "tab/runs/idmt-basic-pitch/pathetique_mono/tab.gp5",
+      "sha256": "040a8cf0921993aefb5a06f1f26b98ceae565e4a3f87aa8cd48a0e351c3ef1a6",
+      "status": "matched canonical GP5 events",
+      "notes": 10
+    },
+    {
+      "file": "tab/runs/idmt-basic-pitch/pathetique_poly/tab.gp5",
+      "sha256": "4ea82a3c72d509e315485bf221b51e6046a030f32334b1bec44d847aeaf1f1f0",
+      "status": "matched canonical GP5 events",
+      "notes": 21
+    },
+    {
+      "file": "tab/runs/idmt-basic-pitch/promenade_mono/tab.gp5",
+      "sha256": "8a27463dc3b78b98d544aee88c531732703dc31a0f26c16445b4ca166fa1b302",
+      "status": "matched canonical GP5 events",
+      "notes": 13
+    },
+    {
+      "file": "tab/runs/idmt-basic-pitch/quintfall/tab.gp5",
+      "sha256": "fc982be700d89a8e4bd75175a1b11ac6a5e379f108652bd4c5390bbc0103f814",
+      "status": "matched canonical GP5 events",
+      "notes": 31
+    },
+    {
+      "file": "tab/runs/idmt-guitar-gaps/nocturneNr2/tab.gp5",
+      "sha256": "f17bda3ba717d0fc9ead11c3d4d8e4ecbc7024fc32684fa1ddb7afe89a37b442",
+      "status": "matched canonical GP5 events",
+      "notes": 20
+    },
+    {
+      "file": "tab/runs/idmt-guitar-gaps/pathetique_mono/tab.gp5",
+      "sha256": "9fac55fa517377088318e1afd9cc93086da9bc986d32aa28f8bdaca95996b657",
+      "status": "matched canonical GP5 events",
+      "notes": 9
+    },
+    {
+      "file": "tab/runs/idmt-guitar-gaps/pathetique_poly/tab.gp5",
+      "sha256": "8b8838ae6b52e41cec25cb44dcc3228c762c144251e3b8aa948f8a26c39caad3",
+      "status": "matched canonical GP5 events",
+      "notes": 18
+    },
+    {
+      "file": "tab/runs/idmt-guitar-gaps/promenade_mono/tab.gp5",
+      "sha256": "8be6a0dc6f597ccfef51fd62f9f4aee59f16d46545953ef0d80403c3707b3bd5",
+      "status": "matched canonical GP5 events",
+      "notes": 13
+    },
+    {
+      "file": "tab/runs/idmt-guitar-gaps/quintfall/tab.gp5",
+      "sha256": "0d4276ec3ea4a75721401a5744b28f01156f248b4c1a60fef4352b82999df280",
+      "status": "matched canonical GP5 events",
+      "notes": 33
+    },
+    {
+      "file": "tab/runs/idmt-licks-basic-pitch/AR_Lick12_KN/tab.gp5",
+      "sha256": "66e5eced5ace322eb4fcccfab12d94dab0691f3b86c019531caf08315af9d36c",
+      "status": "matched canonical GP5 events",
+      "notes": 65
+    },
+    {
+      "file": "tab/runs/idmt-licks-basic-pitch/AR_Lick1_KN/tab.gp5",
+      "sha256": "f5ac0bc70c2281fd8bc24f13d0ba051596788b3e9b6c394070027478392ca5be",
+      "status": "matched canonical GP5 events",
+      "notes": 15
+    },
+    {
+      "file": "tab/runs/idmt-licks-basic-pitch/AR_Lick6_KN/tab.gp5",
+      "sha256": "4348a3849ce6e8a80cf5068b1e14f099ba4971c96f31ac45371c4c5996b040a9",
+      "status": "matched canonical GP5 events",
+      "notes": 10
+    },
+    {
+      "file": "tab/runs/idmt-licks-guitar-gaps/AR_Lick12_KN/tab.gp5",
+      "sha256": "0c6d7e05b9c82d795fd00a52c0f7d31b1701a9e264fad40d3c79d441a201b709",
+      "status": "matched canonical GP5 events",
+      "notes": 44
+    },
+    {
+      "file": "tab/runs/idmt-licks-guitar-gaps/AR_Lick1_KN/tab.gp5",
+      "sha256": "cca73944ff662e33a2e23583df32ced989fbd3aa7dd4642e247c2398bb13ab2d",
+      "status": "matched canonical GP5 events",
+      "notes": 13
+    },
+    {
+      "file": "tab/runs/idmt-licks-guitar-gaps/AR_Lick6_KN/tab.gp5",
+      "sha256": "c03d152fa68168642482816250bf91ad9047c3bd79399240f3958278648b8afb",
+      "status": "matched canonical GP5 events",
+      "notes": 11
+    },
+    {
+      "file": "tab/runs/mixture-pipeline/tab.gp5",
+      "sha256": "8eb33cf023d71f3a69ca8715415e0b522368bb19566878679cfa55d8b715a283",
+      "status": "matched canonical GP5 events",
+      "notes": 26
+    }
+  ]
+}

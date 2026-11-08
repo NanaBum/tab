@@ -32,10 +32,11 @@ The review sequence is stacked, with one PR based on its predecessor:
 17. Fixed picked-lick comparison on a second electric guitar and tuning-format support.
 18. Audited opt-in range filtering, wider-span rebuilding and clearer fingering errors.
 19. Single-global-shift event comparison and sparse full-song note matching.
+20. Local GP3/GP4/GP5 candidate-reference import with tempo maps and source metadata.
 
-Current local work is on `codex/global-time-alignment`, based on local
-`be9683a` / remote `89923cbdfbb3e6bb97bbc76d133d91886f9d8221` (PR #18,
-`codex/explicit-guitar-range`, tree `8e3a424df421727e98729a38e74802f879c0e59e`).
+Current local work is on `codex/local-reference-import`, based on local
+`191ed41` / remote `8a36e3c49b60bcb3ce863a75ed33fbf9a8ed0519` (PR #19,
+`codex/global-time-alignment`, tree `aee38dc09f495f69a82d6603bb32789dfe758564`).
 Keep the guitar model experimental. The immediate user target is electric riffs,
 then full-band recordings. User audio and comparisons remain outside this repo.
 

@@ -56,6 +56,22 @@ def main():
             label: {"path": str(path.resolve()), "sha256": file_hash(path)}
             for label, path in (("reference", args.reference), ("predicted", args.predicted))
         }
+        if args.reference.suffix.lower() == ".json":
+            source_metadata = json.loads(args.reference.read_text(encoding="utf-8-sig")).get(
+                "metadata", {}
+            )
+            if isinstance(source_metadata, dict) and "reference_status" in source_metadata:
+                report["inputs"]["reference"]["reference_metadata"] = {
+                    key: source_metadata[key]
+                    for key in (
+                        "reference_status",
+                        "data_permission",
+                        "approximate_techniques",
+                        "technique_flags",
+                        "timing",
+                    )
+                    if key in source_metadata
+                }
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     except (OSError, ValueError, TypeError, KeyError) as error:
@@ -70,6 +86,10 @@ def main():
     if report["at_search_boundary"]:
         print("Alignment note: The selected shift is at the search boundary.")
     print(f"Report: {args.output.resolve()}")
+    if "reference_metadata" in report["inputs"]["reference"]:
+        print(
+            "Reference note: Imported score is a candidate reference; inspect its timing, technique and permission metadata."
+        )
 
 
 if __name__ == "__main__":
