@@ -11,6 +11,8 @@ CPU environment. It is experimental and keeps the existing defaults unchanged.
 The [clean electric-guitar comparison](IDMT_VALIDATION.md) tests both models on
 five additional recordings and documents inconsistencies in their reference tabs.
 It also includes a separate three-lick comparison on another electric guitar.
+A [simple-detector control](BASELINE_CONTROL.md) compares all eleven fixed
+electric recordings with both ML methods, retaining individual failure cases.
 For timed references, the [global-offset comparison](GLOBAL_ALIGNMENT.md) reports
 both original scores and a bounded, reference-assisted start-shift diagnostic.
 The [local Guitar Pro reference importer](REFERENCE_IMPORT.md) can prepare

@@ -38,10 +38,11 @@ The review sequence is stacked, with one PR based on its predecessor:
 23. Fixed muted-electric counterparts, explicit per-lick failures and unchanged models.
 24. Explicit six-string tunings through the desktop, fretting, audits and GP5 export.
 25. Tuning-aware simple-detector lower search band, preserving standard behavior.
+26. Fixed eleven-recording baseline control and three-backend paired comparison.
 
-Current local work is on `codex/tuning-aware-baseline`, based on local
-`dd653d1` / remote `ab0eaf4b83490e4607ac2dead19c415de75e2aac` (PR #24,
-`codex/explicit-guitar-tuning`, tree `7c110712e723a5a90a0c5d9707885de62880522e`).
+Current local work is on `codex/electric-baseline-control`, based on local
+`a99150a` / remote `45b9e246b397c59ee1b3402489feaea0bf47c955` (PR #25,
+`codex/tuning-aware-baseline`, tree `e8a0b58e2003432d2fe621b278eadbe0d9f235f7`).
 Keep the guitar model experimental. The immediate user target is electric riffs,
 then full-band recordings. User audio and comparisons remain outside this repo.
 
