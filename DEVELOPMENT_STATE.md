@@ -33,6 +33,7 @@ The review sequence is stacked, with one PR based on its predecessor:
 18. Audited opt-in range filtering, wider-span rebuilding and clearer fingering errors.
 19. Single-global-shift event comparison and sparse full-song note matching.
 20. Local GP3/GP4/GP5 candidate-reference import with tempo maps and source metadata.
+21. Opt-in bounded repeat playback, ending masks and repeat tempo reset checks.
 
 Current local work is on `codex/local-reference-import`, based on local
 `191ed41` / remote `8a36e3c49b60bcb3ce863a75ed33fbf9a8ed0519` (PR #19,

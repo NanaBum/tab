@@ -20,6 +20,12 @@ def main():
     )
     parser.add_argument("--list-tracks", action="store_true")
     parser.add_argument("--allow-approximate-techniques", action="store_true")
+    parser.add_argument(
+        "--unfold-repeats",
+        action="store_true",
+        help="Expand supported repeat blocks into playback order",
+    )
+    parser.add_argument("--max-playback-measures", type=int, default=10000)
     parser.add_argument("--output", type=Path, default=Path("runs/reference-events.json"))
     args = parser.parse_args()
     try:
@@ -35,6 +41,8 @@ def main():
             song,
             track_number=args.track,
             allow_approximate_techniques=args.allow_approximate_techniques,
+            unfold_repeats=args.unfold_repeats,
+            max_playback_measures=args.max_playback_measures,
         )
         with args.tab.open("rb") as stream:
             result.metadata["source_sha256"] = hashlib.file_digest(stream, "sha256").hexdigest()
