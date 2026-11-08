@@ -34,10 +34,11 @@ The review sequence is stacked, with one PR based on its predecessor:
 19. Single-global-shift event comparison and sparse full-song note matching.
 20. Local GP3/GP4/GP5 candidate-reference import with tempo maps and source metadata.
 21. Opt-in bounded repeat playback, ending masks and repeat tempo reset checks.
+22. Pinned local audio/reference/prediction manifests and grouped batch evaluation.
 
-Current local work is on `codex/local-reference-import`, based on local
-`191ed41` / remote `8a36e3c49b60bcb3ce863a75ed33fbf9a8ed0519` (PR #19,
-`codex/global-time-alignment`, tree `aee38dc09f495f69a82d6603bb32789dfe758564`).
+Current local work is on `codex/paired-evaluation-manifest`, based on local
+`b517670` / remote `2ee256ad6704647ea9ad1546b7e15688c1960b9c` (PR #21,
+`codex/reference-repeat-playback`, tree `bf00acf42801152edb8196abe4c08ff7812d8c10`).
 Keep the guitar model experimental. The immediate user target is electric riffs,
 then full-band recordings. User audio and comparisons remain outside this repo.
 
