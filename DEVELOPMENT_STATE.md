@@ -28,10 +28,11 @@ The review sequence is stacked, with one PR based on its predecessor:
 13. Local M4A decoding and input diagnostics.
 14. Fresh installed-wheel and local setup validation.
 15. Optional guitar-specific CPU model, pinned checkpoint and separate environment.
+16. Fixed clean electric-guitar comparison, small-subset download and reference audit.
 
-Current local work is on `codex/guitar-model-comparison`, based on local
-`79dd5c3` / remote `5d36c98ba56667922ae290e1917339d985275aad` (PR #14,
-`codex/install-handoff-check`, tree `d7c32f2353df70987b43852dec9edd799b8387a0`).
+Current local work is on `codex/electric-riff-validation`, based on local
+`2a085be` / remote `18f2bd57ba9ef2161a6a4aeb11358abe8a031972` (PR #15,
+`codex/guitar-model-comparison`, tree `c041dbdb4112a554bac1ee80dd2786792255c7af`).
 Keep the guitar model experimental. The immediate user target is electric riffs,
 then full-band recordings. User audio and comparisons remain outside this repo.
 

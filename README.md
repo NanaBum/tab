@@ -8,6 +8,8 @@ Fingering and transcription remain drafts requiring musical review.
 
 An optional [guitar-specific model](GUITAR_MODEL.md) is also available in its own
 CPU environment. It is experimental and keeps the existing defaults unchanged.
+The [clean electric-guitar comparison](IDMT_VALIDATION.md) tests both models on
+five additional recordings and documents inconsistencies in their reference tabs.
 
 ## Quick start
 

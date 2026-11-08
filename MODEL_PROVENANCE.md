@@ -3,6 +3,9 @@
 The later experimental GAPS guitar checkpoint has separate identity, loading and
 evaluation caveats in [GUITAR_MODEL.md](GUITAR_MODEL.md). Its training-recording
 overlap is unresolved; do not treat GuitarSet scores as independent validation.
+The later [clean electric-guitar comparison](IDMT_VALIDATION.md) records the
+paper's distinction between GAPS-only and GAPS-plus-GuitarSet variants. The pinned
+model card does not identify which training manifest produced this checkpoint.
 
 Audited November 7, 2026. The development runs used Basic Pitch 0.4.0 with
 TensorFlow 2.14.0 and the package's ICASSP-2022 TensorFlow model. This project
