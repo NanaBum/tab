@@ -51,6 +51,23 @@ def test_saved_note_rebuild_only_filters_when_explicitly_requested(tmp_path):
     assert "--min-confidence" not in command
 
 
+def test_app_routes_selected_tuning_through_saved_note_rebuild(tmp_path):
+    source = tmp_path / "notes.json"
+    save_events([Note(0, 1, 38)], source)
+    command = conversion_command(
+        sys.executable,
+        source,
+        tmp_path / "out",
+        method=SAVED_NOTES,
+        tempo=120,
+        grid=16,
+        confidence=0.5,
+        separate=False,
+        tuning="drop-d",
+    )
+    assert command[command.index("--tuning") + 1] == "drop-d"
+
+
 def test_worker_shows_filter_notice_even_when_export_fails(tmp_path, monkeypatch):
     result = SimpleNamespace(
         returncode=1,

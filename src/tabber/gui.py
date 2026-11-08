@@ -30,12 +30,17 @@ def conversion_command(
     separate,
     guitar_range=False,
     max_span=5,
+    tuning="standard",
 ):
     """Route saved events directly to export; filtering requires explicit opt-in."""
     interpreter = Path(interpreter)
     if interpreter.name.lower() == "pythonw.exe":
         interpreter = interpreter.with_name("python.exe")
     command = [str(interpreter), "-m", "tabber"]
+    from .tuning import parse_tuning
+
+    parse_tuning(tuning)
+    command.extend(("--tuning", tuning))
     if method == SAVED_NOTES:
         if tempo == "auto":
             raise ValueError("Saved notes need a supplied BPM; enter a number or tap the tempo.")
@@ -96,7 +101,7 @@ class TabberApp:
             guitar_python if guitar_python.is_file() and default_checkpoint().is_file() else None
         )
         window.title("Tabber — guitar audio to editable tabs")
-        window.minsize(700, 650)
+        window.minsize(700, 690)
         window.protocol("WM_DELETE_WINDOW", self.close)
         frame = ttk.Frame(window, padding=24)
         frame.pack(fill="both", expand=True)
@@ -135,38 +140,46 @@ class TabberApp:
         )
         ttk.Label(
             frame,
-            text="Use known BPM, tap the beat, or type auto for a rough estimate. 4/4, standard tuning.",
+            text="Use known BPM, tap the beat, or type auto for a rough estimate. Score meter: 4/4.",
             wraplength=460,
         ).grid(row=5, column=1, columnspan=2, sticky="w", pady=(5, 12))
+        self.tuning = tk.StringVar(value="standard")
+        ttk.Label(frame, text="Guitar tuning").grid(row=6, column=0, sticky="w", pady=(0, 12))
+        ttk.Combobox(
+            frame,
+            textvariable=self.tuning,
+            values=("standard", "drop-d", "eb-standard", "d-standard"),
+            state="readonly",
+        ).grid(row=6, column=1, sticky="ew", pady=(0, 12))
         self.grid = tk.StringVar(value="16")
-        ttk.Label(frame, text="Rhythm detail").grid(row=6, column=0, sticky="w")
+        ttk.Label(frame, text="Rhythm detail").grid(row=7, column=0, sticky="w")
         ttk.Combobox(
             frame, textvariable=self.grid, values=("16", "32", "64"), width=8, state="readonly"
-        ).grid(row=6, column=1, sticky="w")
+        ).grid(row=7, column=1, sticky="w")
         ttk.Label(frame, text="16 is easier to read; 32 or 64 keeps faster notes.").grid(
-            row=7, column=1, columnspan=2, sticky="w", pady=(5, 16)
+            row=8, column=1, columnspan=2, sticky="w", pady=(5, 16)
         )
         self.confidence = tk.StringVar(value="Balanced")
-        ttk.Label(frame, text="Note sensitivity").grid(row=8, column=0, sticky="w")
+        ttk.Label(frame, text="Note sensitivity").grid(row=9, column=0, sticky="w")
         ttk.Combobox(
             frame,
             textvariable=self.confidence,
             values=("More notes", "Balanced", "Fewer notes"),
             state="readonly",
-        ).grid(row=8, column=1, sticky="ew")
+        ).grid(row=9, column=1, sticky="ew")
         ttk.Label(
             frame,
             text="Sensitivity applies when listening. Saved notes keep every event unless you select the range filter below.",
             wraplength=460,
-        ).grid(row=9, column=1, columnspan=2, sticky="w", pady=(5, 16))
+        ).grid(row=10, column=1, columnspan=2, sticky="w", pady=(5, 16))
         self.separate = tk.BooleanVar(value=False)
         self.guitar_range = tk.BooleanVar(value=False)
         self.wider_span = tk.BooleanVar(value=False)
         options = ttk.Frame(frame)
-        options.grid(row=10, column=0, columnspan=3, sticky="w", pady=(0, 12))
+        options.grid(row=11, column=0, columnspan=3, sticky="w", pady=(0, 12))
         ttk.Checkbutton(
             options,
-            text="Exclude notes outside standard tuning / 24 frets (save originals)",
+            text="Exclude notes outside selected tuning / 24 frets (save originals)",
             variable=self.guitar_range,
         ).grid(row=0, column=0, sticky="w")
         ttk.Checkbutton(
@@ -184,17 +197,17 @@ class TabberApp:
                 variable=self.separate,
             ).grid(row=2, column=0, sticky="w")
         self.convert = ttk.Button(frame, text="Create guitar tab", command=self.start)
-        self.convert.grid(row=11, column=0, columnspan=3, sticky="ew", pady=(0, 12))
+        self.convert.grid(row=12, column=0, columnspan=3, sticky="ew", pady=(0, 12))
         self.progress = ttk.Progressbar(frame, mode="indeterminate")
-        self.progress.grid(row=12, column=0, columnspan=3, sticky="ew")
+        self.progress.grid(row=13, column=0, columnspan=3, sticky="ew")
         self.status = tk.StringVar(
             value="Choose a clean guitar recording. Results are drafts to review."
         )
         ttk.Label(frame, textvariable=self.status, wraplength=600).grid(
-            row=13, column=0, columnspan=3, sticky="w", pady=12
+            row=14, column=0, columnspan=3, sticky="w", pady=12
         )
         buttons = ttk.Frame(frame)
-        buttons.grid(row=14, column=0, columnspan=3, sticky="w")
+        buttons.grid(row=15, column=0, columnspan=3, sticky="w")
         self.open_tab = ttk.Button(
             buttons,
             text="Open editable tab",
@@ -274,6 +287,7 @@ class TabberApp:
                 separate=self.separate.get(),
                 guitar_range=self.guitar_range.get(),
                 max_span=7 if self.wider_span.get() else 5,
+                tuning=self.tuning.get(),
             )
         except (ValueError, OSError) as error:
             messagebox.showerror("Check saved notes", str(error))

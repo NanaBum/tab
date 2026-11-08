@@ -8,15 +8,23 @@ from pathlib import Path
 import mido
 
 from .gp5 import build_song, read_gp5, timing_summary, verify_export, write_gp5
-from .models import FrettedNote
+from .models import STANDARD_TUNING, FrettedNote
 from .rhythm import quantize
+from .tuning import pitch_name, validate_tuning
 
 
-def write_outputs(notes: list[FrettedNote], output: Path, bpm: float, grid: int = 16) -> dict:
+def write_outputs(
+    notes: list[FrettedNote], output: Path, bpm: float, grid: int = 16, *, tuning=STANDARD_TUNING
+) -> dict:
+    tuning = validate_tuning(tuning)
     quantize(0, bpm)
-    song = build_song(notes, bpm, grid)
+    song = build_song(notes, bpm, grid, tuning=tuning)
     payload = {"bpm": bpm, "string_order": "high E to low E", "notes": [asdict(n) for n in notes]}
+    if tuning != STANDARD_TUNING:
+        payload["string_order"] = "string 1 to string 6"
     payload["score_grid"] = grid
+    payload["tuning_midi"] = list(tuning)
+    payload["tuning_string_order"] = "string 1 (thin) to string 6 (thick)"
     cells = max((quantize(n.note.end, bpm, grid // 4) for n in notes), default=1) + 1
     rows = [["----"] * cells for _ in range(6)]
     occupied = set()
@@ -31,10 +39,16 @@ def write_outputs(notes: list[FrettedNote], output: Path, bpm: float, grid: int 
         "Original timing is in notes.json; MIDI rounds it to 480 ticks per quarter note.",
         "",
     ]
+    labels = (
+        ("e", "B", "G", "D", "A", "E")
+        if tuning == STANDARD_TUNING
+        else tuple(pitch_name(p) for p in tuning)
+    )
+    if tuning != STANDARD_TUNING:
+        text.insert(1, "Open strings (1 to 6): " + " ".join(labels))
     for first in range(0, cells, 32):
         text.extend(
-            f"{label}|{''.join(row[first : first + 32])}|"
-            for label, row in zip(("e", "B", "G", "D", "A", "E"), rows)
+            f"{label}|{''.join(row[first : first + 32])}|" for label, row in zip(labels, rows)
         )
         text.append("")
     midi = mido.MidiFile(ticks_per_beat=480)
@@ -76,7 +90,7 @@ def write_outputs(notes: list[FrettedNote], output: Path, bpm: float, grid: int 
     write_gp5(song, gp5_bytes)
     gp5_bytes.seek(0)
     saved_song = read_gp5(gp5_bytes)
-    verify_export(saved_song, notes, bpm, grid)
+    verify_export(saved_song, notes, bpm, grid, tuning=tuning)
     timing = timing_summary(saved_song, notes)
     payload["score_timing"] = timing
     rendered = {

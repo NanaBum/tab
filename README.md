@@ -15,6 +15,8 @@ For timed references, the [global-offset comparison](GLOBAL_ALIGNMENT.md) report
 both original scores and a bounded, reference-assisted start-shift diagnostic.
 The [local Guitar Pro reference importer](REFERENCE_IMPORT.md) can prepare
 candidate timed references with explicit track selection and score-feature checks.
+Explicit [alternate tuning](TUNING.md) is available in the app and command line;
+standard tuning remains the default. This changes fret mapping, not detected pitches.
 
 ## Quick start
 
@@ -99,9 +101,10 @@ Exports record score-timing movement in `notes.json` and show a notice if any
 note starts moved by over 50 ms. A finer grid can preserve timing better but
 make notation busier. See [SCORE_TIMING.md](SCORE_TIMING.md) for the measured
 tradeoff; saved detections can be rebuilt without another ML pass.
-Triplets, swing, other meters, and expressive techniques are not yet
-represented. Standard tuning only in
-the command line; the fretting function accepts other tunings.
+Triplets, swing, other meters, and expressive techniques are not yet represented.
+Choose standard, Drop D, E-flat standard or D standard in the app; the command
+line also accepts six explicit MIDI open-string pitches. Tuning is supplied by
+the user and is not recognized automatically. See [TUNING.md](TUNING.md).
 
 ## What works and what remains
 
