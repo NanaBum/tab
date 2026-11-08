@@ -192,6 +192,10 @@ modules for separation, transcription, fingering, timing, and export. Use a bran
 for each change and review before merging. Keep audio, data, weights, and secrets
 outside Git. No project license has been selected yet.
 
+[VALIDATION_STATUS.md](VALIDATION_STATUS.md) maps the working features to their
+evidence and remaining acceptance checks. [INSTALL_VALIDATION.md](INSTALL_VALIDATION.md)
+records a clean core installation outside the development checkout.
+
 Each GP5 export is reopened and compared with its intended quantized note events
 before output files are replaced. See [EXPORT_VALIDATION.md](EXPORT_VALIDATION.md)
 for the corpus check and the tied-note reader workaround. This does not replace
