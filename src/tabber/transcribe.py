@@ -11,6 +11,17 @@ from scipy.signal import correlate, find_peaks
 from .models import Note
 
 
+def baseline_frequency_floor(min_pitch=40):
+    """Preserve the original 75 Hz band unless explicit tuning requires lower.
+
+    Half a semitone below the lowest open string leaves room for pitch estimation
+    error. This is a search-band choice, not a filter that removes detected notes.
+    """
+    if type(min_pitch) is not int or not 0 <= min_pitch <= 127:
+        raise ValueError("Baseline minimum pitch must be an integer MIDI pitch from 0 to 127")
+    return min(75.0, 440 * 2 ** ((min_pitch - 0.5 - 69) / 12))
+
+
 @lru_cache(maxsize=1)
 def _basic_pitch_model():
     from basic_pitch import ICASSP_2022_MODEL_PATH
@@ -26,9 +37,13 @@ def transcribe(
     *,
     guitar_onset: float = 0.3,
     guitar_checkpoint: Path | None = None,
+    baseline_min_pitch: int = 40,
 ) -> list[Note]:
     if not math.isfinite(min_confidence) or not 0 <= min_confidence <= 1:
         raise ValueError("Minimum confidence must be between 0 and 1")
+    low_frequency = baseline_frequency_floor(baseline_min_pitch)
+    if backend != "baseline" and baseline_min_pitch != 40:
+        raise ValueError("Baseline search-band options apply only to the simple melody detector")
     if backend == "guitar-gaps":
         if min_confidence != 0.5:
             raise ValueError("Guitar model uses --onset-threshold instead of --min-confidence")
@@ -60,7 +75,9 @@ def transcribe(
         raise ValueError("Audio contains non-finite samples")
     if len(audio) == 0 or np.max(np.abs(audio)) < 1e-7:
         return []
-    frame = max(256, int(rate * 0.08))
+    # Low custom tunings need enough cycles for autocorrelation. Standard, Eb,
+    # Drop D and D standard all retain the original 80 ms analysis window.
+    frame = max(256, int(rate * 0.08), math.ceil(rate * 4 / low_frequency))
     hop = max(1, int(rate * 0.01))
     threshold = max(1e-5, float(np.max(np.abs(audio))) * 0.025)
     labels = []
@@ -70,7 +87,7 @@ def transcribe(
         if len(chunk) >= frame // 2 and np.sqrt(np.mean(chunk**2)) > threshold:
             chunk = (chunk - chunk.mean()) * np.hanning(len(chunk))
             ac = correlate(chunk, chunk, mode="full", method="fft")[len(chunk) - 1 :]
-            lo, hi = max(1, int(rate / 1400)), min(len(ac) - 1, int(rate / 75))
+            lo, hi = max(1, int(rate / 1400)), min(len(ac) - 1, int(rate / low_frequency))
             peaks, _ = find_peaks(ac[lo : hi + 1])
             if len(peaks) and ac[0] > 0:
                 candidates = peaks + lo

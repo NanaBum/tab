@@ -49,11 +49,27 @@ visually checked with standard tuning selected and all four choices present.
 These are routing and file checks, not proof of real alternate-tuned guitar
 accuracy. A seven-tone synthetic audio trial exposed a detection limitation:
 the simple baseline and Basic Pitch both missed low D and exported the remaining
-six notes at unchanged defaults. The baseline's existing 75 Hz lower search
-bound excludes low D at approximately 73.42 Hz; Basic Pitch's cause is not
-established. A CLI notice makes the baseline limit visible when a low tuning
-is selected. Detectors were not changed to make this trial pass. Real alternate-
-tuned recordings and broader model evaluation remain further work.
+six notes at their original settings. The baseline's fixed 75 Hz lower search
+bound excluded low D at approximately 73.42 Hz; Basic Pitch's cause is not
+established. This initial result is retained in the earlier routing report.
+
+The simple detector now uses an explicit tuning's lowest open pitch to extend
+its search band when necessary, with half a semitone of margin. Standard and
+E-flat standard retain exactly the original 75 Hz floor; Drop D and D standard
+use approximately 71.3 Hz. Low custom tunings also get an analysis window long
+enough for four cycles (at least the original 80 ms). It remains a monophonic
+autocorrelation baseline, with unchanged confidence and note-duration thresholds.
+This is not pitch transposition, tuning inference or an extra range filter.
+The CLI prints the extended band and records it in detection metadata.
+
+On the same unmodified synthetic audio, explicit Drop D now detects/exports all
+seven events, including string 6 fret 0. Default baseline events on all 11 saved
+real electric recordings were identical to the prior implementation, including
+timings and confidence. Both ML models remain unchanged; the Basic Pitch miss
+is not repaired by selecting a tuning. Real alternate-tuned recordings and broader
+model evaluation remain further work.
 
 [drop-d-routing-check.json](reports/drop-d-routing-check.json) keeps the audio
 detection result separate from the successful known-event rebuild.
+[baseline-tuning-check.json](reports/baseline-tuning-check.json) records the later
+tuning-aware baseline check and the default-output regression comparison.

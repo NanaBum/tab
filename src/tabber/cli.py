@@ -12,7 +12,7 @@ from .models import STANDARD_TUNING
 from .rhythm import quantize
 from .separate import separate_guitar
 from .tempo import estimate_tempo, parse_bpm
-from .transcribe import transcribe
+from .transcribe import baseline_frequency_floor, transcribe
 from .tuning import parse_tuning
 
 
@@ -121,10 +121,10 @@ def main():
         if (
             args.audio
             and args.backend == "baseline"
-            and 440 * 2 ** ((min(args.tuning) - 69) / 12) < 75
+            and baseline_frequency_floor(min(args.tuning)) < 75
         ):
             print(
-                "Detector note: The simple melody detector searches above 75 Hz; low open strings in this tuning may be missed.",
+                f"Detector note: Using the selected tuning's lower search limit ({baseline_frequency_floor(min(args.tuning)):.1f} Hz) for the simple melody detector.",
                 flush=True,
             )
         if tempo:
@@ -143,6 +143,10 @@ def main():
                 args.min_confidence,
                 guitar_onset=args.onset_threshold if args.onset_threshold is not None else 0.3,
                 guitar_checkpoint=args.guitar_checkpoint,
+            )
+        elif args.backend == "baseline" and baseline_frequency_floor(min(args.tuning)) < 75:
+            detected = transcribe(
+                path, args.backend, args.min_confidence, baseline_min_pitch=min(args.tuning)
             )
         else:
             detected = transcribe(path, args.backend, args.min_confidence)
@@ -169,6 +173,9 @@ def main():
             "experimental_string_model": str(args.string_model) if args.string_model else None,
             "max_span": args.max_span if args.fretting == "polyphonic" else None,
             "guitar_range_filter_requested": args.guitar_range,
+            "baseline_minimum_search_hz": baseline_frequency_floor(min(args.tuning))
+            if args.audio and args.backend == "baseline"
+            else None,
             "tuning_midi": list(args.tuning),
             "tuning_string_order": "string 1 (thin) to string 6 (thick)",
         }
