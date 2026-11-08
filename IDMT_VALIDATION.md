@@ -35,6 +35,40 @@ The evaluator saves unmatched event details locally for inspection; the checked-
 summary contains aggregate scores, per-track counts, integrity hashes and audit
 indices, without audio, source XML or complete note sequences.
 
+## Additional picked electric licks
+
+The next fixed selection uses `AR_Lick1_KN`, `AR_Lick6_KN` and `AR_Lick12_KN`
+from the archive's dataset2 folder. Their XML identifies an Aristides 010,
+Christian Kehling as performer/composer, picked excitation (`PK`), and normal
+expression (`NO`). These are natural picked licks, not isolated test tones or
+distorted/full-band audio. The selection was fixed before running either model.
+All 67 source pitch/string/fret entries agree under the declared standard tuning.
+The reader accepts the space-separated tuning declaration used by these files
+as well as the comma-separated declaration in the earlier pieces.
+
+| Model | Reference notes | Detections | Pitch/attack matches | Pitch/attack F1 | With release timing |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Basic Pitch | 67 | 90 | 61 | 77.7% | 47.1% |
+| Experimental guitar-GAPS | 67 | 68 | 60 | 88.9% | 66.7% |
+
+Both methods exported every detection on all three licks, without reference-based
+note corrections. Guitar-GAPS made fewer extra detections overall, while Basic
+Pitch matched one more reference attack. Guitar-GAPS matched the listed string
+and fret on 44 of its 60 pitch/attack matches; this conditional measure is not
+whole-tab accuracy. The summary is [reports/idmt-lick-comparison.json](reports/idmt-lick-comparison.json).
+Default thresholds and model choices remain unchanged. These development results
+do not establish general performance on other guitars, distortion or bands.
+
+```powershell
+.venv/Scripts/python.exe scripts/download_idmt_subset.py --selection licks
+.venv-guitar/Scripts/python.exe scripts/evaluate_idmt_subset.py --selection licks
+.venv-ml/Scripts/python.exe scripts/evaluate_idmt_subset.py --selection licks --backend basic-pitch
+```
+
+The six fixed lick files require about 4.74 MB including the archive directory.
+Fresh and cached retrievals passed. Each selection has a separate default data
+folder and each backend/selection has a separate default result folder.
+
 ## Reproduce
 
 ```powershell

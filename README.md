@@ -10,6 +10,7 @@ An optional [guitar-specific model](GUITAR_MODEL.md) is also available in its ow
 CPU environment. It is experimental and keeps the existing defaults unchanged.
 The [clean electric-guitar comparison](IDMT_VALIDATION.md) tests both models on
 five additional recordings and documents inconsistencies in their reference tabs.
+It also includes a separate three-lick comparison on another electric guitar.
 
 ## Quick start
 
