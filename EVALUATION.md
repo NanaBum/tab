@@ -1,9 +1,10 @@
 # Local development evaluation
 
-These are engineering checks, not held-out accuracy claims. The pretrained Basic
-Pitch package includes GuitarSet training-data tooling; these excerpts have not
-been audited against its original train/test split. Do not advertise these scores
-as performance on unseen musicians or recordings.
+These are engineering checks, not held-out accuracy claims. A primary-source
+audit confirms that Basic Pitch used GuitarSet for training, but could not tie
+recording IDs to the installed weights. See [MODEL_PROVENANCE.md](MODEL_PROVENANCE.md)
+for the evidence and model hashes. Do not advertise these scores as performance
+on unseen musicians or recordings.
 
 ## Initial smoke checks — November 7, 2026
 

@@ -16,6 +16,13 @@ own results folder. Open the editable GP5 in TuxGuitar to play and correct it.
 The app runs locally, offers note sensitivity and rhythm detail, and saves a log
 when a conversion fails. It does not download dependencies or upload audio.
 
+To change tempo or rhythm detail after listening once, choose **Rebuild saved
+notes** under Method, then choose `detected-notes.json` from the earlier results
+folder (or a timestamped detected file under `diagnostics/` after a fingering
+failure). Enter a numeric BPM or tap it, leave separation off, and create a new
+tab. Rebuilding keeps every saved note; sensitivity does not filter this input.
+It assigns fingerings again and does not carry over edits made in TuxGuitar.
+
 The core and ML environments are already set up on the development computer.
 For a fresh clone, follow the commands below; `uv sync` sets up the core app and
 the separate ML recipe below enables Machine learning. Tkinter must be available
@@ -177,6 +184,10 @@ Each GP5 export is reopened and compared with its intended quantized note events
 before output files are replaced. See [EXPORT_VALIDATION.md](EXPORT_VALIDATION.md)
 for the corpus check and the tied-note reader workaround. This does not replace
 checking the transcription musically in TuxGuitar.
+
+The pretrained model's GuitarSet use and unresolved recording-level overlap are
+documented in [MODEL_PROVENANCE.md](MODEL_PROVENANCE.md). Dataset results are
+development checks, not proof of accuracy on a new guitar.
 
 Hosted CI is manual-only for now because GitHub reported an account billing block.
 Run the checks above locally; pushes and pull requests do not start hosted jobs.
