@@ -7,12 +7,12 @@ from pathlib import Path
 
 import mido
 
-from .gp5 import build_song, read_gp5, verify_export, write_gp5
+from .gp5 import build_song, read_gp5, timing_summary, verify_export, write_gp5
 from .models import FrettedNote
 from .rhythm import quantize
 
 
-def write_outputs(notes: list[FrettedNote], output: Path, bpm: float, grid: int = 16) -> None:
+def write_outputs(notes: list[FrettedNote], output: Path, bpm: float, grid: int = 16) -> dict:
     quantize(0, bpm)
     song = build_song(notes, bpm, grid)
     payload = {"bpm": bpm, "string_order": "high E to low E", "notes": [asdict(n) for n in notes]}
@@ -63,7 +63,10 @@ def write_outputs(notes: list[FrettedNote], output: Path, bpm: float, grid: int 
     gp5_bytes = io.BytesIO()
     write_gp5(song, gp5_bytes)
     gp5_bytes.seek(0)
-    verify_export(read_gp5(gp5_bytes), notes, bpm, grid)
+    saved_song = read_gp5(gp5_bytes)
+    verify_export(saved_song, notes, bpm, grid)
+    timing = timing_summary(saved_song, notes)
+    payload["score_timing"] = timing
     rendered = {
         "notes.json": (json.dumps(payload, indent=2) + "\n").encode("utf-8"),
         "tab.txt": "\n".join(text).encode("utf-8"),
@@ -79,3 +82,4 @@ def write_outputs(notes: list[FrettedNote], output: Path, bpm: float, grid: int 
             os.replace(temporary, output / filename)
         finally:
             temporary.unlink(missing_ok=True)
+    return timing

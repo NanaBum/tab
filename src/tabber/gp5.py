@@ -187,3 +187,28 @@ def verify_export(song: gp.Song, notes: list[FrettedNote], bpm: float, grid: int
         )
     if song.tempo != tempo or Counter(score_events(song)) != Counter(expected):
         raise ValueError("GP5 verification could not preserve the intended note events")
+
+
+def timing_summary(song: gp.Song, notes: list[FrettedNote]) -> dict:
+    """Measure saved-score movement from detections, not from reference music."""
+    starts, ends = [], []
+    tick_seconds = 60 / (song.tempo * 960)
+    events = score_events(song)
+    for string in range(6):
+        original = sorted((n.note for n in notes if n.string == string), key=lambda n: n.start)
+        saved = sorted((e for e in events if e[2] == string + 1), key=lambda e: e[0])
+        if len(original) != len(saved):
+            raise ValueError("Cannot compare timing when score note counts differ")
+        for note, (first, last, _, fret) in zip(original, saved):
+            if note.pitch != STANDARD_TUNING[string] + fret:
+                raise ValueError("Cannot compare timing when score pitches differ")
+            starts.append(abs((first - 960) * tick_seconds - note.start) * 1000)
+            ends.append(abs((last - 960) * tick_seconds - note.end) * 1000)
+    return {
+        "note_count": len(starts),
+        "score_bpm": song.tempo,
+        "maximum_start_shift_ms": max(starts, default=0),
+        "maximum_end_shift_ms": max(ends, default=0),
+        "starts_moved_over_50ms": sum(value > 50 + 1e-6 for value in starts),
+        "meaning": "Absolute movement from detected timing; not error against the original performance",
+    }

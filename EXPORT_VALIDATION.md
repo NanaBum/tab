@@ -49,3 +49,8 @@ weights, network, or paid computing. Summary results are in
 
 TuxGuitar 2.1 visual/audio acceptance still requires the user because application
 control was denied. File checks do not replace that musical review.
+
+The separate [score-timing audit](SCORE_TIMING.md) measures what grid rounding
+does to reference-note agreement after a successful round trip. Correct saving
+does not imply unchanged performance timing. Normal exports also record and
+surface significant movement from their original detected starts.

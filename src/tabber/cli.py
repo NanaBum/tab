@@ -104,11 +104,18 @@ def main():
             notes = assign(detected)
         if not notes:
             raise ValueError("No notes detected. Try a louder, clean single-note recording.")
-        write_outputs(notes, args.output, bpm, args.grid)
+        timing = write_outputs(notes, args.output, bpm, args.grid)
         save_events(detected, args.output / "detected-notes.json", metadata)
     except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f"Could not transcribe: {exc}\n")
     print(f"Wrote {len(notes)} notes to {args.output.resolve()}")
+    if timing["starts_moved_over_50ms"]:
+        suggestion = "Try a finer rhythm grid" if args.grid < 64 else "Review the tempo and rhythm"
+        print(
+            f"Timing note: {timing['starts_moved_over_50ms']} note "
+            f"{'start' if timing['starts_moved_over_50ms'] == 1 else 'starts'} moved by over 50 ms "
+            f"when fitted to the score. {suggestion}; saved notes can be rebuilt without listening again."
+        )
 
 
 from .events import load_events, save_events
