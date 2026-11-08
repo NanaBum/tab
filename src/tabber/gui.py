@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
+from .jobs import run_conversion
 from .tempo import TapTempo
 
 SAVED_NOTES = "Rebuild saved notes"
@@ -90,6 +91,7 @@ class TabberApp:
         self.root = project_root()
         self.messages = queue.Queue()
         self.running = False
+        self.cancel_event = threading.Event()
         self.result = None
         self.ml = ml_python(self.root)
         from .guitar_gaps import default_checkpoint
@@ -196,8 +198,14 @@ class TabberApp:
                 text="Separate guitar from a full mix (experimental; slower)",
                 variable=self.separate,
             ).grid(row=2, column=0, sticky="w")
-        self.convert = ttk.Button(frame, text="Create guitar tab", command=self.start)
-        self.convert.grid(row=12, column=0, columnspan=3, sticky="ew", pady=(0, 12))
+        actions = ttk.Frame(frame)
+        actions.grid(row=12, column=0, columnspan=3, sticky="ew", pady=(0, 12))
+        self.convert = ttk.Button(actions, text="Create guitar tab", command=self.start)
+        self.convert.pack(side="left", fill="x", expand=True)
+        self.stop_conversion = ttk.Button(
+            actions, text="Stop conversion", state="disabled", command=self.cancel
+        )
+        self.stop_conversion.pack(side="left", padx=(8, 0))
         self.progress = ttk.Progressbar(frame, mode="indeterminate")
         self.progress.grid(row=13, column=0, columnspan=3, sticky="ew")
         self.status = tk.StringVar(
@@ -293,8 +301,10 @@ class TabberApp:
             messagebox.showerror("Check saved notes", str(error))
             return
         self.running = True
+        self.cancel_event.clear()
         self.result = None
         self.convert.configure(state="disabled")
+        self.stop_conversion.configure(state="normal")
         self.browse.configure(state="disabled")
         self.open_tab.configure(state="disabled")
         self.open_folder.configure(state="disabled")
@@ -308,23 +318,22 @@ class TabberApp:
 
     def worker(self, command, output):
         try:
-            process = subprocess.run(
-                command,
-                check=False,
-                cwd=self.root,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            process = run_conversion(
+                command, cwd=self.root, log_path=output / "run.log", cancel_event=self.cancel_event
             )
-            output.mkdir(parents=True, exist_ok=True)
-            (output / "run.log").write_text(process.stdout + process.stderr, encoding="utf-8")
+            log = (output / "run.log").read_text(encoding="utf-8", errors="replace")
+            if process.cancelled:
+                self.messages.put(
+                    (
+                        False,
+                        output,
+                        "Conversion stopped. Saved diagnostics and any partial outputs remain in the results folder; they are not a completed tab.",
+                    )
+                )
+                return
             if process.returncode:
                 messages = [
-                    line
-                    for line in process.stderr.splitlines()
-                    if line.startswith("Could not transcribe:")
+                    line for line in log.splitlines() if line.startswith("Could not transcribe:")
                 ]
                 error = (
                     messages[-1]
@@ -333,8 +342,10 @@ class TabberApp:
                 )
                 notices = [
                     line
-                    for line in process.stdout.splitlines()
-                    if line.startswith(("Audio note:", "Range note:", "Fingering note:"))
+                    for line in log.splitlines()
+                    if line.startswith(
+                        ("Audio note:", "Range note:", "Fingering note:", "Detector note:")
+                    )
                 ]
                 if notices:
                     error += " " + " ".join(notices)
@@ -342,7 +353,7 @@ class TabberApp:
             else:
                 estimates = [
                     line
-                    for line in process.stdout.splitlines()
+                    for line in log.splitlines()
                     if line.startswith(
                         (
                             "Estimated tempo:",
@@ -350,6 +361,7 @@ class TabberApp:
                             "Audio note:",
                             "Range note:",
                             "Fingering note:",
+                            "Detector note:",
                         )
                     )
                 ]
@@ -376,6 +388,7 @@ class TabberApp:
             self.result = output
             self.progress.stop()
             self.convert.configure(state="normal")
+            self.stop_conversion.configure(state="disabled")
             self.browse.configure(state="normal")
             self.open_folder.configure(state="normal" if output.exists() else "disabled")
             self.open_tab.configure(state="normal" if success else "disabled")
@@ -396,10 +409,17 @@ class TabberApp:
                 "Could not open result", f"Open this file manually:\n{path}\n\n{error}"
             )
 
+    def cancel(self):
+        if self.running:
+            self.cancel_event.set()
+            self.stop_conversion.configure(state="disabled")
+            self.status.set("Stopping this conversion… Saved diagnostics will be kept.")
+
     def close(self):
         if self.running:
             messagebox.showinfo(
-                "Conversion in progress", "Wait for the current conversion to finish, then close."
+                "Conversion in progress",
+                "Click Stop conversion and wait for it to stop, or let it finish, then close.",
             )
             return
         self.window.destroy()

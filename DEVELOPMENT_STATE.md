@@ -39,10 +39,11 @@ The review sequence is stacked, with one PR based on its predecessor:
 24. Explicit six-string tunings through the desktop, fretting, audits and GP5 export.
 25. Tuning-aware simple-detector lower search band, preserving standard behavior.
 26. Fixed eleven-recording baseline control and three-backend paired comparison.
+27. Cancellable owned conversion processes, retained live logs and partial-output status.
 
-Current local work is on `codex/electric-baseline-control`, based on local
-`a99150a` / remote `45b9e246b397c59ee1b3402489feaea0bf47c955` (PR #25,
-`codex/tuning-aware-baseline`, tree `e8a0b58e2003432d2fe621b278eadbe0d9f235f7`).
+Current local work is on `codex/cancel-local-conversion`, based on local
+`f8e5117` / remote `2d2ade58cdfc14317c85691fa4a60f0a89619697` (PR #26,
+`codex/electric-baseline-control`, tree `091b371758ba2a14f3ac1289040420c9b736e674`).
 Keep the guitar model experimental. The immediate user target is electric riffs,
 then full-band recordings. User audio and comparisons remain outside this repo.
 
