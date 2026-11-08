@@ -196,5 +196,10 @@ The pretrained model's GuitarSet use and unresolved recording-level overlap are
 documented in [MODEL_PROVENANCE.md](MODEL_PROVENANCE.md). Dataset results are
 development checks, not proof of accuracy on a new guitar.
 
+For a short single-note recording with a supplied string/fret sequence but no
+reference timestamps, [SEQUENCE_EVALUATION.md](SEQUENCE_EVALUATION.md) describes
+an offline sequence comparison. It reports wrong, missing and extra pitches,
+plus conditional fingering agreement; it does not score rhythm.
+
 Hosted CI is manual-only for now because GitHub reported an account billing block.
 Run the checks above locally; pushes and pull requests do not start hosted jobs.
