@@ -1,6 +1,6 @@
 import queue
 import sys
-from types import SimpleNamespace
+import threading
 
 import pytest
 
@@ -10,6 +10,7 @@ from tabber.cli import main
 from tabber.events import load_events, save_events
 from tabber.gp5 import read_gp5, score_events
 from tabber.gui import GUITAR_MODEL, SAVED_NOTES, TabberApp, conversion_command
+from tabber.jobs import RunResult
 from tabber.models import Note
 
 
@@ -69,20 +70,44 @@ def test_app_routes_selected_tuning_through_saved_note_rebuild(tmp_path):
 
 
 def test_worker_shows_filter_notice_even_when_export_fails(tmp_path, monkeypatch):
-    result = SimpleNamespace(
-        returncode=1,
-        stdout="Range note: Excluded 2 of 4 detections.\n",
-        stderr="Could not transcribe: sustained strings conflict\n",
-    )
-    monkeypatch.setattr("tabber.gui.subprocess.run", lambda *args, **kwargs: result)
+    def failed_run(*args, log_path, **kwargs):
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        log_path.write_text(
+            "Range note: Excluded 2 of 4 detections.\nCould not transcribe: sustained strings conflict\n",
+            encoding="utf-8",
+        )
+        return RunResult(1)
+
+    monkeypatch.setattr("tabber.gui.run_conversion", failed_run)
     app = object.__new__(TabberApp)
     app.root = tmp_path
     app.messages = queue.Queue()
+    app.cancel_event = threading.Event()
     app.worker(["python", "-m", "tabber"], tmp_path / "out")
     success, _, message = app.messages.get_nowait()
     assert success is False
     assert "Range note: Excluded 2 of 4" in message
     assert "sustained strings conflict" in message
+
+
+def test_cancelled_worker_keeps_partial_tab_but_never_reports_success(tmp_path, monkeypatch):
+    output = tmp_path / "out"
+    output.mkdir()
+    partial = output / "tab.gp5"
+    partial.write_bytes(b"partial result")
+
+    def cancelled_run(*args, log_path, **kwargs):
+        log_path.write_text("Cancelled by user\n", encoding="utf-8")
+        return RunResult(1, True)
+
+    monkeypatch.setattr("tabber.gui.run_conversion", cancelled_run)
+    app = object.__new__(TabberApp)
+    app.root, app.messages, app.cancel_event = tmp_path, queue.Queue(), threading.Event()
+    app.worker(["unused"], output)
+    success, path, message = app.messages.get_nowait()
+    assert not success and path == output
+    assert "not a completed tab" in message
+    assert partial.read_bytes() == b"partial result"
 
 
 def test_app_rebuild_preserves_weak_notes_without_listening_again(tmp_path, monkeypatch):

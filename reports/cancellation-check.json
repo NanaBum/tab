@@ -1,0 +1,16 @@
+{
+  "purpose": "Actual local guitar-GAPS cancellation through the app process helper, followed by a successful saved-note conversion",
+  "synthetic_audio_sha256": "c1631a282400813d93203a83a85cde98767ae5c4b47abf1eaf625724f230c0e2",
+  "model_segment_entry_observed_before_cancel": true,
+  "cancelled": true,
+  "stop_latency_seconds": 0.068,
+  "original_audio_unchanged": true,
+  "input_diagnostic_retained": true,
+  "cancel_marker_in_retained_log": true,
+  "completed_gp5_present_in_cancelled_run": false,
+  "subsequent_conversion_exit_code": 0,
+  "subsequent_saved_attacks": 2,
+  "native_ownership_check": "Automated Windows job-object test stops an owned child, preserves an unrelated process and original/diagnostic files",
+  "gui_scope": "Stop button layout visually checked; button-click cancellation not exercised because user input interrupted UI testing",
+  "limits": "Synthetic workload for process behavior, not transcription accuracy. No user recording or model settings changed."
+}

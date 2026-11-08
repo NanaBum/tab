@@ -30,6 +30,11 @@ own results folder. Open the editable GP5 in TuxGuitar to play and correct it.
 The app runs locally, offers note sensitivity and rhythm detail, and saves a log
 when a conversion fails. It does not download dependencies or upload audio.
 
+Use **Stop conversion** to stop a long run. Its log and any saved diagnostics
+remain in that run's results folder; partial outputs are not a completed tab.
+Wait for the stopped message before starting another run or closing the app.
+See [CANCELLATION.md](CANCELLATION.md) for behavior and verification limits.
+
 To change tempo or rhythm detail after listening once, choose **Rebuild saved
 notes** under Method, then choose `detected-notes.json` from the earlier results
 folder (or a timestamped detected file under `diagnostics/` after a fingering
