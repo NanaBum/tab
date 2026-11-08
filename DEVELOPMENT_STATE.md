@@ -41,10 +41,11 @@ The review sequence is stacked, with one PR based on its predecessor:
 26. Fixed eleven-recording baseline control and three-backend paired comparison.
 27. Cancellable owned conversion processes, retained live logs and partial-output status.
 28. Optional notes-only MIDI/event output independent of fretting and score grids.
+29. Isolated YouTube audio/MP3 tools and hash-checked single-revision source-pair collection.
 
-Current local work is on `codex/notes-only-output`, based on local
-`57e7092` / remote `a55a52ffd5254bb0730b820be61977e77b002429` (PR #27,
-`codex/cancel-local-conversion`, tree `74cf0004d6fbd87e9fd6ac1b48128c0dc8c96b9f`).
+Current local work is on `codex/media-pair-collection`, based on local
+`178009a` / remote `d8b672027f50d559325d2003afae6086e36f8b20` (PR #28,
+`codex/notes-only-output`, tree `1f955edd101f2a685178f105a5cf87c130577c3b`).
 Keep the guitar model experimental. The immediate user target is electric riffs,
 then full-band recordings. User audio and comparisons remain outside this repo.
 

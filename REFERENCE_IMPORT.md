@@ -83,8 +83,9 @@ See [GLOBAL_ALIGNMENT.md](GLOBAL_ALIGNMENT.md).
 For a future paired corpus, record the exact tab revision, selected track and
 recording version, verify the applicable permissions, and check alignment before
 using the pair. A large noisy training collection and a small carefully reviewed
-evaluation subset serve different purposes. No Songsterr collection has begun;
-the user's licensing inquiry is awaiting a response.
+evaluation subset serve different purposes. The [local source-pair tools](MEDIA_COLLECTION.md)
+retain source identities and permission notes alongside candidate labels; packaging
+does not establish that a recording and tab are the same performance/version.
 
 ## Local evidence
 
