@@ -6,6 +6,7 @@ They do not measure perceived playability or prove string identification.
 """
 
 import math
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 
 import numpy as np
@@ -13,6 +14,64 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import maximum_bipartite_matching
 
 from .models import STANDARD_TUNING, FrettedNote, Note
+
+
+@dataclass(frozen=True)
+class IDMTRecording:
+    notes: list[Note]
+    positions: list[tuple[int, int] | None]
+    metadata: dict[str, str]
+    inconsistent_position_indices: list[int]
+
+
+def idmt_recording(xml: str) -> IDMTRecording:
+    """Read IDMT note targets, auditing pitch/string/fret consistency separately.
+
+    Source strings are 1-based low E first. Some published entries have positions
+    inconsistent with their MIDI pitch; retain that pitch and exclude only their
+    position from conditional string/fret scoring, with explicit indices.
+    """
+    root = ET.fromstring(xml)
+    if root.tag != "instrumentRecording":
+        raise ValueError("Expected an IDMT instrumentRecording annotation")
+    global_parameters = root.find("globalParameter")
+    metadata = (
+        {child.tag: child.text or "" for child in global_parameters}
+        if global_parameters is not None
+        else {}
+    )
+    tuning = tuple(
+        int(value.strip())
+        for value in metadata.get("instrumentTuning", "").split(",")
+        if value.strip()
+    )
+    if tuning != tuple(reversed(STANDARD_TUNING)):
+        raise ValueError("IDMT evaluation currently requires declared standard tuning")
+    notes, positions, inconsistent = [], [], []
+    for index, event in enumerate(root.findall("./transcription/event")):
+        try:
+            note = Note(
+                float(event.findtext("onsetSec")),
+                float(event.findtext("offsetSec")),
+                int(event.findtext("pitch")),
+            )
+        except (TypeError, ValueError) as error:
+            raise ValueError(f"Invalid IDMT pitch/timing at event {index}") from error
+        notes.append(note)
+        position = None
+        try:
+            string = 6 - int(event.findtext("stringNumber"))
+            fret = int(event.findtext("fretNumber"))
+            if 0 <= string < 6 and 0 <= fret <= 24 and STANDARD_TUNING[string] + fret == note.pitch:
+                position = (string, fret)
+        except (TypeError, ValueError):
+            pass
+        positions.append(position)
+        if position is None:
+            inconsistent.append(index)
+    if not notes:
+        raise ValueError("IDMT annotation contains no note events")
+    return IDMTRecording(notes, positions, metadata, inconsistent)
 
 
 @dataclass(frozen=True)
