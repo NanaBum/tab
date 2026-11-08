@@ -12,7 +12,7 @@ def assign_frets(notes: list[Note], tuning=STANDARD_TUNING, max_fret=24) -> list
     notes = sorted(notes, key=lambda n: n.start)
     if any(b.start < a.end - 1e-6 for a, b in itertools.pairwise(notes)):
         raise ValueError(
-            "Overlapping notes need chord-aware fingering, which is not implemented yet"
+            "Overlapping notes need polyphonic fingering; choose --fretting polyphonic"
         )
     if not notes:
         return []
@@ -26,7 +26,10 @@ def assign_frets(notes: list[Note], tuning=STANDARD_TUNING, max_fret=24) -> list
     ]
     for note, candidates in zip(notes, positions):
         if not candidates:
-            raise ValueError(f"MIDI pitch {note.pitch} is outside this guitar's playable range")
+            raise ValueError(
+                f"MIDI pitch {note.pitch} at {note.start:.3f}s is outside this guitar's playable range "
+                f"({min(tuning)}-{max(tuning) + max_fret}); no notes were dropped"
+            )
     costs = [f * 0.05 for _, f in positions[0]]
     parents = []
     for previous, current in itertools.pairwise(positions):
@@ -97,7 +100,10 @@ def assign_polyphonic_frets(
             (s, note.pitch - p) for s, p in enumerate(tuning) if 0 <= note.pitch - p <= max_fret
         ]
         if not candidates:
-            raise ValueError(f"MIDI pitch {note.pitch} is outside this guitar's playable range")
+            raise ValueError(
+                f"MIDI pitch {note.pitch} at {note.start:.3f}s is outside this guitar's playable range "
+                f"({min(tuning)}-{max(tuning) + max_fret}); no notes were dropped"
+            )
         expanded = {}
         for cost, history, active, hand, last_string in states:
             active = tuple(n for n in active if n.note.end > note.start + 1e-6)
@@ -127,7 +133,7 @@ def assign_polyphonic_frets(
                     expanded[key] = state
         if not expanded:
             raise ValueError(
-                f"No fingering at {note.start:.3f}s for note {index + 1}: sustained strings "
+                f"No fingering at {note.start:.3f}s for event {index + 1} (MIDI pitch {note.pitch}): sustained strings "
                 f"or the {max_span}-fret span limit conflict. Review detections; no notes were dropped."
             )
         states = sorted(expanded.values(), key=lambda state: state[0])[:beam_width]

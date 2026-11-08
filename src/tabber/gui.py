@@ -18,8 +18,20 @@ SAVED_NOTES = "Rebuild saved notes"
 GUITAR_MODEL = "Guitar model (experimental)"
 
 
-def conversion_command(interpreter, path, output, *, method, tempo, grid, confidence, separate):
-    """Route saved events directly to export, without another listening/filtering pass."""
+def conversion_command(
+    interpreter,
+    path,
+    output,
+    *,
+    method,
+    tempo,
+    grid,
+    confidence,
+    separate,
+    guitar_range=False,
+    max_span=5,
+):
+    """Route saved events directly to export; filtering requires explicit opt-in."""
     interpreter = Path(interpreter)
     if interpreter.name.lower() == "pythonw.exe":
         interpreter = interpreter.with_name("python.exe")
@@ -46,6 +58,10 @@ def conversion_command(interpreter, path, output, *, method, tempo, grid, confid
             )
         if separate:
             command.append("--separate")
+    if guitar_range:
+        command.append("--guitar-range")
+    if max_span != 5:
+        command.extend(("--max-span", str(max_span)))
     command.extend(("--bpm", str(tempo), "--grid", str(grid), "--output", str(output)))
     return command
 
@@ -80,7 +96,7 @@ class TabberApp:
             guitar_python if guitar_python.is_file() and default_checkpoint().is_file() else None
         )
         window.title("Tabber — guitar audio to editable tabs")
-        window.minsize(660, 590)
+        window.minsize(700, 650)
         window.protocol("WM_DELETE_WINDOW", self.close)
         frame = ttk.Frame(window, padding=24)
         frame.pack(fill="both", expand=True)
@@ -140,10 +156,22 @@ class TabberApp:
         ).grid(row=8, column=1, sticky="ew")
         ttk.Label(
             frame,
-            text="Sensitivity applies when listening. Rebuild saved notes keeps every saved note.",
+            text="Sensitivity applies when listening. Saved notes keep every event unless you select the range filter below.",
             wraplength=460,
         ).grid(row=9, column=1, columnspan=2, sticky="w", pady=(5, 16))
         self.separate = tk.BooleanVar(value=False)
+        self.guitar_range = tk.BooleanVar(value=False)
+        self.wider_span = tk.BooleanVar(value=False)
+        options = ttk.Frame(frame)
+        options.grid(row=10, column=0, columnspan=3, sticky="w", pady=(0, 12))
+        ttk.Checkbutton(
+            options,
+            text="Exclude notes outside standard tuning / 24 frets (save originals)",
+            variable=self.guitar_range,
+        ).grid(row=0, column=0, sticky="w")
+        ttk.Checkbutton(
+            options, text="Allow wider fret stretches (7 frets)", variable=self.wider_span
+        ).grid(row=1, column=0, sticky="w")
         separation_python = (
             self.root
             / ".venv-separation"
@@ -151,10 +179,10 @@ class TabberApp:
         )
         if separation_python.exists():
             ttk.Checkbutton(
-                frame,
+                options,
                 text="Separate guitar from a full mix (experimental; slower)",
                 variable=self.separate,
-            ).grid(row=10, column=0, columnspan=3, sticky="w", pady=(0, 12))
+            ).grid(row=2, column=0, sticky="w")
         self.convert = ttk.Button(frame, text="Create guitar tab", command=self.start)
         self.convert.grid(row=11, column=0, columnspan=3, sticky="ew", pady=(0, 12))
         self.progress = ttk.Progressbar(frame, mode="indeterminate")
@@ -244,6 +272,8 @@ class TabberApp:
                     self.confidence.get()
                 ],
                 separate=self.separate.get(),
+                guitar_range=self.guitar_range.get(),
+                max_span=7 if self.wider_span.get() else 5,
             )
         except (ValueError, OSError) as error:
             messagebox.showerror("Check saved notes", str(error))
@@ -288,7 +318,9 @@ class TabberApp:
                     else "Conversion failed; see run.log in the results folder."
                 )
                 notices = [
-                    line for line in process.stdout.splitlines() if line.startswith("Audio note:")
+                    line
+                    for line in process.stdout.splitlines()
+                    if line.startswith(("Audio note:", "Range note:", "Fingering note:"))
                 ]
                 if notices:
                     error += " " + " ".join(notices)
@@ -297,7 +329,15 @@ class TabberApp:
                 estimates = [
                     line
                     for line in process.stdout.splitlines()
-                    if line.startswith(("Estimated tempo:", "Timing note:", "Audio note:"))
+                    if line.startswith(
+                        (
+                            "Estimated tempo:",
+                            "Timing note:",
+                            "Audio note:",
+                            "Range note:",
+                            "Fingering note:",
+                        )
+                    )
                 ]
                 ready = "Your draft tab is ready. Open it in TuxGuitar to review and play."
                 if estimates:

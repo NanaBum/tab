@@ -26,8 +26,13 @@ To change tempo or rhythm detail after listening once, choose **Rebuild saved
 notes** under Method, then choose `detected-notes.json` from the earlier results
 folder (or a timestamped detected file under `diagnostics/` after a fingering
 failure). Enter a numeric BPM or tap it, leave separation off, and create a new
-tab. Rebuilding keeps every saved note; sensitivity does not filter this input.
+tab. Rebuilding keeps every saved note unless you explicitly select the optional
+instrument-range filter; sensitivity does not filter saved input.
 It assigns fingerings again and does not carry over edits made in TuxGuitar.
+
+If export fails, [recovery controls](FRETTING_RECOVERY.md) can explicitly exclude
+out-of-range detections with an audit, or allow a wider simultaneous fret span.
+They are separate choices and remain off by default in the app.
 
 The core and ML environments are already set up on the development computer.
 For a fresh clone, follow the commands below; `uv sync` sets up the core app and
