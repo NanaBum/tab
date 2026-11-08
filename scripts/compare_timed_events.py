@@ -3,29 +3,10 @@
 import argparse
 import hashlib
 import json
-import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from tabber.alignment import compare_with_global_shift
-from tabber.evaluation import idmt_recording
-from tabber.events import load_events
-from tabber.models import Note
-
-
-def read_notes(path):
-    if path.suffix.lower() == ".xml":
-        try:
-            return idmt_recording(path.read_text(encoding="utf-8-sig")).notes
-        except ET.ParseError as error:
-            raise ValueError(f"Invalid IDMT XML: {error}") from error
-    payload = json.loads(path.read_text(encoding="utf-8-sig"))
-    if not isinstance(payload, dict):
-        raise TypeError("Expected a note-file object")
-    if payload.get("format") == "tabber-note-events":
-        return load_events(path)
-    if payload.get("string_order") == "high E to low E" and isinstance(payload.get("notes"), list):
-        return [Note(**entry["note"]) for entry in payload["notes"]]
-    raise ValueError("Use detected-note JSON, an exported notes.json, or IDMT annotation XML")
+from tabber.note_files import read_notes
 
 
 def file_hash(path):

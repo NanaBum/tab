@@ -1,0 +1,92 @@
+{
+  "purpose": "Manifest runner reproduces all raw/shifted counts and F1 from the existing eight-recording, two-model development diagnostic",
+  "pair_count": 16,
+  "manifest_sha256": "278d3f24435cf09dcc4d767942280261f7f1a6ff97266244b653de40f480da76",
+  "previous_report_sha256": "ca720ebeb1c1758830a18c3a7236a3403aca9d57ea748bfc249be6779778685b",
+  "all_existing_aggregates_matched": true,
+  "aggregates": [
+    {
+      "split": "development",
+      "model_id": "basic-pitch",
+      "pairs": 8,
+      "raw": {
+        "onsets": {
+          "reference_notes": 157,
+          "predicted_notes": 186,
+          "matched_notes": 138,
+          "precision": 0.7419354838709677,
+          "recall": 0.8789808917197452,
+          "f1": 0.8046647230320699
+        },
+        "onsets_offsets": {
+          "reference_notes": 157,
+          "predicted_notes": 186,
+          "matched_notes": 103,
+          "precision": 0.553763440860215,
+          "recall": 0.6560509554140127,
+          "f1": 0.6005830903790087
+        }
+      },
+      "shifted": {
+        "onsets": {
+          "reference_notes": 157,
+          "predicted_notes": 186,
+          "matched_notes": 141,
+          "precision": 0.7580645161290323,
+          "recall": 0.8980891719745223,
+          "f1": 0.8221574344023324
+        },
+        "onsets_offsets": {
+          "reference_notes": 157,
+          "predicted_notes": 186,
+          "matched_notes": 111,
+          "precision": 0.5967741935483871,
+          "recall": 0.7070063694267515,
+          "f1": 0.6472303206997084
+        }
+      }
+    },
+    {
+      "split": "development",
+      "model_id": "guitar-gaps",
+      "pairs": 8,
+      "raw": {
+        "onsets": {
+          "reference_notes": 157,
+          "predicted_notes": 161,
+          "matched_notes": 138,
+          "precision": 0.8571428571428571,
+          "recall": 0.8789808917197452,
+          "f1": 0.8679245283018868
+        },
+        "onsets_offsets": {
+          "reference_notes": 157,
+          "predicted_notes": 161,
+          "matched_notes": 107,
+          "precision": 0.6645962732919255,
+          "recall": 0.6815286624203821,
+          "f1": 0.6729559748427673
+        }
+      },
+      "shifted": {
+        "onsets": {
+          "reference_notes": 157,
+          "predicted_notes": 161,
+          "matched_notes": 146,
+          "precision": 0.906832298136646,
+          "recall": 0.9299363057324841,
+          "f1": 0.9182389937106918
+        },
+        "onsets_offsets": {
+          "reference_notes": 157,
+          "predicted_notes": 161,
+          "matched_notes": 114,
+          "precision": 0.7080745341614907,
+          "recall": 0.7261146496815286,
+          "f1": 0.7169811320754716
+        }
+      }
+    }
+  ],
+  "limits": "Development comparison only; candidate labels, reference-fitted shifts and unresolved checkpoint overlap. Audio, references and predictions unchanged; no new inference or training."
+}
