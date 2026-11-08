@@ -1,6 +1,7 @@
 .venv/
 .venv-ml/
 .venv-separation/
+.venv-audio/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -17,6 +18,8 @@ runs/
 *.wav
 *.mp3
 *.flac
+*.m4a
+*.aac
 *.pt
 *.pth
 *.onnx

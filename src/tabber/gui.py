@@ -173,7 +173,7 @@ class TabberApp:
             filetypes=(
                 [("Saved notes", "*.json")]
                 if replay
-                else [("Audio recordings", "*.wav *.flac *.ogg *.mp3")]
+                else [("Audio recordings", "*.wav *.flac *.ogg *.mp3 *.m4a *.aac")]
             )
             + [("All files", "*.*")],
         )
@@ -264,12 +264,17 @@ class TabberApp:
                     if messages
                     else "Conversion failed; see run.log in the results folder."
                 )
+                notices = [
+                    line for line in process.stdout.splitlines() if line.startswith("Audio note:")
+                ]
+                if notices:
+                    error += " " + " ".join(notices)
                 self.messages.put((False, output, error))
             else:
                 estimates = [
                     line
                     for line in process.stdout.splitlines()
-                    if line.startswith(("Estimated tempo:", "Timing note:"))
+                    if line.startswith(("Estimated tempo:", "Timing note:", "Audio note:"))
                 ]
                 ready = "Your draft tab is ready. Open it in TuxGuitar to review and play."
                 if estimates:

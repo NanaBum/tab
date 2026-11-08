@@ -1,0 +1,2 @@
+# Optional local codec support, isolated from core/ML/separation packages.
+imageio-ffmpeg==0.8.1

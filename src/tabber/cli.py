@@ -1,9 +1,11 @@
 import argparse
+import json
 import subprocess
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 
+from .audio import inspect_audio, prepare_audio
 from .export import write_outputs
 from .fretting import assign_frets, assign_polyphonic_frets
 from .rhythm import quantize
@@ -64,6 +66,16 @@ def main():
         path = (args.audio or args.events).resolve()
         if not path.is_file():
             raise ValueError(f"Input file does not exist: {path}")
+        health = None
+        if args.audio:
+            path = prepare_audio(path, args.output / "diagnostics")
+            health = inspect_audio(path)
+            stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+            check_path = args.output / "diagnostics" / f"audio-{stamp}.json"
+            check_path.parent.mkdir(parents=True, exist_ok=True)
+            check_path.write_text(json.dumps(health, indent=2) + "\n", encoding="utf-8")
+            for warning in health["warnings"]:
+                print("Audio note: " + warning, flush=True)
         tempo = estimate_tempo(path) if args.bpm == "auto" else None
         bpm = tempo.bpm if tempo else args.bpm
         quantize(0, bpm)
@@ -81,6 +93,7 @@ def main():
         )
         metadata = {
             "input": str(path),
+            "audio_check": health,
             "original_input": str((args.audio or args.events).resolve()),
             "separated": args.separate,
             "tempo_source": "estimated" if tempo else "supplied",
