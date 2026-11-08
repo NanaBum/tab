@@ -17,6 +17,9 @@ For timed references, the [global-offset comparison](GLOBAL_ALIGNMENT.md) report
 both original scores and a bounded, reference-assisted start-shift diagnostic.
 The [local Guitar Pro reference importer](REFERENCE_IMPORT.md) can prepare
 candidate timed references with explicit track selection and score-feature checks.
+Local [audio download and source-pair collection](MEDIA_COLLECTION.md) tools can
+prepare explicit Songsterr/YouTube pairs with original audio, MP3, tab revision
+identity and hashes. Packaging is separate from alignment and model training.
 Explicit [alternate tuning](TUNING.md) is available in the app and command line;
 standard tuning remains the default. This changes fret mapping, not detected pitches.
 

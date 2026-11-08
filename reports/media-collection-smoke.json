@@ -1,0 +1,40 @@
+{
+  "purpose": "Local downloader and source-pair packaging checks; not a collected training song or model accuracy result",
+  "youtube_live_test": {
+    "url": "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+    "title": "Me at the zoo",
+    "tool_version": "2026.10.26",
+    "original_retained": true,
+    "mp3_decodes": true,
+    "mp3_duration_seconds": 19.005541666666666,
+    "assets": {
+      "original": {
+        "path": "jNQXAC9IVRw.webm",
+        "bytes": 252182,
+        "sha256": "8e18a126899cfb98cfd10f5e1dcdeabfa97e368ca9645f52fd802ba24b07e4f9"
+      },
+      "mp3": {
+        "path": "jNQXAC9IVRw.mp3",
+        "bytes": 762284,
+        "sha256": "c0b948e1cb9151ed75e03b8d3c050026f39314a1f8a50ee6aa14ad9101628e25"
+      }
+    },
+    "use": "Short public nonsong download test; not training data"
+  },
+  "songsterr_fixture": {
+    "bundle_sha256": "77aa893f5b894624a95f72f2dade1fa476030388aefb50266afa617d9c221b2a",
+    "track_count": 9,
+    "asset_count": 12,
+    "all_asset_hashes_checked": true,
+    "live_songsterr_requests": 0
+  },
+  "pair_packaging": {
+    "all_file_hashes_checked": true,
+    "asset_count": 17,
+    "test_fixture": true,
+    "excluded_from_training": true,
+    "alignment": "pending",
+    "split": "unassigned"
+  },
+  "limits": "The first upstream YouTube test URL was unavailable; a different short public test downloaded and converted successfully. No actual matched music pairs or model training were produced. Visual UI tests were not performed; CLI/code checks avoid taking over the active desktop."
+}
