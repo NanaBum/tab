@@ -8,6 +8,7 @@ from pathlib import Path
 from .audio import inspect_audio, prepare_audio
 from .export import write_outputs
 from .fretting import assign_frets, assign_polyphonic_frets
+from .models import STANDARD_TUNING
 from .rhythm import quantize
 from .separate import separate_guitar
 from .tempo import estimate_tempo, parse_bpm
@@ -61,6 +62,17 @@ def main():
     parser.add_argument(
         "--separate", action="store_true", help="Run optional Demucs guitar separation"
     )
+    parser.add_argument(
+        "--guitar-range",
+        action="store_true",
+        help="Explicitly exclude pitches outside standard tuning / 24 frets; retain raw diagnostics",
+    )
+    parser.add_argument(
+        "--max-span",
+        type=int,
+        default=5,
+        help="Maximum simultaneous non-open fret span, 0-24 (default 5); larger stretches may be harder to play",
+    )
     args = parser.parse_args()
     if (args.audio is None) == (args.events is None):
         parser.error("Provide either an audio file or --events, not both")
@@ -68,6 +80,10 @@ def main():
         parser.error("--separate needs audio input")
     if args.events and args.bpm == "auto":
         parser.error("--bpm auto needs audio input; supply BPM when rebuilding saved events")
+    if not 0 <= args.max_span <= 24:
+        parser.error("--max-span must be from 0 to 24")
+    if args.fretting == "melodic" and args.max_span != 5:
+        parser.error("--max-span applies to polyphonic fretting")
     if args.string_model and (args.events or args.fretting != "polyphonic"):
         parser.error("--string-model needs audio input and polyphonic fretting")
     if (args.onset_threshold is not None or args.guitar_checkpoint) and (
@@ -131,6 +147,8 @@ def main():
             else None,
             "timing": "seconds, original detected timing before score quantization",
             "experimental_string_model": str(args.string_model) if args.string_model else None,
+            "max_span": args.max_span if args.fretting == "polyphonic" else None,
+            "guitar_range_filter_requested": args.guitar_range,
         }
         if args.backend == "guitar-gaps" and not args.events:
             from .guitar_gaps import (
@@ -153,20 +171,60 @@ def main():
         diagnostic = args.output / "diagnostics" / f"detected-{stamp}.json"
         save_events(detected, diagnostic, metadata)
         print(f"Detected note events saved to {diagnostic.resolve()}", flush=True)
+        if args.fretting == "polyphonic" and args.max_span != 5:
+            print(
+                f"Fingering note: Using a {args.max_span}-fret span limit; review the stretches before playing.",
+                flush=True,
+            )
+        selected = detected
+        if args.guitar_range:
+            minimum, maximum = min(STANDARD_TUNING), max(STANDARD_TUNING) + 24
+            selected = [note for note in detected if minimum <= note.pitch <= maximum]
+            excluded = [
+                {"source_index": index, "note": asdict(note)}
+                for index, note in enumerate(detected)
+                if not minimum <= note.pitch <= maximum
+            ]
+            report_path = args.output / "diagnostics" / f"range-filter-{stamp}.json"
+            audit = {
+                "purpose": "Explicitly requested standard-tuning / 24-fret pitch filter",
+                "min_pitch": minimum,
+                "max_pitch": maximum,
+                "source_note_count": len(detected),
+                "retained_note_count": len(selected),
+                "excluded_note_count": len(excluded),
+                "excluded": excluded,
+                "unfiltered_events": str(diagnostic.resolve()),
+                "source_index_convention": "Zero-based index into the unfiltered events file",
+            }
+            report_path.write_text(json.dumps(audit, indent=2) + "\n", encoding="utf-8")
+            metadata["guitar_range_filter"] = {
+                key: value for key, value in audit.items() if key != "excluded"
+            }
+            metadata["guitar_range_filter"]["audit_file"] = str(report_path.resolve())
+            save_events(selected, args.output / "diagnostics" / f"selected-{stamp}.json", metadata)
+            print(
+                f"Range note: Excluded {len(excluded)} of {len(detected)} detections outside "
+                f"standard guitar range ({minimum}-{maximum}). Raw notes and exclusions are saved in diagnostics.",
+                flush=True,
+            )
+            if detected and not selected:
+                raise ValueError(
+                    "The requested range filter excluded every detection. Review the raw notes in diagnostics."
+                )
         assign = assign_frets if args.fretting == "melodic" else assign_polyphonic_frets
+        assignment_options = {} if args.fretting == "melodic" else {"max_span": args.max_span}
         if args.string_model:
             from .string_model import string_priors
 
-            priors = string_priors(path, detected, args.string_model)
-            notes = assign(detected, string_priors=priors)
-        else:
-            notes = assign(detected)
+            assignment_options["string_priors"] = string_priors(path, selected, args.string_model)
+        notes = assign(selected, **assignment_options)
         if not notes:
             raise ValueError(
                 "No notes detected. Check that the guitar is clearly audible in the recording."
             )
         timing = write_outputs(notes, args.output, bpm, args.grid)
-        save_events(detected, args.output / "detected-notes.json", metadata)
+        save_events(selected, args.output / "detected-notes.json", metadata)
     except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f"Could not transcribe: {exc}\n")
     print(f"Wrote {len(notes)} notes to {args.output.resolve()}")

@@ -53,7 +53,12 @@ The initial fixed six-solo/six-accompaniment smoke check (first ten seconds,
 performer round-robin) is saved in [reports/gaps-smoke.json](reports/gaps-smoke.json).
 Pitch/onset F1 was 94.7% solo and 95.4% accompaniment; including release timing
 gave 88.2% and 78.7%. Eleven clips exported all detections. The remaining clip
-included an unplayable MIDI-39 detection and failed explicitly; no note was dropped.
+failed at the 39th event (MIDI pitch 62) under the five-fret span constraint;
+all its pitches were in range and no note was dropped. A later exact constraint
+audit proved the fixed detections infeasible with a five-fret span and feasible
+with seven. The earlier wording incorrectly called this a MIDI-39 detection.
+The [recovery workflow](FRETTING_RECOVERY.md) documents the exact audit and a
+later successful seven-fret rebuild, preserving all 57 detections.
 These small checks do not establish performance on other recordings.
 
 With the existing GuitarSet archives, reproduce each mode using:
