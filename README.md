@@ -13,6 +13,8 @@ five additional recordings and documents inconsistencies in their reference tabs
 It also includes a separate three-lick comparison on another electric guitar.
 For timed references, the [global-offset comparison](GLOBAL_ALIGNMENT.md) reports
 both original scores and a bounded, reference-assisted start-shift diagnostic.
+The [local Guitar Pro reference importer](REFERENCE_IMPORT.md) can prepare
+candidate timed references with explicit track selection and score-feature checks.
 
 ## Quick start
 
