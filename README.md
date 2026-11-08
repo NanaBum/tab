@@ -63,6 +63,11 @@ uv run tabber "C:/path/to/guitar.wav" --output runs/my-song --bpm 100
 ```
 
 Use WAV or FLAC first. Format support depends on the installed libsndfile.
+Optional local codec support adds M4A/AAC and other FFmpeg-readable audio without
+altering the original file. Input measurements and notices help diagnose quiet,
+possibly clipped, or cancelling stereo audio. See [AUDIO_INPUT.md](AUDIO_INPUT.md)
+for the small separate decoder setup and the heuristic checks. Gain is not
+changed automatically.
 Supply a known quarter-note tempo, tap the beat in the app, or explicitly choose
 `--bpm auto` (type `auto` in the app). Automatic tempo is provisional and needs the
 ML environment. It analyzes at most the first 60 seconds and may follow half-time,

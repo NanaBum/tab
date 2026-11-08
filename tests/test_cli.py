@@ -1,5 +1,6 @@
 import guitarpro
 import pytest
+import soundfile as sf
 
 from tabber.cli import main
 from tabber.events import load_events, save_events
@@ -20,7 +21,7 @@ def test_cli_rebuilds_gp5_from_events_without_audio_or_ml(tmp_path, monkeypatch)
 
 def test_cli_saves_detections_if_fingering_fails_and_keeps_old_tab(tmp_path, monkeypatch):
     audio = tmp_path / "input.wav"
-    audio.touch()
+    sf.write(audio, [0.0] * 2205, 22050)
     output = tmp_path / "existing"
     output.mkdir()
     old_tab = output / "tab.gp5"
