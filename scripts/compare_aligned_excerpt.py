@@ -1,4 +1,4 @@
-"""Compare detectors on the same recording excerpt using a fixed score shift."""
+"""Compare detectors on the same recording excerpt using a fixed score clock."""
 
 import argparse
 import json
@@ -12,19 +12,21 @@ from tabber.media import sha256_file
 from tabber.models import Note
 
 
-def excerpt_target(tracks, *, score_shift, recording_start, duration):
+def excerpt_target(tracks, *, score_shift, recording_start, duration, score_scale=1.0):
     """Count each coincident pitch/attack once for a combined guitar target."""
     if not all(math.isfinite(value) for value in (score_shift, recording_start, duration)):
         raise ValueError("Shift, start and duration must be finite")
     if recording_start < 0 or duration <= 0:
         raise ValueError("Use a nonnegative excerpt start and positive duration")
+    if not math.isfinite(score_scale) or score_scale <= 0:
+        raise ValueError("The score scale must be finite and positive")
     unique = {}
     for track in tracks:
         for note in track:
-            onset = note.start + score_shift - recording_start
+            onset = note.start * score_scale + score_shift - recording_start
             if not 0 <= onset < duration:
                 continue
-            release = min(note.end + score_shift - recording_start, duration)
+            release = min(note.end * score_scale + score_shift - recording_start, duration)
             key = round(onset, 8), note.pitch
             if key not in unique or unique[key].end < release:
                 unique[key] = Note(onset, release, note.pitch)
@@ -37,7 +39,12 @@ def main():
     parser.add_argument(
         "--prediction", nargs=2, action="append", required=True, metavar=("NAME", "FILE")
     )
-    parser.add_argument("--score-shift", type=float, required=True, help="Add to every score time")
+    parser.add_argument(
+        "--score-shift", type=float, required=True, help="Add after scaling score time"
+    )
+    parser.add_argument(
+        "--score-scale", type=float, default=1, help="Multiply score times before shifting"
+    )
     parser.add_argument("--recording-start", type=float, default=0)
     parser.add_argument("--duration", type=float, required=True)
     parser.add_argument("--onset-tolerance", type=float, default=0.075)
@@ -72,12 +79,14 @@ def main():
             score_shift=args.score_shift,
             recording_start=args.recording_start,
             duration=args.duration,
+            score_scale=args.score_scale,
         )
         if not target:
             raise ValueError("No reference attacks in the selected excerpt")
         report = {
-            "purpose": "Fixed-shift candidate onset comparison",
+            "purpose": "Fixed score-clock candidate onset comparison",
             "score_shift_seconds": args.score_shift,
+            "score_scale": args.score_scale,
             "recording_start_seconds": args.recording_start,
             "excerpt_duration_seconds": args.duration,
             "onset_tolerance_seconds": args.onset_tolerance,
