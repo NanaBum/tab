@@ -74,3 +74,25 @@ checkpoint has not been established. GuitarSet checks are development checks,
 not an independent held-out benchmark. Timing, sustain, string assignment and
 playability remain separate from an ordered pitch-sequence match. No private
 recording or reference sequence is included in this repository.
+
+## Attack sensitivity on electric guitar
+
+Run `scripts/sweep_guitar_onsets.py` in the optional guitar environment to
+compare several attack thresholds on the fixed 11-clip IDMT development set.
+It runs the network once per clip and reports missed and extra pitch/onset
+events for each threshold.
+
+| Attack threshold | Missed | Extra |
+| --- | ---: | ---: |
+| 0.18 | 30 | 31 |
+| 0.24 | 31 | 29 |
+| 0.30 (default) | 32 | 27 |
+| 0.36 | 32 | 26 |
+| 0.42 | 32 | 24 |
+
+The stricter 0.42 setting removed three extra events with the same match
+count on this set. The more sensitive 0.18 setting recovered two attacks in
+the difficult muted lick and added four extras across other clips. The
+default scores and source hashes match the earlier runs on all 11 clips.
+This is development evidence. Use `--onset-threshold` to try a setting for a
+particular recording. See [the complete sweep](reports/gaps-onset-sweep.json).
