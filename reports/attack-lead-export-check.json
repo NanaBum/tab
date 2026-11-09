@@ -1,0 +1,13 @@
+{
+  "purpose": "Check an optional attack-lead rebuild using real electric-guitar detections",
+  "source": "IDMT AR_Lick12_KN, published annotation",
+  "requested_lead_ms": 20,
+  "source_events": 44,
+  "adjusted_attacks": 44,
+  "limited_by_previous_release": 20,
+  "bpm": 120,
+  "grid": 64,
+  "all_notes_exported_and_gp5_readback_verified": true,
+  "original_events_unchanged": true,
+  "limits": "One export check. At grid 32 the adjusted events collided after snapping, and the exporter refused them."
+}

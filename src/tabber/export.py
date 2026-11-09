@@ -36,7 +36,7 @@ def write_outputs(
         rows[n.string][column] = f"{n.fret:-^4}"
     text = [
         f"Tempo: {bpm:g} BPM | one cell = 1/{grid} note; dashes show no new onset",
-        "Original timing is in notes.json; MIDI rounds it to 480 ticks per quarter note.",
+        "Pre-quantization timing is in notes.json; MIDI rounds it to 480 ticks per quarter note.",
         "",
     ]
     labels = (

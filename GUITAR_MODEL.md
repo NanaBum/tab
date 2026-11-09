@@ -103,3 +103,19 @@ same-pitch frame support, octave competition, and duration. The filter
 missed more attacks than the fixed-threshold control. The
 [development report](reports/gaps-pitch-evidence-check.json) also records
 an earlier-attack timing comparison on electric and acoustic recordings.
+
+To audition an earlier attack without running the detector again, rebuild
+from its saved detections into a fresh folder:
+
+```powershell
+uv run tabber --events runs/original/detected-notes.json --attack-lead-ms 20 --bpm 120 --grid 64 --output runs/earlier-attacks
+```
+
+The option advances attacks by up to the requested amount and keeps release
+times. Each attack stops at the most recent prior release to avoid adding
+overlaps. Original detections remain in `detected-notes.json`. The adjusted
+events and counts are in `diagnostics/`. The chosen grid can still put
+different attacks in the same cell, so compare using a finer grid if export
+reports a collision. On the electric development set, this capped 20 ms
+adjustment increased onset matches from 192 to 199 and onset-plus-release
+matches from 141 to 145. One piece lost two onset matches.
