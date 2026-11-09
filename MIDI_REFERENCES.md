@@ -85,6 +85,15 @@ record; see [MEDIA_COLLECTION.md](MEDIA_COLLECTION.md) and
 [GLOBAL_ALIGNMENT.md](GLOBAL_ALIGNMENT.md). Detector-generated MIDI is useful
 for structural readback tests, not independent ground truth for that detector.
 
+Use `scripts/compare_aligned_excerpt.py` when several detector outputs should
+share one independently chosen score shift. Pass one `--reference` per target
+track from the same pair, one `--prediction NAME FILE` per condition, and supply
+`--score-shift`, `--recording-start`, `--duration`, and `--output`.
+Predicted times start at excerpt zero. The comparator counts exact coincident
+pitch/attack events once across guitar parts. It reports candidate onset scores
+without fitting each condition separately. See the
+[full-band separation pilot](reports/full-band-separation-pilot.json).
+
 The fixture check imported 108 notes from one selected guitar channel in the
 offline nine-track source bundle. Every pitch/start/end matched an independent
 Mido playback-iterator calculation to eight decimal places, with source bytes

@@ -1,0 +1,21 @@
+{
+  "purpose": "Compare full mix and separated guitar on one real 40-second excerpt",
+  "excerpt_start_seconds": 0,
+  "excerpt_duration_seconds": 40,
+  "source_count": 1,
+  "fixed_score_shift_seconds": -0.929,
+  "shift_source": "Song-wide recording-to-score chroma comparison, prior to the detector runs",
+  "onset_tolerance_seconds": 0.075,
+  "separator": "Demucs 4.0.1 htdemucs_6s, CPU, shifts=0, segment=7s",
+  "target": {
+    "lead_distorted": 105,
+    "all_four_guitar_tracks_unique_pitch_onsets": 370
+  },
+  "conditions": {
+    "gaps_full_mix": {"detections": 2, "matched_lead": 0, "matched_all_guitars": 1},
+    "gaps_guitar_stem": {"detections": 455, "matched_lead": 19, "matched_all_guitars": 66},
+    "basic_pitch_full_mix": {"detections": 124, "matched_lead": 10, "matched_all_guitars": 40},
+    "basic_pitch_guitar_stem": {"detections": 155, "matched_lead": 25, "matched_all_guitars": 55}
+  },
+  "limits": "One exploratory excerpt scored against a candidate tab. The stem can contain bleed or omit guitar. The global shift does not verify individual attacks. The input diagnostic also flagged samples at full scale."
+}
