@@ -111,6 +111,15 @@ describe the coarse clock tested in the
 clock to every comparison condition. The attack probe only refines the
 shift and keeps the scale fixed.
 
+After selecting candidate windows, run `scripts/prepare_training_excerpts.py`
+with a version 1 `tabber-excerpt-plan` and a fresh output folder. Each row
+names the source pair, decoded recording, attack report, explicit track
+numbers, score scale, score shift, split, and recording-time windows. The
+packager verifies source hashes, checks each window against the report's
+displaced controls, and keeps all versions of a song in one split. It saves
+sample-exact WAV excerpts, weak score onsets, and a manifest. Durations in the
+event files describe score playback and are carried for inspection.
+
 The fixture check imported 108 notes from one selected guitar channel in the
 offline nine-track source bundle. Every pitch/start/end matched an independent
 Mido playback-iterator calculation to eight decimal places, with source bytes

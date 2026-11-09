@@ -117,3 +117,24 @@ def compare_with_global_shift(
         ),
         "limits": "One translation on a finite grid; no tempo/section warping, pitch correction or note removal. Shift is fitted using this reference, not independently calibrated.",
     }
+
+
+def excerpt_target(tracks, *, score_shift, recording_start, duration, score_scale=1.0):
+    """Count each coincident pitch/attack once for a combined guitar target."""
+    if not all(math.isfinite(value) for value in (score_shift, recording_start, duration)):
+        raise ValueError("Shift, start and duration must be finite")
+    if recording_start < 0 or duration <= 0:
+        raise ValueError("Use a nonnegative excerpt start and positive duration")
+    if not math.isfinite(score_scale) or score_scale <= 0:
+        raise ValueError("The score scale must be finite and positive")
+    unique = {}
+    for track in tracks:
+        for note in track:
+            onset = note.start * score_scale + score_shift - recording_start
+            if not 0 <= onset < duration:
+                continue
+            release = min(note.end * score_scale + score_shift - recording_start, duration)
+            key = round(onset, 8), note.pitch
+            if key not in unique or unique[key].end < release:
+                unique[key] = Note(onset, release, note.pitch)
+    return sorted(unique.values(), key=lambda note: (note.start, note.pitch))
