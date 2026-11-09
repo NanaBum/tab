@@ -1,4 +1,22 @@
 import math
+from bisect import bisect_right
+from dataclasses import replace
+
+from .models import Note
+
+
+def lead_attacks(notes: list[Note], seconds: float) -> tuple[list[Note], int]:
+    """Advance attacks up to the requested lead without introducing overlaps."""
+    releases = sorted(note.end for note in notes)
+    adjusted = []
+    limited = 0
+    for note in notes:
+        target = max(0.0, note.start - seconds)
+        previous_release = bisect_right(releases, note.start) - 1
+        start = max(target, releases[previous_release]) if previous_release >= 0 else target
+        limited += start > target
+        adjusted.append(replace(note, start=start))
+    return adjusted, limited
 
 
 def quantize(time: float, bpm: float, subdivisions: int = 4) -> int:

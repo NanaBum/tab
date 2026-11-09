@@ -1,5 +1,6 @@
 import argparse
 import json
+import math
 import subprocess
 from dataclasses import asdict
 from datetime import datetime
@@ -10,7 +11,7 @@ from .export import write_outputs
 from .fretting import assign_frets, assign_polyphonic_frets
 from .models import STANDARD_TUNING
 from .pitch_midi import check_notes_only_output, write_pitch_midi
-from .rhythm import quantize
+from .rhythm import lead_attacks, quantize
 from .separate import separate_guitar
 from .tempo import estimate_tempo, parse_bpm
 from .transcribe import baseline_frequency_floor, transcribe
@@ -21,6 +22,12 @@ def main():
     parser = argparse.ArgumentParser(description="Experimental audio-to-guitar-tab converter")
     parser.add_argument("audio", type=Path, nargs="?")
     parser.add_argument("--events", type=Path, help="Rebuild a tab from saved detected-notes.json")
+    parser.add_argument(
+        "--attack-lead-ms",
+        type=float,
+        default=0,
+        help="For saved-event tab rebuilds, move attacks earlier by up to 50 ms and retain releases",
+    )
     parser.add_argument(
         "--string-model",
         type=Path,
@@ -93,6 +100,10 @@ def main():
         parser.error("--separate needs audio input")
     if args.events and args.bpm == "auto":
         parser.error("--bpm auto needs audio input; supply BPM when rebuilding saved events")
+    if not math.isfinite(args.attack_lead_ms) or not 0 <= args.attack_lead_ms <= 50:
+        parser.error("--attack-lead-ms must be from 0 to 50")
+    if args.attack_lead_ms and (not args.events or args.notes_only):
+        parser.error("--attack-lead-ms applies only to editable tab rebuilds from --events")
     if not 0 <= args.max_span <= 24:
         parser.error("--max-span must be from 0 to 24")
     if args.fretting == "melodic" and args.max_span != 5:
@@ -110,6 +121,8 @@ def main():
     ):
         parser.error("Guitar-model options need --backend guitar-gaps and audio input")
     try:
+        if args.attack_lead_ms and args.output.exists() and any(args.output.iterdir()):
+            raise ValueError("Choose a fresh output folder for the timing comparison")
         if args.notes_only:
             check_notes_only_output(args.output, source=args.audio or args.events)
         path = (args.audio or args.events).resolve()
@@ -277,7 +290,30 @@ def main():
             from .string_model import string_priors
 
             assignment_options["string_priors"] = string_priors(path, selected, args.string_model)
-        notes = assign(selected, tuning=args.tuning, **assignment_options)
+        export_events = selected
+        if args.attack_lead_ms:
+            export_events, limited = lead_attacks(selected, args.attack_lead_ms / 1000)
+            adjusted_path = args.output / "diagnostics" / f"export-events-{stamp}.json"
+            metadata["export_attack_adjustment"] = {
+                "lead_ms": args.attack_lead_ms,
+                "changed_attacks": sum(a.start != b.start for a, b in zip(selected, export_events)),
+                "positive_attacks_clamped_to_zero": sum(
+                    a.start > 0 and b.start == 0 for a, b in zip(selected, export_events)
+                ),
+                "attacks_limited_by_previous_release": limited,
+                "export_events": str(adjusted_path.resolve()),
+                "unadjusted_events": str(diagnostic.resolve()),
+            }
+            save_events(
+                export_events,
+                adjusted_path,
+                {**metadata, "timing": "Adjusted attacks in seconds before score quantization"},
+            )
+            print(
+                f"Timing note: Applied a {args.attack_lead_ms:g} ms attack lead for export. Original events are preserved.",
+                flush=True,
+            )
+        notes = assign(export_events, tuning=args.tuning, **assignment_options)
         if not notes:
             raise ValueError(
                 "No notes detected. Check that the guitar is clearly audible in the recording."
