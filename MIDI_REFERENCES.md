@@ -94,6 +94,14 @@ pitch/attack events once across guitar parts. It reports candidate onset scores
 without fitting each condition separately. See the
 [full-band separation pilot](reports/full-band-separation-pilot.json).
 
+To screen several collected pairs together, run
+`scripts/screen_pair_alignment.py` in the Basic Pitch environment with the
+pair manifests as positional arguments and a new `--output` report. It checks
+source hashes, compares full-band pitch classes over short windows and
+estimates a global shift. The report shows competing peaks and later residuals
+for an optional tempo fit based on early windows. Use it to select pairs for
+the finer attack check.
+
 For a finer check near a coarse offset, run
 `scripts/probe_attack_alignment.py` in the Basic Pitch environment, which
 already contains librosa. Supply the local WAV starting at the recording's
