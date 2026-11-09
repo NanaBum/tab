@@ -1,0 +1,13 @@
+{
+  "purpose": "Compare GP7 guitar playback events with independent reads of the paired MIDI exports",
+  "pairs": 3,
+  "explicitly_selected_guitar_tracks": 12,
+  "tracks_recovered_after_same_channel_unison_rejection": 3,
+  "recovered_note_events": 6711,
+  "total_note_events": 11752,
+  "attack_ticks_and_pitches_match_as_multisets": true,
+  "release_ticks_and_pitches_match_as_multisets": true,
+  "tempo_maps_match": true,
+  "all_imports_read_back_as_tabber_note_events": true,
+  "limits": "Both score representations originate from the same conversion. These checks cover playback event preservation and do not measure accuracy against the recordings."
+}
