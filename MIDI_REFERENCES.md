@@ -103,6 +103,14 @@ first window selects a refinement. Later windows report its score alongside
 their own peaks and nearby displaced controls. These are diagnostics to review
 before choosing a training excerpt.
 
+Both excerpt tools accept `--score-scale` for a constant tempo correction.
+They multiply score times by that scale, then add the supplied shift in
+seconds. For example, a scale of 0.998651 and a shift of −0.673 seconds
+describe the coarse clock tested in the
+[tempo-drift pilot](reports/affine-score-clock-pilot.json). Supply the same
+clock to every comparison condition. The attack probe only refines the
+shift and keeps the scale fixed.
+
 The fixture check imported 108 notes from one selected guitar channel in the
 offline nine-track source bundle. Every pitch/start/end matched an independent
 Mido playback-iterator calculation to eight decimal places, with source bytes

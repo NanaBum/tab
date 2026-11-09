@@ -1,4 +1,4 @@
-"""Check a fixed score-to-audio shift against pitch-specific attack evidence."""
+"""Check a score-to-audio clock against pitch-specific attack evidence."""
 
 import argparse
 import json
@@ -43,10 +43,13 @@ def pitch_flux(path):
     return np.minimum(flux, 6), len(audio) / rate
 
 
-def assess_windows(flux, attacks, windows, *, coarse, duration):
+def assess_windows(flux, attacks, windows, *, coarse, duration, scale=1.0):
     """Fit on the first window and apply that estimate to all later windows."""
     if not math.isfinite(coarse):
         raise ValueError("The coarse shift must be finite")
+    if not math.isfinite(scale) or scale <= 0:
+        raise ValueError("The score scale must be finite and positive")
+    scaled_attacks = [(time * scale, pitch) for time, pitch in attacks]
     shifts = coarse + np.arange(-43, 44) * STEP
     rows = []
     calibrated_index = None
@@ -56,7 +59,7 @@ def assess_windows(flux, attacks, windows, *, coarse, duration):
         if not (max(0.8, previous_end) <= lo < hi <= duration - 0.8):
             raise ValueError("Use ordered, disjoint windows at least 0.8s inside the audio")
         previous_end = hi
-        in_window = [(t, p) for t, p in attacks if lo <= t + coarse < hi]
+        in_window = [(t, p) for t, p in scaled_attacks if lo <= t + coarse < hi]
         anchors = [(t, p) for t, p in in_window if LOW_PITCH <= p < LOW_PITCH + len(flux)]
         if len(anchors) < 10:
             raise ValueError(f"Window {lo:g}–{hi:g}s needs at least ten in-range candidate attacks")
@@ -97,6 +100,9 @@ def main():
     parser.add_argument("audio", type=Path, help="Audio with the original recording's time zero")
     parser.add_argument("--reference", type=Path, action="append", required=True)
     parser.add_argument("--coarse-shift", type=float, required=True)
+    parser.add_argument(
+        "--score-scale", type=float, default=1, help="Multiply score times before adding the shift"
+    )
     parser.add_argument("--window", type=float, nargs=2, action="append", required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
@@ -120,12 +126,15 @@ def main():
             args.window,
             coarse=args.coarse_shift,
             duration=duration,
+            scale=args.score_scale,
         )
         result.update(
             audio_sha256=sha256_file(args.audio),
             source_pair_sha256=pairs.pop(),
             references=references,
             coarse_score_shift_seconds=args.coarse_shift,
+            score_scale=args.score_scale,
+            mapping="recording_time = score_time * score_scale + shift",
             score_shift_grid_step_seconds=STEP,
             control_offsets_from_coarse_seconds=CONTROLS,
             limits=(
