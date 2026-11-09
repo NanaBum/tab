@@ -1,9 +1,10 @@
 import sys
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
 
-from tabber.guitar_gaps import _load_model, _make_segments, _stitch_segments
+from tabber.guitar_gaps import _load_model, _make_segments, _stitch_segments, decode_gaps
 from tabber.models import Note
 from tabber.transcribe import transcribe
 
@@ -44,3 +45,29 @@ def test_guitar_route_keeps_low_activations_and_uses_attack_threshold(monkeypatc
     assert calls == [(source, {"checkpoint": None, "onset_threshold": 0.2})]
     with pytest.raises(ValueError, match="onset-threshold"):
         transcribe(source, "guitar-gaps", min_confidence=0.7)
+
+
+def test_redecode_keeps_shared_activations_and_applies_requested_threshold(monkeypatch):
+    class Processor:
+        def __init__(self, _rate, _pitches, threshold, *_other_thresholds):
+            self.threshold = threshold
+
+        def output_dict_to_midi_events(self, values):
+            assert "onset_output" not in values
+            values["onset_output"] = None
+            return (
+                [{"onset_time": 0, "offset_time": 0.08, "midi_note": 60}]
+                if self.threshold < 0.4
+                else [],
+                None,
+            )
+
+    monkeypatch.setitem(
+        sys.modules,
+        "piano_transcription_inference.utilities",
+        SimpleNamespace(RegressionPostProcessor=Processor),
+    )
+    output = {"reg_onset_output": np.full((10, 88), 0.35)}
+    assert decode_gaps(output, 0.1, onset_threshold=0.3) == [Note(0, 0.08, 60, 0.35)]
+    assert decode_gaps(output, 0.1, onset_threshold=0.42) == []
+    assert set(output) == {"reg_onset_output"}

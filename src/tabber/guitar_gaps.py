@@ -100,15 +100,11 @@ def _load_model(checkpoint: Path):
     return model
 
 
-def transcribe_gaps(
-    path: Path, *, checkpoint: Path | None = None, onset_threshold: float = 0.3
-) -> list[Note]:
-    if not math.isfinite(onset_threshold) or not 0 < onset_threshold <= 1:
-        raise ValueError("Guitar-model onset threshold must be above zero and at most one")
+def gaps_activations(path: Path, *, checkpoint: Path | None = None):
+    """Run the frozen network once for one or more decoder comparisons."""
     model = _load_model((checkpoint or default_checkpoint()).resolve())
     import librosa
     from piano_transcription_inference.pytorch_utils import forward
-    from piano_transcription_inference.utilities import RegressionPostProcessor
 
     audio, rate = librosa.load(str(path), sr=16000, mono=True)
     duration = len(audio) / rate
@@ -120,8 +116,22 @@ def transcribe_gaps(
     output = {key: _stitch_segments(value)[:valid_frames] for key, value in output.items()}
     if any(not np.all(np.isfinite(value)) for value in output.values()):
         raise ValueError("Guitar model produced non-finite activations")
+    return output, duration
+
+
+def _validate_onset_threshold(onset_threshold):
+    if not math.isfinite(onset_threshold) or not 0 < onset_threshold <= 1:
+        raise ValueError("Guitar-model onset threshold must be above zero and at most one")
+
+
+def decode_gaps(output, duration, *, onset_threshold=0.3) -> list[Note]:
+    """Decode one threshold without changing the stored network outputs."""
+    _validate_onset_threshold(onset_threshold)
+    from piano_transcription_inference.utilities import RegressionPostProcessor
+
     processor = RegressionPostProcessor(100, 88, onset_threshold, 0.3, 0.1, 0.2)
-    events, _ = processor.output_dict_to_midi_events(output)
+    events, _ = processor.output_dict_to_midi_events(dict(output))
+    valid_frames = len(output["reg_onset_output"])
     notes = []
     for event in events:
         start, end, pitch = (
@@ -139,3 +149,11 @@ def transcribe_gaps(
         # All decoded events are retained; no Basic Pitch confidence filter applies.
         notes.append(Note(start, end, pitch, float(np.clip(activation, 0, 1))))
     return sorted(notes, key=lambda note: note.start)
+
+
+def transcribe_gaps(
+    path: Path, *, checkpoint: Path | None = None, onset_threshold: float = 0.3
+) -> list[Note]:
+    _validate_onset_threshold(onset_threshold)
+    output, duration = gaps_activations(path, checkpoint=checkpoint)
+    return decode_gaps(output, duration, onset_threshold=onset_threshold)
