@@ -96,3 +96,10 @@ the difficult muted lick and added four extras across other clips. The
 default scores and source hashes match the earlier runs on all 11 clips.
 This is development evidence. Use `--onset-threshold` to try a setting for a
 particular recording. See [the complete sweep](reports/gaps-onset-sweep.json).
+
+A separate `scripts/evaluate_guitar_pitch_evidence.py` run tests a small
+learned filter with each phrase group held out in turn. It uses onset,
+same-pitch frame support, octave competition, and duration. The filter
+missed more attacks than the fixed-threshold control. The
+[development report](reports/gaps-pitch-evidence-check.json) also records
+an earlier-attack timing comparison on electric and acoustic recordings.
