@@ -1,0 +1,15 @@
+{
+  "working_score_shift_seconds": -0.929,
+  "attack_calibration_seconds": [2, 14],
+  "later_check_windows_seconds": [[14, 26], [26, 38]],
+  "full_mix_local_peak_shifts_seconds": [-0.9522, -0.9522, -0.9464],
+  "guitar_stem_local_peak_shifts_seconds": [-0.9116, -0.9348, -0.9348],
+  "candidate_excerpt_for_technical_pilot_seconds": [2, 26],
+  "reason": "The fixed working shift exceeded all six displaced controls on both inputs in the first two windows. A displaced control exceeded the best local full-mix peak in the last window. The working shift was chosen by the earlier song-wide chroma probe.",
+  "other_pairs": {
+    "method": "Fit an affine clock on the first half of the coarse pitch-class window peaks and measure residuals on the second half",
+    "later_window_absolute_residuals_seconds": [[0.279, 0.952, 0.836, 0.600], [4.882, 6.266, 7.465, 8.384, 8.328, 2.792]],
+    "decision": "Keep both pairs out of the first training pool pending section-level evidence"
+  },
+  "limits": "The pitch flux can reflect other instruments and harmonics, and both inputs share the same recording. The candidate excerpt has a working alignment but its individual labels and releases still need review."
+}

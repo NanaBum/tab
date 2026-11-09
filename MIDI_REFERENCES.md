@@ -94,6 +94,15 @@ pitch/attack events once across guitar parts. It reports candidate onset scores
 without fitting each condition separately. See the
 [full-band separation pilot](reports/full-band-separation-pilot.json).
 
+For a finer check near a coarse offset, run
+`scripts/probe_attack_alignment.py` in the Basic Pitch environment, which
+already contains librosa. Supply the local WAV starting at the recording's
+time zero, the target `--reference` files, `--coarse-shift`, two or more
+ordered `--window START END` intervals, and a fresh `--output` path. The
+first window selects a refinement. Later windows report its score alongside
+their own peaks and nearby displaced controls. These are diagnostics to review
+before choosing a training excerpt.
+
 The fixture check imported 108 notes from one selected guitar channel in the
 offline nine-track source bundle. Every pitch/start/end matched an independent
 Mido playback-iterator calculation to eight decimal places, with source bytes
