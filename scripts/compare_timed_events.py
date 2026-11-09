@@ -52,6 +52,8 @@ def main():
                         "timing",
                         "repeat_unfolding_requested",
                         "playback_measure_count",
+                        "source_pair",
+                        "source_pair_sha256",
                     )
                     if key in source_metadata
                 }

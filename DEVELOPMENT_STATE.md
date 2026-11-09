@@ -42,10 +42,11 @@ The review sequence is stacked, with one PR based on its predecessor:
 27. Cancellable owned conversion processes, retained live logs and partial-output status.
 28. Optional notes-only MIDI/event output independent of fretting and score grids.
 29. Isolated YouTube audio/MP3 tools and hash-checked single-revision source-pair collection.
+30. Explicit source MIDI track/channel selection and candidate timed pitch labels.
 
-Current local work is on `codex/media-pair-collection`, based on local
-`178009a` / remote `d8b672027f50d559325d2003afae6086e36f8b20` (PR #28,
-`codex/notes-only-output`, tree `1f955edd101f2a685178f105a5cf87c130577c3b`).
+Current local work is on `codex/midi-reference-labels`, based on local
+`5490953` / remote `badb780b98fdaa6f26b36654698839a479c13957` (PR #29,
+`codex/media-pair-collection`, tree `7017b5ffe56cde54dabf3563e6eaf83a86753ca0`).
 Keep the guitar model experimental. The immediate user target is electric riffs,
 then full-band recordings. User audio and comparisons remain outside this repo.
 
@@ -58,13 +59,14 @@ milestone is `codex/audio-input-checks`: local commit `68bd31d`, remote commit
 Hosted tests remain manual-only.
 
 Development data, audio, weights and run results are under ignored data/, models/
-and runs/. Five separate environments exist on the development machine:
+and runs/. Six separate environments exist on the development machine:
 
 - `.venv`: core Python 3.13; `uv.lock`.
 - `.venv-ml`: Basic Pitch/features, Python 3.11; `requirements/ml-windows-py311.txt`.
 - `.venv-separation`: CPU Demucs, Python 3.11; separate requirements lock.
 - `.venv-audio`: FFmpeg codec only, Python 3.13; `requirements/audio-windows-py313.txt`.
 - `.venv-guitar`: experimental GAPS guitar model, Python 3.11; `requirements/guitar-windows-py311.txt`.
+- `.venv-media`: local YouTube/MP3 and source-pair collection, Python 3.13; `requirements/media-windows-py313.txt`.
 
 Core tests must run without importing TensorFlow or downloading models. Package
 recipes do not bundle datasets, weights, audio or environments. The exported
