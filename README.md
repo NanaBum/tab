@@ -20,6 +20,8 @@ candidate timed references with explicit track selection and score-feature check
 Local [audio download and source-pair collection](MEDIA_COLLECTION.md) tools can
 prepare explicit Songsterr/YouTube pairs with original audio, MP3, tab revision
 identity and hashes. Packaging is separate from alignment and model training.
+The [MIDI reference importer](MIDI_REFERENCES.md) can select source channels from
+those bundles and preserve their playback timing as candidate note labels.
 Explicit [alternate tuning](TUNING.md) is available in the app and command line;
 standard tuning remains the default. This changes fret mapping, not detected pitches.
 

@@ -46,8 +46,9 @@ Each fresh collection run has staging downloads and `pair/pair.json`, containing
 The original parsed Songsterr values are reserialized; their hashes identify
 the saved bytes, not the original HTTP encoding. GP7 is a ZIP-based format even
 if the upstream website called its download `.gp`. The existing GP3/4/5 reference
-importer does not read GP7 yet. Raw track JSON and MIDI are retained for the next
-label-import stage; choose target guitar tracks and check version/alignment
+importer does not read GP7 yet. A separate [MIDI label importer](MIDI_REFERENCES.md)
+can read explicitly selected tracks/channels as timed candidates. Raw track JSON
+is retained as well; choose target guitar parts and check version/alignment
 before treating a pair as a reference. No string/fret model is trained here.
 
 Staging plus final pair copies use extra disk space. Start with a small pilot.
