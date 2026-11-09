@@ -1,11 +1,28 @@
-# Candidate note labels from source MIDI
+# Candidate note labels from collected scores
 
 The local Songsterr source bundle retains GP7, MIDI and raw track JSON from one
 captured revision. The existing Guitar Pro importer reads GP3/4/5, not GP7.
 This separate MIDI importer prepares timed pitch/attack/release candidates from
 explicitly selected MIDI tracks/channels without assigning guitar positions.
 
-First inspect the actual MIDI file:
+For a collected pair, the GP7 playback importer keeps each attack and its own
+release together. This recovers overlapping unisons that cannot be paired
+reliably after conversion to MIDI. It uses Node and alphaTab from the installed
+sibling Songsterr Downloader. Use `--downloader` to point to that installation
+when the folders are arranged differently.
+
+```powershell
+node scripts/import_gp7_reference.mjs data/training-pairs/PILOT/pair/pair.json --list-tracks
+node scripts/import_gp7_reference.mjs data/training-pairs/PILOT/pair/pair.json --track 2 --output runs/score-track-2.json
+```
+
+Select the one-based track by name. The importer checks the score hash against
+the pair manifest and retains its revision, warnings and review status. The
+renderer supplies repeat, tempo and articulation playback. Pitch bends are
+reduced to the generated MIDI key, and the saved durations are renderer gates.
+Each output is a new file containing unaligned candidate events.
+
+For a MIDI source, first inspect the actual MIDI file:
 
 ```powershell
 uv run python scripts/import_midi_reference.py data/training-pairs/PILOT/pair/tab/score.mid --list-tracks
