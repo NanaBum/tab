@@ -183,3 +183,13 @@ Each estimate beat the displaced controls in all three windows. Local peaks
 varied by up to 23.2 ms over a recording, so these are approximate clock
 corrections. The audit fits the offset to the first window and uses the later
 windows as checks. It does not fit model weights or use P3's audio.
+
+`scripts/prepare_guitar_techs_features.py` produces separate, hash-identified
+development and test caches. Use `--split development` with the clock audit,
+or `--split test` for P3's separately checked clocks. Both modes exclude
+overlapping, too-short, out-of-range and expression-flagged windows. This
+uses MIDI pitch and gates with the measured offset. It does not run a note
+detector or fit a model. The pilot yields 270 development notes and 127
+held-out notes, each recorded in direct and amplifier views. One test take
+supplies 73 notes, so report results per take and per channel as well as
+pooled. Do not treat the two views as independent performances.
