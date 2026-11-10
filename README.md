@@ -97,7 +97,8 @@ One text-tab cell is a sixteenth note by default. Dashes mean no new onset, not 
 rest; exact durations are available in MIDI and JSON. GP5 uses 4/4 measures and
 snaps starts and ends to sixteenth notes, with at least one cell per note. Gaps
 become rests, and sustained notes split into tied durations across measures.
-GP5 tempo is rounded to the nearest integer BPM (1-999). Original timings remain
+GP5 and the text tab use the same tempo rounded to the nearest integer BPM
+(1-999). Original timings remain
 unchanged in JSON and are approximated at MIDI tick resolution. Grid collisions are rejected instead of discarding
 notes. For faster notes choose `--grid 32` or `--grid 64` (divisions per whole note).
 Exports record score-timing movement in `notes.json` and show a notice if any
