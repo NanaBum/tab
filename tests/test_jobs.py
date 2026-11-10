@@ -27,6 +27,20 @@ def test_latest_progress_reads_only_completed_stage_lines(tmp_path):
     assert latest_conversion_progress(log) == "Detecting guitar notes."
 
 
+def test_guitar_window_count_only_applies_to_current_stage(tmp_path):
+    log = tmp_path / "run.log"
+    log.write_bytes(
+        b"Progress: Detecting guitar notes.\nSegment 34 / 39\n"
+        b"Segment 35 / 39\r\nSegment 40 / 39\n"
+    )
+    assert latest_conversion_progress(log) == (
+        "Detecting guitar notes. 35 of 39 guitar audio windows processed."
+    )
+    with log.open("ab") as stream:
+        stream.write(b"Progress: Fitting notes to guitar strings.\n")
+    assert latest_conversion_progress(log) == "Fitting notes to guitar strings."
+
+
 def test_completed_job_keeps_stdout_stderr_and_exit_status(tmp_path):
     log = tmp_path / "result/run.log"
     result = run_conversion(
