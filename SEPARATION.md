@@ -58,6 +58,18 @@ run the following for the event files and a report with input hashes.
 .venv-guitar/Scripts/python.exe scripts/evaluate_guitar_mix_levels.py --output runs/gaps-controlled-mixture-levels
 ```
 
+Basic Pitch was also run on all 14 byte-verified inputs from that experiment.
+The models agreed on all 46 detections in the two guitar-free controls.
+Agreement alone did not distinguish guitar from the generated accompaniment.
+On the equal-RMS picked-lick stem, Basic Pitch matched 3 attacks from 8
+detections and GAPS matched 1 from 3. On the polyphonic stem both matched 14
+from 18. Combining the detections on the equal-RMS mixes added unmatched
+events without recovering any more score attacks than GAPS alone.
+
+```powershell
+.venv-ml/Scripts/python.exe scripts/compare_controlled_mix_detectors.py runs/gaps-controlled-mixture-levels --output runs/controlled-mix-detector-comparison
+```
+
 ### Original Basic Pitch smoke test
 
 After the separate ML and separation environments and GuitarSet archives exist:
