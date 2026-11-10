@@ -183,6 +183,7 @@ def main():
             "audio_check": health,
             "original_input": str((args.audio or args.events).resolve()),
             "separated": args.separate,
+            "bpm": bpm,
             "tempo_source": "estimated" if tempo else "supplied",
             "tempo_estimate": asdict(tempo) if tempo else None,
             "backend": "events" if args.events else args.backend,

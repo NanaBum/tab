@@ -1,6 +1,7 @@
 """Small offline desktop front end; no web server or paid service."""
 
 import importlib.util
+import json
 import os
 import queue
 import subprocess
@@ -14,7 +15,7 @@ from tkinter import filedialog, messagebox, ttk
 
 from .events import saved_detections
 from .jobs import run_conversion
-from .tempo import TapTempo
+from .tempo import TapTempo, parse_bpm
 
 SAVED_NOTES = "Rebuild saved notes"
 GUITAR_MODEL = "Guitar model (experimental)"
@@ -293,8 +294,6 @@ class TabberApp:
     def start(self):
         path = Path(self.audio.get().strip()).expanduser()
         try:
-            from .tempo import parse_bpm
-
             tempo = parse_bpm(self.tempo.get())
             if (
                 tempo == "auto"
@@ -460,9 +459,18 @@ class TabberApp:
         self.backend.set(SAVED_NOTES)
         self.audio.set(str(self.rebuild_input))
         self.separate.set(False)
-        self.status.set(
-            "Saved detections selected. Enter a BPM or tap the tempo before continuing."
-        )
+        try:
+            payload = json.loads(self.rebuild_input.read_text(encoding="utf-8-sig"))
+            bpm = parse_bpm(str(payload["metadata"]["bpm"]))
+        except (KeyError, OSError, TypeError, ValueError):
+            bpm = None
+        if bpm is None or bpm == "auto":
+            self.status.set(
+                "Saved detections selected. Enter a BPM or tap the tempo before continuing."
+            )
+        else:
+            self.tempo.set(str(bpm))
+            self.status.set(f"Saved detections selected at {bpm:g} BPM. You can change the tempo.")
 
     def open_result(self, filename=None):
         if self.result is None:
