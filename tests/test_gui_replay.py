@@ -99,10 +99,20 @@ def test_notes_only_or_cancelled_result_never_enables_a_missing_or_partial_tab(
     (tmp_path / "notes.mid").write_bytes(b"test output")
     if tab_exists:
         (tmp_path / "tab.gp5").write_bytes(b"cancelled partial file")
+    if not success:
+        save_events([Note(0, 1, 64)], tmp_path / "diagnostics/detected-attempt.json")
     app.window = SimpleNamespace(after=lambda *args: None)
     app.progress = SimpleNamespace(stop=lambda: None)
     app.status = SimpleNamespace(set=lambda value: states.update(message=value))
-    for field in ("convert", "stop_conversion", "browse", "open_folder", "open_tab", "open_midi"):
+    for field in (
+        "convert",
+        "stop_conversion",
+        "browse",
+        "open_folder",
+        "open_tab",
+        "open_midi",
+        "rebuild_saved",
+    ):
         setattr(
             app,
             field,
@@ -112,7 +122,34 @@ def test_notes_only_or_cancelled_result_never_enables_a_missing_or_partial_tab(
     assert app.running is False
     assert states["open_tab"]["state"] == "disabled"
     assert states["open_midi"]["state"] == ("normal" if success else "disabled")
+    assert states["rebuild_saved"]["state"] == ("disabled" if success else "normal")
     assert states["convert"]["state"] == "normal"
+
+
+def test_use_saved_detections_selects_rebuild_and_disables_separation(tmp_path):
+    app = object.__new__(TabberApp)
+    app.running = False
+    source = tmp_path / "diagnostics/detected-attempt.json"
+    save_events([Note(0, 1, 64)], source)
+    app.rebuild_input = source
+    state = {}
+    for key in ("backend", "audio", "separate", "status"):
+        setattr(app, key, SimpleNamespace(set=lambda value, name=key: state.update({name: value})))
+    app.use_saved_detections()
+    command = conversion_command(
+        sys.executable,
+        source,
+        tmp_path / "output",
+        method=state["backend"],
+        tempo=120,
+        grid=32,
+        confidence=0.5,
+        separate=state["separate"],
+    )
+    assert state["audio"] == str(source)
+    assert state["backend"] == SAVED_NOTES
+    assert command[command.index("--events") + 1] == str(source.resolve())
+    assert "--separate" not in command
 
 
 @pytest.mark.parametrize("notes_only", [True, False])
