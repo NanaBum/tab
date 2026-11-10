@@ -17,6 +17,8 @@ from .tempo import TapTempo
 
 SAVED_NOTES = "Rebuild saved notes"
 GUITAR_MODEL = "Guitar model (experimental)"
+GUITAR_RELEASE_MODEL = "Guitar model (experimental note endings)"
+GUITAR_METHODS = (GUITAR_MODEL, GUITAR_RELEASE_MODEL)
 
 
 def conversion_command(
@@ -55,11 +57,13 @@ def conversion_command(
         load_events(path)
         command.extend(("--events", str(path.resolve())))
     else:
-        if method == GUITAR_MODEL:
+        if method in GUITAR_METHODS:
             onset = {0.3: 0.2, 0.5: 0.3, 0.7: 0.5}[confidence]
             command.extend(
                 (str(path.resolve()), "--backend", "guitar-gaps", "--onset-threshold", str(onset))
             )
+            if method == GUITAR_RELEASE_MODEL:
+                command.append("--guitar-release-v1")
         else:
             backend = "basic-pitch" if method == "Machine learning" else "baseline"
             command.extend(
@@ -97,7 +101,7 @@ class TabberApp:
         self.cancel_event = threading.Event()
         self.result = None
         self.ml = ml_python(self.root)
-        from .guitar_gaps import default_checkpoint
+        from .guitar_gaps import default_checkpoint, release_v1_checkpoint
 
         guitar_python = (
             self.root / ".venv-guitar" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
@@ -130,6 +134,8 @@ class TabberApp:
         choices = ["Simple melody detector"] + (["Machine learning"] if self.ml else [])
         if self.guitar:
             choices.append(GUITAR_MODEL)
+            if release_v1_checkpoint().is_file():
+                choices.append(GUITAR_RELEASE_MODEL)
         choices.append(SAVED_NOTES)
         ttk.Label(frame, text="Method").grid(row=3, column=0, sticky="w", pady=12)
         self.method = ttk.Combobox(
@@ -290,7 +296,7 @@ class TabberApp:
             if (
                 tempo == "auto"
                 and self.ml is None
-                and not (self.backend.get() == GUITAR_MODEL and self.guitar)
+                and not (self.backend.get() in GUITAR_METHODS and self.guitar)
             ):
                 raise ValueError("Automatic tempo needs the ML environment")
         except ValueError:
@@ -304,7 +310,7 @@ class TabberApp:
         stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
         output = self.root / "runs" / f"{path.stem}-{stamp}"
         interpreter = self.ml if self.backend.get() == "Machine learning" else Path(sys.executable)
-        if self.backend.get() == GUITAR_MODEL:
+        if self.backend.get() in GUITAR_METHODS:
             interpreter = self.guitar
         elif tempo == "auto":
             interpreter = self.ml

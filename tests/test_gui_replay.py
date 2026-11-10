@@ -10,17 +10,24 @@ pytest.importorskip("tkinter")
 from tabber.cli import main
 from tabber.events import load_events, save_events
 from tabber.gp5 import read_gp5, score_events
-from tabber.gui import GUITAR_MODEL, SAVED_NOTES, TabberApp, conversion_command
+from tabber.gui import (
+    GUITAR_MODEL,
+    GUITAR_RELEASE_MODEL,
+    SAVED_NOTES,
+    TabberApp,
+    conversion_command,
+)
 from tabber.jobs import RunResult
 from tabber.models import Note
 
 
-def test_guitar_method_uses_its_own_sensitivity_scale(tmp_path):
+@pytest.mark.parametrize("method", [GUITAR_MODEL, GUITAR_RELEASE_MODEL])
+def test_guitar_method_uses_its_own_sensitivity_scale(tmp_path, method):
     command = conversion_command(
         sys.executable,
         tmp_path / "riff.ogg",
         tmp_path / "out",
-        method=GUITAR_MODEL,
+        method=method,
         tempo=140,
         grid=32,
         confidence=0.5,
@@ -31,6 +38,7 @@ def test_guitar_method_uses_its_own_sensitivity_scale(tmp_path):
     assert "--min-confidence" not in command
     assert "--guitar-range" not in command
     assert "--max-span" not in command
+    assert ("--guitar-release-v1" in command) == (method == GUITAR_RELEASE_MODEL)
 
 
 def test_saved_note_rebuild_only_filters_when_explicitly_requested(tmp_path):
