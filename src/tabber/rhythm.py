@@ -34,3 +34,8 @@ def quantize(time: float, bpm: float, subdivisions: int = 4) -> int:
     if not math.isfinite(time) or time < 0:
         raise ValueError("Time must be finite and nonnegative")
     return int(time * bpm / 60 * subdivisions + 0.5)
+
+
+def score_interval(note: Note, tempo: int, grid: int) -> tuple[int, int]:
+    start = quantize(note.start, tempo, grid // 4)
+    return start, max(start + 1, quantize(note.end, tempo, grid // 4))
