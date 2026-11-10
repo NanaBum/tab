@@ -1,4 +1,4 @@
-"""Compare the agreement and union of detectors run on the same benchmark audio."""
+"""Compare agreement, union and an empty-result fallback on shared benchmark audio."""
 
 import argparse
 import json
@@ -54,6 +54,7 @@ def compare(manifest, split, first, second, destination):
                 ("secondary", b_notes),
                 ("agreement", agreement),
                 ("union", union),
+                ("empty_primary_fallback", a_notes or b_notes),
             )
         }
         record = {
@@ -64,6 +65,7 @@ def compare(manifest, split, first, second, destination):
             "labels_sha256": row["labels_sha256"],
             "primary_events_sha256": a["prediction_sha256"],
             "secondary_events_sha256": b["prediction_sha256"],
+            "fallback_used_secondary": not a_notes,
             "scores": scores,
         }
         rows.append(record)
@@ -80,7 +82,7 @@ def compare(manifest, split, first, second, destination):
     for i, (notes, metadata) in enumerate(combined, 1):
         save_events(notes, destination / f"excerpt-{i:03d}-union.json", metadata)
     report = {
-        "purpose": "Diagnostic comparison of detector agreement and complementary events",
+        "purpose": "Diagnostic comparison of detector agreement, union and empty-result fallback",
         "manifest_sha256": manifest_hash,
         "split": split,
         "agreement_tolerance_seconds": 0.05,
