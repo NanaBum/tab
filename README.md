@@ -98,8 +98,11 @@ rest; exact durations are available in MIDI and JSON. GP5 uses 4/4 measures and
 snaps starts and ends to sixteenth notes, with at least one cell per note. Gaps
 become rests, and sustained notes split into tied durations across measures.
 GP5 tempo is rounded to the nearest integer BPM (1-999). Original timings remain
-unchanged in JSON and are approximated at MIDI tick resolution. Grid collisions are rejected instead of discarding
-notes. For faster notes choose `--grid 32` or `--grid 64` (divisions per whole note).
+unchanged in JSON and are approximated at MIDI tick resolution. If notes land
+on the same string and score cell, polyphonic export tries another fingering
+using the chosen tuning, fret span, and grid. An unresolved collision prompts
+you to choose a finer grid. For faster notes choose `--grid 32` or `--grid 64`
+(divisions per whole note).
 Exports record score-timing movement in `notes.json` and show a notice if any
 note starts moved by over 50 ms. A finer grid can preserve timing better but
 make notation busier. Saved detections can be rebuilt without another ML pass.

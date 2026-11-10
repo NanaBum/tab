@@ -9,8 +9,12 @@ import guitarpro
 from guitarpro import models as gp
 
 from .models import STANDARD_TUNING, FrettedNote
-from .rhythm import quantize
+from .rhythm import quantize, score_interval
 from .tuning import validate_tuning
+
+
+class GridCollision(ValueError):
+    """Two notes assigned to a string occupy the same score cell."""
 
 
 def build_song(
@@ -55,13 +59,12 @@ def build_song(
             raise ValueError("GP5 export needs a valid string and fret from 0 to 24")
         if tuning[n.string] + n.fret != n.note.pitch:
             raise ValueError("Fingering does not match the pitch in the selected tuning")
-        start = quantize(n.note.start, tempo, grid // 4)
-        end = max(start + 1, quantize(n.note.end, tempo, grid // 4))
+        start, end = score_interval(n.note, tempo, grid)
         previous = ends_by_string.get(n.string)
         if previous and n.note.start < previous[0] - 1e-6:
             raise ValueError("Overlapping notes cannot occupy the same guitar string")
         if previous and start < previous[1]:
-            raise ValueError(
+            raise GridCollision(
                 f"Notes collide on the GP5 1/{grid} grid; choose --grid 32 or --grid 64"
             )
         events.append((start, end, n))
@@ -187,8 +190,7 @@ def verify_export(
         raise ValueError("GP5 verification found an unexpected track or tuning")
     expected = []
     for note in notes:
-        first = quantize(note.note.start, tempo, grid // 4)
-        last = max(first + 1, quantize(note.note.end, tempo, grid // 4))
+        first, last = score_interval(note.note, tempo, grid)
         expected.append(
             (960 + first * (3840 // grid), 960 + last * (3840 // grid), note.string + 1, note.fret)
         )
