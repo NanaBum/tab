@@ -91,6 +91,23 @@ Detailed fixed-protocol results are in reports/string-cross-validation.json.
 Reproduce with `scripts/crossvalidate_string_model.py` after feature extraction.
 The audit does not replace or overwrite the original optional inference model.
 
+## Collected song labels
+
+The GP7 importer can preserve written string/fret positions without changing
+the existing pitch/onset references. Keep the new `-positions.json` files
+beside those references. To count candidates in a verified excerpt package,
+run `scripts/audit_string_label_windows.py PLAN MANIFEST --root SOURCE_ROOT
+--output NEW_REPORT.json`. The audit rechecks the source references, alignment
+evidence, and excerpt hashes. It keeps standard-tuned, capo-free positions
+within the model's pitch range, and checks that no other selected guitar
+note overlaps the feature window, including notes sustained into the excerpt.
+
+The first audit found 101 candidates across the training partition and zero
+in validation or test. These are score-derived candidates. The check cannot
+establish whether an individual guitar is audible in a mixed recording or
+whether the performer used the written position. Use a separate, independently
+labeled evaluation set to assess a trained classifier.
+
 ## Reproduce locally
 
 Use the tested ML environment and downloaded GuitarSet archives:

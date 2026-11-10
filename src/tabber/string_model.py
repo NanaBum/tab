@@ -34,16 +34,24 @@ def audio_features(waveform: np.ndarray, rate: int):
     return waveform, mfcc
 
 
+def tone_window(note: Note):
+    lo = note.start + 0.03
+    hi = min(note.end, lo + 0.15)
+    if hi - lo < 0.06 or not PITCH_MIN <= note.pitch <= PITCH_MAX:
+        return None
+    return lo, hi
+
+
 def isolated_features(waveform, mfcc, notes: list[Note]):
     """Return feature rows or None, using the same windows as the training recipe."""
     rows = []
     rate = 22050
     for note in notes:
-        lo = note.start + 0.03
-        hi = min(note.end, lo + 0.15)
-        if hi - lo < 0.06 or not PITCH_MIN <= note.pitch <= PITCH_MAX:
+        window = tone_window(note)
+        if window is None:
             rows.append(None)
             continue
+        lo, hi = window
         if any(other is not note and other.start < hi and other.end > lo for other in notes):
             rows.append(None)
             continue
