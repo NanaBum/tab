@@ -227,6 +227,15 @@ def main():
         diagnostic = args.output / "diagnostics" / f"detected-{stamp}.json"
         save_events(detected, diagnostic, metadata)
         print(f"Detected note events saved to {diagnostic.resolve()}", flush=True)
+        if not detected:
+            if args.audio and args.backend == "guitar-gaps":
+                raise ValueError(
+                    "The guitar model detected no notes. Try Basic Pitch on the same audio. "
+                    "For a full-band recording, try separating guitar first if you have not already."
+                )
+            raise ValueError(
+                "No notes detected. Check that the guitar is clearly audible in the recording."
+            )
         if args.fretting == "polyphonic" and args.max_span != 5 and not args.notes_only:
             print(
                 f"Fingering note: Using a {args.max_span}-fret span limit; review the stretches before playing.",
@@ -270,10 +279,6 @@ def main():
                     "The requested range filter excluded every detection. Review the raw notes in diagnostics."
                 )
         if args.notes_only:
-            if not selected:
-                raise ValueError(
-                    "No notes detected. Check that the guitar is clearly audible in the recording."
-                )
             write_pitch_midi(selected, args.output, bpm)
             metadata["fingering_applied"] = False
             metadata["midi_timing"] = (
@@ -314,10 +319,6 @@ def main():
                 flush=True,
             )
         notes = assign(export_events, tuning=args.tuning, **assignment_options)
-        if not notes:
-            raise ValueError(
-                "No notes detected. Check that the guitar is clearly audible in the recording."
-            )
         timing = write_outputs(notes, args.output, bpm, args.grid, tuning=args.tuning)
         save_events(selected, args.output / "detected-notes.json", metadata)
     except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError) as exc:

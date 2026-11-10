@@ -72,3 +72,22 @@ def test_attack_lead_does_not_cross_an_earlier_release():
     assert [n.start for n in adjusted] == pytest.approx([0, 0.2, 0.29])
     assert [n.end for n in adjusted] == [n.end for n in notes]
     assert limited == 1
+
+
+@pytest.mark.parametrize("notes_only", [False, True])
+def test_empty_guitar_result_saves_diagnostics_and_suggests_basic_pitch(
+    tmp_path, monkeypatch, capsys, notes_only
+):
+    source, output = tmp_path / "riff.wav", tmp_path / "results"
+    sf.write(source, [0.0, 0.1] * 4000, 16000)
+    monkeypatch.setattr("tabber.cli.transcribe", lambda *args, **kwargs: [])
+    argv = ["tabber", str(source), "--backend", "guitar-gaps", "--output", str(output)]
+    monkeypatch.setattr("sys.argv", argv + (["--notes-only"] if notes_only else []))
+    with pytest.raises(SystemExit) as error:
+        main()
+    assert error.value.code == 1
+    assert "Try Basic Pitch on the same audio" in capsys.readouterr().err
+    [diagnostic] = list((output / "diagnostics").glob("detected-*.json"))
+    assert load_events(diagnostic) == []
+    assert not (output / "tab.gp5").exists()
+    assert not (output / "notes.mid").exists()
