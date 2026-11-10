@@ -139,6 +139,24 @@ selected clips.
 See the [full-band onset benchmark](reports/full-band-onset-test.json) for
 the first test comparison with shared stems.
 
+To try the experimental onset ranker, first cache separated train and
+validation stems and frozen model activations. Use the optional guitar
+environment for both commands:
+
+```powershell
+.venv-guitar/Scripts/python.exe scripts/prepare_guitar_training_cache.py DATASET/manifest.json --output runs/stem-cache
+.venv-guitar/Scripts/python.exe scripts/train_stem_onset_ranker.py DATASET/manifest.json --cache runs/stem-cache --output models/onset-ranker
+```
+
+The cache saves completed clips individually and verifies them before reuse.
+The ranker fits on same-pitch pairs from the training split, using
+score-supported attacks and unmatched candidates away from score attacks.
+It weights contributing songs equally and compares the
+learned ordering with frozen onset scores and the existing decoder at the
+same detection count on validation. Test audio and labels are kept out of
+both steps. This experiment predicts onset rankings, so it does not
+estimate note lengths or generate tabs.
+
 The fixture check imported 108 notes from one selected guitar channel in the
 offline nine-track source bundle. Every pitch/start/end matched an independent
 Mido playback-iterator calculation to eight decimal places, with source bytes
