@@ -160,6 +160,18 @@ three excerpts and returned no notes on the fourth. These excerpt results
 describe fallback from a completely empty result. A full song can contain
 both empty and active sections and still bypass that rule.
 
+To inspect an empty GAPS result, run `scripts/diagnose_empty_guitar.py` in
+`.venv-guitar` with the same manifest and `--split`, `--stem-results` set
+to the run that created the separated stems, and a new `--output` folder.
+It verifies the original excerpts and stems, then compares frozen onset
+and frame activation peaks on the mix, the stem, and the same stem at
+half amplitude. It saves event files at three fixed onset thresholds for
+inspection or tab export. The experiment leaves app settings unchanged.
+In the [four-excerpt check](reports/empty-guitar-diagnostic-check.json), the
+full mix stayed empty at every tested cutoff. Halving the separated stem
+recovered reference matches in one excerpt and left the other three empty
+at the default cutoff.
+
 `scripts/screen_fusion_candidates.py` tests two ways to admit Basic Pitch
 additions while keeping the GAPS events. One uses Basic Pitch confidence.
 The other looks for a GAPS activation on the same pitch within 50 ms of
