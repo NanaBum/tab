@@ -1,7 +1,7 @@
 """Build editable GP5 scores on a sixteenth-note grid in 4/4."""
 
 import itertools
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import BinaryIO
 
@@ -43,7 +43,8 @@ def build_song(
     if not 1 <= tempo <= 999:
         raise ValueError("GP5 export requires a tempo from 1 to 999 BPM")
     ordered = sorted(notes, key=lambda n: n.note.start)
-    events = []
+    attacks = defaultdict(list)
+    releases = defaultdict(list)
     ends_by_string = {}
     for n in ordered:
         if (
@@ -64,7 +65,8 @@ def build_song(
             raise ValueError(
                 f"Notes collide on the GP5 1/{grid} grid; choose --grid 32 or --grid 64"
             )
-        events.append((start, end, n))
+        attacks[start].append(n)
+        releases[end].append(n.string)
         ends_by_string[n.string] = (n.note.end, end)
 
     song = gp.Song(title="Guitar transcription", tempo=tempo)
@@ -75,7 +77,7 @@ def build_song(
     track.strings = [gp.GuitarString(i + 1, pitch) for i, pitch in enumerate(tuning)]
     track.measures.clear()
     song.measureHeaders.clear()
-    final_cell = max((event[1] for event in events), default=1)
+    final_cell = max(releases, default=1)
     measure_count = max(1, (final_cell + grid - 1) // grid)
     for index in range(measure_count):
         header = gp.MeasureHeader(number=index + 1, start=960 + index * 3840)
@@ -111,10 +113,15 @@ def build_song(
 
     # A single rhythmic voice can contain chord attacks mixed with tied notes.
     # Split at every attack/release, retaining held strings through those splits.
-    boundaries = sorted({0, measure_count * grid} | {t for a, b, _ in events for t in (a, b)})
+    boundaries = sorted({0, measure_count * grid} | attacks.keys() | releases.keys())
+    sounding = {}
     for start, end in itertools.pairwise(boundaries):
-        sounding = [(onset, fretted) for onset, stop, fretted in events if onset <= start < stop]
-        append_segment(start, end, sounding)
+        # Release the old note before attacking again on the same string.
+        for string in releases.get(start, ()):
+            del sounding[string]
+        for note in attacks.get(start, ()):
+            sounding[note.string] = (start, note)
+        append_segment(start, end, sounding.values())
     return song
 
 
