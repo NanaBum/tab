@@ -28,6 +28,38 @@ distorted guitar, vocals, or other recording conditions.
 
 ## Reproduce
 
+### Electric guitar with controlled backing levels
+
+Two labeled IDMT electric-guitar excerpts were mixed with the same generated
+bass/drum pattern. Within each excerpt, the guitar level stayed fixed across
+conditions. Backing levels were set by RMS and all conditions shared one gain
+to avoid clipping. GAPS used its default onset threshold and 50 ms matching.
+
+| Condition | Picked lick matches / detections (13 attacks) | Polyphonic piece matches / detections (19 attacks) |
+| --- | ---: | ---: |
+| Clean guitar | 12 / 13 | 15 / 18 |
+| Backing only | 0 / 22 | 0 / 24 |
+| Guitar 6 dB louder | 12 / 35 | 15 / 49 |
+| Equal guitar and backing RMS | 11 / 36 | 15 / 56 |
+| Guitar 6 dB quieter | 9 / 38 | 14 / 59 |
+| Separated, equal RMS mix | 1 / 3 | 14 / 18 |
+| Separated, quieter guitar mix | 2 / 3 | 14 / 25 |
+
+The guitar-free control shows that GAPS can report attacks from accompaniment.
+Separation reduced unmatched attacks on the polyphonic excerpt. On the picked
+lick, it also removed most matches. Waveform similarity at equal RMS moved
+from −0.03 to −7.34 dB for the lick and from −0.15 to 12.80 dB for the
+polyphonic excerpt. This comparison uses two recordings and generated backing.
+
+With the guitar model, separation environment, and IDMT examples installed,
+run the following for the event files and a report with input hashes.
+
+```powershell
+.venv-guitar/Scripts/python.exe scripts/evaluate_guitar_mix_levels.py --output runs/gaps-controlled-mixture-levels
+```
+
+### Original Basic Pitch smoke test
+
 After the separate ML and separation environments and GuitarSet archives exist:
 
 ```powershell
