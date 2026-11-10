@@ -8,7 +8,37 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from tabber.jobs import run_conversion
+from tabber.jobs import latest_conversion_progress, run_conversion
+
+
+def test_latest_progress_reads_only_completed_stage_lines(tmp_path):
+    log = tmp_path / "run.log"
+    assert latest_conversion_progress(log) is None
+    log.write_bytes(
+        b"x" * 10000
+        + b"Progress: truncated prefix\n"
+        + b"Progress: Separating guitar from the mix.\r\n"
+        + b"\rSeparator output\n"
+        + b"Progress: Detecting"
+    )
+    assert latest_conversion_progress(log) == "Separating guitar from the mix."
+    with log.open("ab") as stream:
+        stream.write(b" guitar notes.\n")
+    assert latest_conversion_progress(log) == "Detecting guitar notes."
+
+
+def test_guitar_window_count_only_applies_to_current_stage(tmp_path):
+    log = tmp_path / "run.log"
+    log.write_bytes(
+        b"Progress: Detecting guitar notes.\nSegment 34 / 39\n"
+        b"Segment 35 / 39\r\nSegment 40 / 39\n"
+    )
+    assert latest_conversion_progress(log) == (
+        "Detecting guitar notes. 35 of 39 guitar audio windows processed."
+    )
+    with log.open("ab") as stream:
+        stream.write(b"Progress: Fitting notes to guitar strings.\n")
+    assert latest_conversion_progress(log) == "Fitting notes to guitar strings."
 
 
 def test_completed_job_keeps_stdout_stderr_and_exit_status(tmp_path):

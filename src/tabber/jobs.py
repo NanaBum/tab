@@ -2,15 +2,40 @@
 
 import ctypes
 import os
+import re
 import signal
 import subprocess
 from dataclasses import dataclass
+
+_GUITAR_WINDOW = re.compile(rb"Segment ([0-9]{1,9}) / ([0-9]{1,9})")
 
 
 @dataclass(frozen=True)
 class RunResult:
     returncode: int
     cancelled: bool = False
+
+
+def latest_conversion_progress(log_path):
+    """Read a complete stage message without loading a long process log."""
+    try:
+        with log_path.open("rb") as log:
+            start = max(0, log.seek(0, os.SEEK_END) - 8192)
+            log.seek(start)
+            lines = log.read(8192).split(b"\n")
+    except OSError:
+        return None
+    complete = lines[1:-1] if start else lines[:-1]
+    windows = None
+    for line in reversed(complete):
+        if line.startswith(b"Progress: "):
+            stage = line.removeprefix(b"Progress: ").strip().decode("utf-8", errors="replace")
+            return f"{stage} {windows}" if windows else stage
+        if windows is None and (match := _GUITAR_WINDOW.fullmatch(line.strip())):
+            done, total = map(int, match.groups())
+            if 0 <= done <= total and total:
+                windows = f"{done} of {total} guitar audio windows processed."
+    return windows
 
 
 class WindowsJob:
