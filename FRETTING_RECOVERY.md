@@ -41,6 +41,9 @@ pitch, attack and release. Open strings are excluded from the span calculation.
 The CLI accepts span limits from 0 through 24 in polyphonic mode; default is 5.
 Wider permitted stretches still require musical and ergonomic review, and the
 bounded search can still fail. There is no automatic fallback to a larger span.
+If the app lists overlapping pitches that need distinct strings, their timing
+and pitch already rule out an assignment in the selected tuning and fret range.
+Review the detected attacks and releases around the reported time before rebuilding.
 
 ```powershell
 uv run tabber --events runs/failed/diagnostics/detected-TIMESTAMP.json --max-span 7 --bpm 120 --grid 32 --output runs/wider-review
