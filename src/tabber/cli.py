@@ -15,7 +15,7 @@ from .rhythm import lead_attacks, quantize
 from .separate import separate_guitar
 from .tempo import estimate_tempo, parse_bpm
 from .transcribe import baseline_frequency_floor, transcribe
-from .tuning import parse_tuning
+from .tuning import PRESETS, parse_tuning
 
 
 def main():
@@ -43,7 +43,7 @@ def main():
         "--tuning",
         type=parse_tuning,
         default=STANDARD_TUNING,
-        help="standard (default), drop-d, eb-standard, d-standard, or six MIDI pitches, string 1 to 6",
+        help=f"{', '.join(PRESETS)} or six MIDI pitches, string 1 to 6 (default: standard)",
     )
     parser.add_argument(
         "--bpm",

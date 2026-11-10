@@ -78,6 +78,7 @@ def test_drop_d_rebuild_and_range_audit_retain_low_d_without_listening(tmp_path,
 def test_custom_tuning_keeps_physical_string_order():
     assert parse_tuning("64,59,55,50,45,36") == (64, 59, 55, 50, 45, 36)
     assert parse_tuning(" DROP-D ") == PRESETS["drop-d"]
+    assert parse_tuning("c-sharp-standard") == (61, 56, 52, 47, 42, 37)
 
 
 @pytest.mark.parametrize(
