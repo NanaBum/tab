@@ -126,14 +126,15 @@ def test_notes_only_or_cancelled_result_never_enables_a_missing_or_partial_tab(
     assert states["convert"]["state"] == "normal"
 
 
-def test_use_saved_detections_selects_rebuild_and_disables_separation(tmp_path):
+@pytest.mark.parametrize("bpm", [None, 87.5])
+def test_use_saved_detections_selects_rebuild_and_disables_separation(tmp_path, bpm):
     app = object.__new__(TabberApp)
     app.running = False
     source = tmp_path / "diagnostics/detected-attempt.json"
-    save_events([Note(0, 1, 64)], source)
+    save_events([Note(0, 1, 64)], source, {"bpm": bpm} if bpm is not None else {})
     app.rebuild_input = source
     state = {}
-    for key in ("backend", "audio", "separate", "status"):
+    for key in ("backend", "audio", "separate", "status", "tempo"):
         setattr(app, key, SimpleNamespace(set=lambda value, name=key: state.update({name: value})))
     app.use_saved_detections()
     command = conversion_command(
@@ -148,6 +149,7 @@ def test_use_saved_detections_selects_rebuild_and_disables_separation(tmp_path):
     )
     assert state["audio"] == str(source)
     assert state["backend"] == SAVED_NOTES
+    assert state.get("tempo") == (str(bpm) if bpm is not None else None)
     assert command[command.index("--events") + 1] == str(source.resolve())
     assert "--separate" not in command
 

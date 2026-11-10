@@ -56,13 +56,18 @@ def test_cli_saves_detections_if_fingering_fails_and_keeps_old_tab(tmp_path, mon
     old_tab = output / "tab.gp5"
     old_tab.write_bytes(b"previous successful export")
     monkeypatch.setattr("tabber.cli.transcribe", lambda *args: [Note(0, 1, 20)])
-    monkeypatch.setattr("sys.argv", ["tabber", str(audio), "--output", str(output)])
+    monkeypatch.setattr(
+        "sys.argv", ["tabber", str(audio), "--output", str(output), "--bpm", "87.5"]
+    )
     with pytest.raises(SystemExit) as error:
         main()
     assert error.value.code == 1
     diagnostics = list((output / "diagnostics").glob("detected-*.json"))
     assert len(diagnostics) == 1
     assert load_events(diagnostics[0]) == [Note(0, 1, 20)]
+    metadata = json.loads(diagnostics[0].read_text())["metadata"]
+    assert metadata["bpm"] == 87.5
+    assert metadata["tempo_source"] == "supplied"
     assert old_tab.read_bytes() == b"previous successful export"
 
 
