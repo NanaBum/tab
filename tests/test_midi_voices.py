@@ -1,9 +1,38 @@
 import mido
 import pytest
 
-from scripts.validate_midi_exports import midi_events
 from tabber.export import write_outputs
 from tabber.models import FrettedNote, Note
+
+
+def midi_events(path):
+    """Decode our one-track, one-channel-per-string MIDI; reject ambiguous releases."""
+    midi = mido.MidiFile(path)
+    if len(midi.tracks) != 1 or midi.ticks_per_beat != 480:
+        raise ValueError("Unexpected MIDI track count or tick resolution")
+    tick, active, events, programs, tempos = 0, {}, [], {}, []
+    for message in midi.tracks[0]:
+        tick += message.time
+        if message.type == "program_change":
+            programs[message.channel] = message.program
+        elif message.type == "set_tempo":
+            tempos.append(message.tempo)
+        elif message.type == "note_on" and message.velocity:
+            if message.channel in active:
+                raise ValueError("Simultaneous notes share one string channel")
+            if not 0 <= message.channel < 6 or programs.get(message.channel) != 24:
+                raise ValueError("Unexpected MIDI channel or guitar program")
+            active[message.channel] = tick, message.note
+        elif message.type in ("note_on", "note_off"):
+            if message.channel not in active:
+                raise ValueError("Release has no active note")
+            first, pitch = active.pop(message.channel)
+            if pitch != message.note or tick <= first:
+                raise ValueError("Wrong MIDI release pitch or nonpositive duration")
+            events.append((first, tick, message.channel, pitch))
+    if active or len(tempos) != 1:
+        raise ValueError("Stuck notes or unexpected tempo changes")
+    return events, tempos[0]
 
 
 def test_unison_strings_have_independent_midi_releases(tmp_path):

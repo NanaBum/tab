@@ -50,22 +50,3 @@ This can address a span conflict but cannot fix an out-of-range pitch. Neither
 control corrects bad detection timing, recovers techniques or identifies the
 guitarist's actual fingering. Saved-note rebuilding reassigns fingerings and does
 not preserve edits made in TuxGuitar.
-
-## Evidence and correction
-
-The GAPS smoke check's failure at `00_BN1-129-Eb_comp` was at **event 39, MIDI
-pitch 62**, not a MIDI-39 detection. The earlier write-up confused the event
-ordinal with pitch; that explanation and PR #15's description were corrected.
-All 57 detected pitches were in range. The original five-fret result remains
-recorded rather than being replaced by the more favorable setting.
-
-The [exact constraint audit](reports/gaps-fretting-audit.json) proved those fixed
-detections infeasible with a five-fret span and feasible with seven under our
-declared string-reservation assumptions. Rebuilding with seven exported all 57
-events; saved event times and pitches matched the source exactly, and the GP5
-was reopened and verified. This is a recovery example, not an accuracy gain.
-
-Local checks also cover inclusive range boundaries, weak saved notes, indexed
-exclusions, all-excluded failure, retained infeasible chords, prior-tab preservation,
-GUI command routing and notices on failure. The desktop controls were visually
-checked with both new options unchecked. No ML defaults changed.

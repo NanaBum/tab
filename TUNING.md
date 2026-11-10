@@ -61,15 +61,3 @@ enough for four cycles (at least the original 80 ms). It remains a monophonic
 autocorrelation baseline, with unchanged confidence and note-duration thresholds.
 This is not pitch transposition, tuning inference or an extra range filter.
 The CLI prints the extended band and records it in detection metadata.
-
-On the same unmodified synthetic audio, explicit Drop D now detects/exports all
-seven events, including string 6 fret 0. Default baseline events on all 11 saved
-real electric recordings were identical to the prior implementation, including
-timings and confidence. Both ML models remain unchanged; the Basic Pitch miss
-is not repaired by selecting a tuning. Real alternate-tuned recordings and broader
-model evaluation remain further work.
-
-[drop-d-routing-check.json](reports/drop-d-routing-check.json) keeps the audio
-detection result separate from the successful known-event rebuild.
-[baseline-tuning-check.json](reports/baseline-tuning-check.json) records the later
-tuning-aware baseline check and the default-output regression comparison.

@@ -55,18 +55,3 @@ containing those files is refused to prevent old tabs looking like new results.
 The input must not be the output's detected-event or MIDI path. Use a fresh run
 folder, as the app already does. Individual replacements are atomic for MIDI;
 the output collection is not a transaction and partial runs remain incomplete.
-
-## Checks
-
-An actual guitar-GAPS run on the existing IDMT picked electric lick saved all
-13 detections. A separate replay saved all 57 unchanged detections from the
-GuitarSet clip whose default five-fret search still fails. Independent MIDI
-readback matched every pitch and start/end tick in both runs. Source notes were
-not corrected from reference answers. Evidence: [notes-only-check.json](reports/notes-only-check.json).
-
-Tests cover overlaps, independent unison releases, extreme MIDI pitches, minimum
-durations, tick-boundary channel reuse, capacity failure, explicit range filtering,
-source/stale-tab protection and GUI command/result/control state. The new GUI
-layout has not been visually checked in this milestone; testing avoided taking
-over the user's active window. These are preservation/workflow checks, not new
-transcription or readable-notation accuracy results.

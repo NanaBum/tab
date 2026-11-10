@@ -9,7 +9,6 @@ from tabber.export import write_outputs
 from tabber.fretting import assign_polyphonic_frets
 from tabber.gp5 import read_gp5, score_events, verify_export
 from tabber.models import FrettedNote, Note
-from tabber.note_files import read_notes
 from tabber.reference import extract_reference
 from tabber.tuning import PRESETS, parse_tuning, validate_tuning
 
@@ -33,7 +32,7 @@ def test_every_preset_exports_six_held_open_strings_with_correct_pitches(tmp_pat
     assert sorted(m.note for m in midi if m.type == "note_on" and m.velocity) == sorted(tuning)
     payload = json.loads((tmp_path / "notes.json").read_text())
     assert payload["tuning_midi"] == list(tuning)
-    assert sorted(n.pitch for n in read_notes(tmp_path / "notes.json")) == sorted(tuning)
+    assert sorted(row["note"]["pitch"] for row in payload["notes"]) == sorted(tuning)
     if name == "drop-d":
         assert "Open strings (1 to 6): E4 B3 G3 D3 A2 D2" in (tmp_path / "tab.txt").read_text()
 

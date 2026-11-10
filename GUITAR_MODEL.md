@@ -47,62 +47,7 @@ Input is converted to 16 kHz mono. Half-overlapping ten-second windows are
 stitched using the upstream policy, then cropped in **frames** to the recording
 duration before decoding. Original source audio is unchanged.
 
-## Evaluation limits
-
-The initial fixed six-solo/six-accompaniment smoke check (first ten seconds,
-performer round-robin) is saved in [reports/gaps-smoke.json](reports/gaps-smoke.json).
-Pitch/onset F1 was 94.7% solo and 95.4% accompaniment; including release timing
-gave 88.2% and 78.7%. Eleven clips exported all detections. The remaining clip
-failed at the 39th event (MIDI pitch 62) under the five-fret span constraint;
-all its pitches were in range and no note was dropped. A later exact constraint
-audit proved the fixed detections infeasible with a five-fret span and feasible
-with seven. The earlier wording incorrectly called this a MIDI-39 detection.
-The [recovery workflow](FRETTING_RECOVERY.md) documents the exact audit and a
-later successful seven-fret rebuild, preserving all 57 detections.
-These small checks do not establish performance on other recordings.
-
-With the existing GuitarSet archives, reproduce each mode using:
-
-```powershell
-.venv-guitar/Scripts/python.exe scripts/evaluate_guitarset.py --backend guitar-gaps --mode solo --limit 6 --seconds 10 --grid 32 --export-tabs --output runs/gaps-six-solo.json
-.venv-guitar/Scripts/python.exe scripts/evaluate_guitarset.py --backend guitar-gaps --mode comp --limit 6 --seconds 10 --grid 32 --export-tabs --output runs/gaps-six-comp.json
-```
-
-A favorable result on a development riff is not proof of general accuracy on
-electric guitars, distortion or full bands. Training-recording overlap for this
-checkpoint has not been established. GuitarSet checks are development checks,
-not an independent held-out benchmark. Timing, sustain, string assignment and
-playability remain separate from an ordered pitch-sequence match. No private
-recording or reference sequence is included in this repository.
-
-## Attack sensitivity on electric guitar
-
-Run `scripts/sweep_guitar_onsets.py` in the optional guitar environment to
-compare several attack thresholds on the fixed 11-clip IDMT development set.
-It runs the network once per clip and reports missed and extra pitch/onset
-events for each threshold.
-
-| Attack threshold | Missed | Extra |
-| --- | ---: | ---: |
-| 0.18 | 30 | 31 |
-| 0.24 | 31 | 29 |
-| 0.30 (default) | 32 | 27 |
-| 0.36 | 32 | 26 |
-| 0.42 | 32 | 24 |
-
-The stricter 0.42 setting removed three extra events with the same match
-count on this set. The more sensitive 0.18 setting recovered two attacks in
-the difficult muted lick and added four extras across other clips. The
-default scores and source hashes match the earlier runs on all 11 clips.
-This is development evidence. Use `--onset-threshold` to try a setting for a
-particular recording. See [the complete sweep](reports/gaps-onset-sweep.json).
-
-A separate `scripts/evaluate_guitar_pitch_evidence.py` run tests a small
-learned filter with each phrase group held out in turn. It uses onset,
-same-pitch frame support, octave competition, and duration. The filter
-missed more attacks than the fixed-threshold control. The
-[development report](reports/gaps-pitch-evidence-check.json) also records
-an earlier-attack timing comparison on electric and acoustic recordings.
+## Adjusting attack timing
 
 To audition an earlier attack without running the detector again, rebuild
 from its saved detections into a fresh folder:
@@ -116,9 +61,7 @@ times. Each attack stops at the most recent prior release to avoid adding
 overlaps. Original detections remain in `detected-notes.json`. The adjusted
 events and counts are in `diagnostics/`. The chosen grid can still put
 different attacks in the same cell, so compare using a finer grid if export
-reports a collision. On the electric development set, this capped 20 ms
-adjustment increased onset matches from 192 to 199 and onset-plus-release
-matches from 141 to 145. One piece lost two onset matches.
+reports a collision.
 
 An audible guitar stem can still produce weak attack scores. If the guitar
 model returns no notes, try Basic Pitch on the same input. Lower attack

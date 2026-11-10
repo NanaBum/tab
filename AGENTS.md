@@ -1,6 +1,6 @@
 # Project instructions
 
-Goal: a local, measurable audio-to-guitar-tab research prototype. Never imply that a
+Goal: a local audio-to-guitar-tab app. Never imply that a
 synthetic test establishes accuracy on real recordings.
 
 Setup: `uv sync`. Checks: `uv run pytest` and `uv run ruff check .`.
@@ -15,10 +15,9 @@ String 0 is physical string 1 (normally high E); standard tuning defaults to
 (64, 59, 55, 50, 45, 40). Explicit tuning must flow through fretting, range audits,
 GP5 validation and JSON/text labeling. Never infer tuning or transpose detections.
 Frets are zero-based (0 means open). Always preserve the original event timings.
-Prioritize note/timing quality; retain the current fretting solver for tab export
-and defer additional fingering-model work. Notes-only output must bypass fretting
+Prioritize note and timing accuracy. Use the existing fretting solver for tab export. Notes-only output must bypass fretting
 and score-grid snapping, preserve all delivered events, and keep range exclusion
-explicit. Original recordings remain valuable for later string-timbre inference.
+explicit.
 
 Keep data/, models/, runs/, audio, weights and credentials out of Git.
 Use branches for changes; never force-push. Preserve existing remote work.
@@ -35,10 +34,3 @@ Opt-in instrument-range filtering must preserve unfiltered events and an indexed
 exclusion audit. Keep it off by default; never silently widen the five-fret span.
 Core tests must not import TensorFlow. Keep ML pins in requirements/ml.in and the
 Windows/Python 3.11 lock separate from uv.lock. These paths are tested locally.
-GuitarSet development scores are not held-out accuracy claims; audit the pretrained
-model's data splits before making any generalization claim.
-The optional string-tone model uses fixed performer splits (01-04 train, 05 val,
-00 test). Never fit scaling on test notes or tune parameters on test results.
-Its oracle-note classification and conditional end-to-end fingering scores are
-different metrics. Keep it off by default until testing on the user's guitar.
-Do not train models or download large datasets without explaining size and purpose.

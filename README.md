@@ -1,25 +1,13 @@
 # Tabber
 
-A local, open-source audio-to-guitar-tab research prototype. Clean guitar audio becomes editable
-GP5 scores for TuxGuitar 2.1, MIDI playback, text tabs, and JSON with original note
+A local, open-source app for turning guitar recordings into editable tabs. Exports include GP5 scores for TuxGuitar 2.1, MIDI playback, text tabs, and JSON
+with original note
 timings and suggested string/fret positions. The lightweight default detector is
 monophonic; optional local Basic Pitch ML can detect chords and overlapping notes.
 Fingering and transcription remain drafts requiring musical review.
 
 An optional [guitar-specific model](GUITAR_MODEL.md) is also available in its own
-CPU environment. It is experimental and keeps the existing defaults unchanged.
-The [clean electric-guitar comparison](IDMT_VALIDATION.md) tests both models on
-five additional recordings and documents inconsistencies in their reference tabs.
-It also includes a separate three-lick comparison on another electric guitar.
-A [simple-detector control](BASELINE_CONTROL.md) compares all eleven fixed
-electric recordings with both ML methods, retaining individual failure cases.
-For timed references, the [global-offset comparison](GLOBAL_ALIGNMENT.md) reports
-both original scores and a bounded, reference-assisted start-shift diagnostic.
-The [local Guitar Pro reference importer](REFERENCE_IMPORT.md) can prepare
-candidate timed references with explicit track selection and score-feature checks.
-The [MIDI reference importer](MIDI_REFERENCES.md) can read note timing from
-local MIDI files.
-Explicit [alternate tuning](TUNING.md) is available in the app and command line;
+CPU environment. Explicit [alternate tuning](TUNING.md) is available in the app and command line;
 standard tuning remains the default. This changes fret mapping, not detected pitches.
 
 ## Quick start
@@ -75,7 +63,7 @@ as `.tg` if desired. `tab.txt` is a plain-text preview. `notes.mid` provides pla
 `notes.json` preserves detected timing, pitch, confidence, and fingering.
 MIDI uses one channel per guitar string so overlapping unisons have independent
 releases. Times round to 480 ticks per quarter note, with a minimum one-tick
-duration. See [MIDI_VALIDATION.md](MIDI_VALIDATION.md) for the checks and limits.
+duration.
 `detected-notes.json` is a separate editable note-event file, before fingering and
 score quantization. To rebuild an edited detection without rerunning the audio:
 
@@ -114,36 +102,19 @@ unchanged in JSON and are approximated at MIDI tick resolution. Grid collisions 
 notes. For faster notes choose `--grid 32` or `--grid 64` (divisions per whole note).
 Exports record score-timing movement in `notes.json` and show a notice if any
 note starts moved by over 50 ms. A finer grid can preserve timing better but
-make notation busier. See [SCORE_TIMING.md](SCORE_TIMING.md) for the measured
-tradeoff; saved detections can be rebuilt without another ML pass.
+make notation busier. Saved detections can be rebuilt without another ML pass.
 Triplets, swing, other meters, and expressive techniques are not yet represented.
 Choose standard, Drop D, E-flat standard or D standard in the app; the command
 line also accepts six explicit MIDI open-string pitches. Tuning is supplied by
 the user and is not recognized automatically. See [TUNING.md](TUNING.md).
 
-## What works and what remains
+## Transcription limits
 
-- Implemented: autocorrelation melody baseline, optional locally tested Basic
-  Pitch, polyphonic fingering search that preserves sustained strings, 4/4 GP5
-  with chords/rests/ties, MIDI/JSON/text, synthetic demo, and real-audio evaluation.
-- Separate environments: lightweight core Python 3.13 and tested ML Python 3.11.
-- Optional locally tested stage: Demucs guitar separation in its own CPU environment.
-- Remaining: reliable beat/downbeat alignment, string identification on new guitars, expressive
-  techniques, MusicXML export, and broader real-world musical review.
-
-An optional, locally trained string-tone experiment is now available through
-`--string-model`. It is off by default and has only been evaluated within the
-GuitarSet domain. See [STRING_EXPERIMENT.md](STRING_EXPERIMENT.md) for the fixed
-performer split, limitations, and training/reproduction commands. Weights are not
-committed; they remain under ignored `models/`.
-
-The baseline can confuse harmonics and octaves. Frame boundaries introduce timing
-error, and adjacent repeated notes may merge. Fingering optimizes a simple movement
-cost; it does not recover which string was actually played. The default fingering
-search supports overlaps, up to six strings and a five-fret span; it rejects
-conflicting detections rather than dropping notes. For strict melodic dynamic
-programming choose `--fretting melodic`. Synthetic tests verify plumbing; real-audio
-development results and their limitations are documented in [EVALUATION.md](EVALUATION.md).
+The simple melody detector can confuse harmonics with the notes being played and
+may merge repeated notes. The optional models can detect overlapping pitches.
+Review the resulting tab by ear, especially for distorted guitar or full-band
+recordings. Tabber suggests playable string and fret positions based on the
+detected notes and the selected tuning.
 
 ## Optional ML environments
 
@@ -190,27 +161,7 @@ Formats unsupported by soundfile still need external conversion to WAV/FLAC.
 The desktop app offers an experimental separation checkbox when this environment
 exists. Leave it off for isolated guitar. Source separation can add artifacts or
 remove guitar content, and the archived upstream model is not a guarantee for
-arbitrary full songs. See [SEPARATION.md](SEPARATION.md) for the controlled test.
-
-References: [Basic Pitch](https://github.com/spotify/basic-pitch),
-[Demucs](https://github.com/facebookresearch/demucs).
-
-## GuitarSet
-
-[Original GuitarSet v1.1.0](https://zenodo.org/records/3371780) includes aligned
-guitar audio and annotations. Review its license and citation requirements before
-use. No datasets or weights are committed.
-
-```powershell
-uv run python scripts/download_guitarset.py
-# Optional: also download the approximately 657 MB microphone recordings
-uv run python scripts/download_guitarset.py --include-audio
-```
-
-The default downloads only the approximately 39 MB annotations. Archives are
-checksum-verified and left for manual extraction under ignored `data/guitarset/`.
-Do not mix excerpts from the same performer across train and test without documenting
-the split; report pitch, onset, and string/fret accuracy separately.
+arbitrary full songs.
 
 ## Development
 
@@ -223,24 +174,9 @@ uv run ruff check .
 See AGENTS.md for conventions. The pipeline lives in `src/tabber/`, with separate
 modules for separation, transcription, fingering, timing, and export. Use a branch
 for each change and review before merging. The default branch carries locally
-verified snapshots. Keep audio, data, weights, and secrets outside Git.
+verified snapshots.
 
-[INSTALL_VALIDATION.md](INSTALL_VALIDATION.md) records a clean core installation
-outside the development checkout.
-
-Each GP5 export is reopened and compared with its intended quantized note events
-before output files are replaced. See [EXPORT_VALIDATION.md](EXPORT_VALIDATION.md)
-for the corpus check and the tied-note reader workaround. This does not replace
-checking the transcription musically in TuxGuitar.
-
-The pretrained model's GuitarSet use and unresolved recording-level overlap are
-documented in [MODEL_PROVENANCE.md](MODEL_PROVENANCE.md). Dataset results are
-development checks, not proof of accuracy on a new guitar.
-
-For a short single-note recording with a supplied string/fret sequence but no
-reference timestamps, [SEQUENCE_EVALUATION.md](SEQUENCE_EVALUATION.md) describes
-an offline sequence comparison. It reports wrong, missing and extra pitches,
-plus conditional fingering agreement; it does not score rhythm.
+Tabber checks each saved GP5 against the intended score events.
 
 Hosted CI is manual-only. Run the checks above locally.
 
@@ -248,4 +184,3 @@ Hosted CI is manual-only. Run the checks above locally.
 
 Tabber's source code and documentation are available under the [MIT License](LICENSE).
 Installed dependencies and optional model weights have their own terms.
-See [model provenance](MODEL_PROVENANCE.md) for details.
