@@ -17,6 +17,9 @@ CHECKPOINT_NAME = "guitar-gaps-paper-version-12200_iterations.pth"
 CHECKPOINT_SHA256 = "94a7c936ec9fde83686d29007dc256274384e832739cadece39e92cee3b69a7e"
 MODEL_REVISION = "b7bec65a2b860aca72856b0feef58b5df407b777"
 MODEL_REPOSITORY = "xavriley/midi-transcription-models"
+INPUT_RATE = 16000
+BOUNDARY_WINDOW = 0.02
+LEAD_IN = 0.25
 
 
 def default_checkpoint() -> Path:
@@ -100,18 +103,22 @@ def _load_model(checkpoint: Path):
     return model
 
 
-def gaps_activations(path: Path, *, checkpoint: Path | None = None, input_gain: float = 1.0):
-    """Run the frozen network once for one or more decoder comparisons."""
+def _gaps_input(path, checkpoint, input_gain):
     if not math.isfinite(input_gain) or not 0 < input_gain <= 1:
         raise ValueError("Guitar-model input gain must be above zero and at most one")
     model = _load_model((checkpoint or default_checkpoint()).resolve())
     import librosa
-    from piano_transcription_inference.pytorch_utils import forward
 
-    audio, rate = librosa.load(str(path), sr=16000, mono=True)
-    duration = len(audio) / rate
+    audio, _ = librosa.load(str(path), sr=INPUT_RATE, mono=True)
     if input_gain != 1:
         audio = audio * input_gain
+    return audio, model
+
+
+def _infer_gaps(audio, model):
+    from piano_transcription_inference.pytorch_utils import forward
+
+    duration = len(audio) / INPUT_RATE
     segments = _make_segments(audio)
     output = forward(model, segments, batch_size=1)
     # Upstream's crop uses sample count against frame arrays. Crop in frame units
@@ -121,6 +128,11 @@ def gaps_activations(path: Path, *, checkpoint: Path | None = None, input_gain: 
     if any(not np.all(np.isfinite(value)) for value in output.values()):
         raise ValueError("Guitar model produced non-finite activations")
     return output, duration
+
+
+def gaps_activations(path: Path, *, checkpoint: Path | None = None, input_gain: float = 1.0):
+    """Run the frozen network once for one or more decoder comparisons."""
+    return _infer_gaps(*_gaps_input(path, checkpoint, input_gain))
 
 
 def _validate_onset_threshold(onset_threshold):
@@ -163,5 +175,20 @@ def transcribe_gaps(
     input_gain: float = 1.0,
 ) -> list[Note]:
     _validate_onset_threshold(onset_threshold)
-    output, duration = gaps_activations(path, checkpoint=checkpoint, input_gain=input_gain)
-    return decode_gaps(output, duration, onset_threshold=onset_threshold)
+    audio, model = _gaps_input(path, checkpoint, input_gain)
+    output, duration = _infer_gaps(audio, model)
+    notes = decode_gaps(output, duration, onset_threshold=onset_threshold)
+    # The peak finder ignores the first two 10 ms frames. A trimmed recording
+    # with an immediate attack can therefore produce an empty first pass.
+    if notes or not np.any(np.abs(audio[: round(INPUT_RATE * BOUNDARY_WINDOW)]) >= 0.01):
+        return notes
+    print("Retrying the guitar model with a short silent lead-in.", flush=True)
+    padded = np.pad(audio, (round(INPUT_RATE * LEAD_IN), 0))
+    output, padded_duration = _infer_gaps(padded, model)
+    recovered = []
+    for note in decode_gaps(output, padded_duration, onset_threshold=onset_threshold):
+        start = max(0.0, note.start - LEAD_IN)
+        end = min(duration, note.end - LEAD_IN)
+        if note.start >= LEAD_IN - BOUNDARY_WINDOW and end > start:
+            recovered.append(Note(start, end, note.pitch, note.confidence))
+    return recovered if recovered and recovered[0].start <= 0.075 else []

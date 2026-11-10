@@ -4,7 +4,13 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from tabber.guitar_gaps import _load_model, _make_segments, _stitch_segments, decode_gaps
+from tabber.guitar_gaps import (
+    _load_model,
+    _make_segments,
+    _stitch_segments,
+    decode_gaps,
+    transcribe_gaps,
+)
 from tabber.models import Note
 from tabber.transcribe import transcribe
 
@@ -71,3 +77,40 @@ def test_redecode_keeps_shared_activations_and_applies_requested_threshold(monke
     assert decode_gaps(output, 0.1, onset_threshold=0.3) == [Note(0, 0.08, 60, 0.35)]
     assert decode_gaps(output, 0.1, onset_threshold=0.42) == []
     assert set(output) == {"reg_onset_output"}
+
+
+@pytest.mark.parametrize(
+    ("early_signal", "first", "second", "expected", "retry"),
+    [
+        (True, [Note(0, 0.125, 64)], [], [Note(0, 0.125, 64)], False),
+        (False, [], [], [], False),
+        (
+            True,
+            [],
+            [Note(0.01, 0.125, 60), Note(0.24, 0.375, 64)],
+            [Note(0, 0.125, 64)],
+            True,
+        ),
+        (True, [], [Note(0.375, 0.5, 64)], [], True),
+    ],
+)
+def test_empty_boundary_retry_respects_original_clock(
+    monkeypatch, early_signal, first, second, expected, retry
+):
+    audio = np.zeros(16000, dtype=np.float32)
+    audio[50 if early_signal else 500] = 0.4
+    calls = []
+
+    def infer(samples, _model):
+        calls.append(samples)
+        events = first if len(calls) == 1 else second
+        return events, len(samples) / 16000
+
+    monkeypatch.setattr("tabber.guitar_gaps._gaps_input", lambda *_: (audio, object()))
+    monkeypatch.setattr("tabber.guitar_gaps._infer_gaps", infer)
+    monkeypatch.setattr("tabber.guitar_gaps.decode_gaps", lambda events, *_args, **_kw: events)
+    assert transcribe_gaps(None) == expected
+    assert len(calls) == 1 + retry
+    if retry:
+        np.testing.assert_array_equal(calls[1][:4000], 0)
+        np.testing.assert_array_equal(calls[1][4000:], audio)

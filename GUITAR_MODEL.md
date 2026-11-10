@@ -63,6 +63,10 @@ events and counts are in `diagnostics/`. The chosen grid can still put
 different attacks in the same cell, so compare using a finer grid if export
 reports a collision.
 
+If the first pass is empty and there is audible signal immediately at the
+start, Tabber retries with 250 ms of silence before the waveform. The retry
+must recover an early attack. Returned timings use the original audio clock.
+
 An audible guitar stem can still produce weak attack scores. If the guitar
 model returns no notes, try Basic Pitch on the same input. Lower attack
 thresholds may add spurious detections.
