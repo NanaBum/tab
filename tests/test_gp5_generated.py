@@ -43,3 +43,25 @@ def test_validation_rejects_wrong_tuning_even_when_fret_values_match():
     score.tracks[0].strings[0].value = 63
     with pytest.raises(ValueError, match="tuning"):
         verify_export(score, notes, 120, 16)
+
+
+def test_barline_releases_precede_new_attacks_while_another_string_sustains():
+    notes = [
+        FrettedNote(Note(2.0, 2.25, 67), 0, 3),
+        FrettedNote(Note(1.5, 2.0, 64), 0, 0),
+        FrettedNote(Note(1.75, 2.5, 61), 1, 2),
+        FrettedNote(Note(1.875, 2.0, 55), 2, 0),
+        FrettedNote(Note(2.0, 2.125, 52), 3, 2),
+    ]
+    stream = io.BytesIO()
+    write_gp5(build_song(notes, 120), stream)
+    stream.seek(0)
+    score = read_gp5(stream)
+    verify_export(score, notes, 120, 16)
+    assert score_events(score) == [
+        (3840, 4800, 1, 0),
+        (4320, 5760, 2, 2),
+        (4560, 4800, 3, 0),
+        (4800, 5280, 1, 3),
+        (4800, 5040, 4, 2),
+    ]
