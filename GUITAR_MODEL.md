@@ -119,3 +119,10 @@ different attacks in the same cell, so compare using a finer grid if export
 reports a collision. On the electric development set, this capped 20 ms
 adjustment increased onset matches from 192 to 199 and onset-plus-release
 matches from 141 to 145. One piece lost two onset matches.
+
+An audible guitar stem can still produce weak attack scores. One empty
+test excerpt peaked below 0.093 in the attack model, even though the audio
+itself peaked at 0.77 after mono averaging. Lowering the decoder threshold
+to 0.05 returned three events. If the guitar model returns no notes, try
+Basic Pitch on the same input. The [diagnostic results](reports/gaps-empty-diagnosis.json)
+also show why a lower threshold can add many unmatched detections.
