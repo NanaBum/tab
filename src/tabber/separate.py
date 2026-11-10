@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import sys
@@ -6,6 +7,21 @@ from pathlib import Path
 
 import numpy as np
 import soundfile as sf
+
+
+def saved_guitar_stem(output: Path) -> Path | None:
+    """Return a finished separation output from this run only."""
+    try:
+        root = output.resolve()
+        relative = json.loads((root / "guitar-stem.json").read_text(encoding="utf-8"))
+        if not isinstance(relative, str) or Path(relative).is_absolute():
+            return None
+        path = (root / relative).resolve()
+        if path.is_relative_to(root) and path.name == "guitar.wav" and path.is_file():
+            return path
+    except (OSError, ValueError, RuntimeError):
+        pass
+    return None
 
 
 def separate_guitar(path: Path, output: Path) -> Path:
@@ -24,6 +40,8 @@ def separate_guitar(path: Path, output: Path) -> Path:
         audio = np.repeat(audio.mean(axis=1, keepdims=True), 2, axis=1)
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=True)
+    marker = output / "guitar-stem.json"
+    marker.unlink(missing_ok=True)
     # Demucs 4.0.1's mono tensor expansion aliases samples on modern PyTorch.
     # A real stereo file avoids the in-place normalization bug, and soundfile
     # also decodes supported inputs without requiring ffmpeg/ffprobe binaries.
@@ -54,6 +72,7 @@ def separate_guitar(path: Path, output: Path) -> Path:
             env=environment,
         )
     stem = output / "htdemucs_6s" / path.stem / "guitar.wav"
-    if not stem.exists():
+    if not stem.is_file():
         raise ValueError("Demucs did not produce the expected guitar stem")
+    marker.write_text(json.dumps(stem.relative_to(output).as_posix()) + "\n", encoding="utf-8")
     return stem

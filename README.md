@@ -45,6 +45,10 @@ If export fails, [recovery controls](FRETTING_RECOVERY.md) can explicitly exclud
 out-of-range detections with an audit, or allow a wider simultaneous fret span.
 They are separate choices and remain off by default in the app.
 
+After full-mix separation, choose **Reuse guitar stem** to try another detector
+on the saved guitar audio. The app selects that audio and turns off separation
+for the next run. This also works if separation finished and tab conversion failed.
+
 The desktop app needs Tkinter in the Python installation. The terminal setup
 below also works without Tkinter.
 

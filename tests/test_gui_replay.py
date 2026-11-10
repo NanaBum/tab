@@ -1,3 +1,4 @@
+import json
 import queue
 import sys
 import threading
@@ -102,7 +103,15 @@ def test_notes_only_or_cancelled_result_never_enables_a_missing_or_partial_tab(
     app.window = SimpleNamespace(after=lambda *args: None)
     app.progress = SimpleNamespace(stop=lambda: None)
     app.status = SimpleNamespace(set=lambda value: states.update(message=value))
-    for field in ("convert", "stop_conversion", "browse", "open_folder", "open_tab", "open_midi"):
+    for field in (
+        "convert",
+        "stop_conversion",
+        "browse",
+        "open_folder",
+        "open_tab",
+        "open_midi",
+        "reuse_stem",
+    ):
         setattr(
             app,
             field,
@@ -112,7 +121,32 @@ def test_notes_only_or_cancelled_result_never_enables_a_missing_or_partial_tab(
     assert app.running is False
     assert states["open_tab"]["state"] == "disabled"
     assert states["open_midi"]["state"] == ("normal" if success else "disabled")
+    assert states["reuse_stem"]["state"] == "disabled"
     assert states["convert"]["state"] == "normal"
+
+
+def test_reuse_stem_selects_audio_and_turns_off_separation(tmp_path):
+    output = tmp_path / "stems"
+    output.mkdir()
+    stem = output / "guitar.wav"
+    stem.touch()
+    (output / "guitar-stem.json").write_text(json.dumps(stem.name), encoding="utf-8")
+    states = {"backend": GUITAR_MODEL}
+    app = object.__new__(TabberApp)
+    app.result, app.running = tmp_path, False
+    for name in ("audio", "separate", "backend", "status"):
+        setattr(
+            app,
+            name,
+            SimpleNamespace(
+                set=lambda value, key=name: states.update({key: value}),
+                get=lambda key=name: states.get(key),
+            ),
+        )
+    app.use_saved_stem()
+    assert states["audio"] == str(stem.resolve())
+    assert states["separate"] is False
+    assert states["backend"] == GUITAR_MODEL
 
 
 @pytest.mark.parametrize("notes_only", [True, False])
