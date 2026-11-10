@@ -193,3 +193,16 @@ detector or fit a model. The pilot yields 270 development notes and 127
 held-out notes, each recorded in direct and amplifier views. One test take
 supplies 73 notes, so report results per take and per channel as well as
 pooled. Do not treat the two views as independent performances.
+
+`scripts/fit_guitar_techs_string_model.py` fits fixed pitch-only and
+pitch-plus-timbre models on P1/P2, then separately evaluates saved weights
+on P3. On 112 ambiguous pitches per audio view, the new timbre model
+classified 69 correctly in direct audio and 68 in amp audio. The same-data
+pitch-only model scored 55 in each view. The old GuitarSet timbre model
+scored 57 in each view. These measurements use supplied pitch and timing.
+
+On the independent IDMT solver comparison, the new timbre prior got 37 of
+80 ambiguous positions right, compared with 31 for the original timbre
+prior and 50 for the ergonomic solver. Across all 198 comparable positions
+the new prior got 112 right, versus 134 for the solver alone. The new model
+remains experimental.
