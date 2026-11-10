@@ -139,6 +139,18 @@ selected clips.
 See the [full-band onset benchmark](reports/full-band-onset-test.json) for
 the first test comparison with shared stems.
 
+To compare agreement and complementary detections, run
+`scripts/compare_detector_fusion.py` with the same manifest and split,
+`--primary` and `--secondary` pointing to the two result folders, and
+`--output` pointing to a fresh folder. It verifies prediction files and
+the shared detector input. It pairs nearby same-pitch notes one-to-one,
+keeps the primary event for each pair, and saves the union with source
+indices. Pairing can merge close repetitions. In the
+[fusion check](reports/detector-fusion-check.json), the union matched more
+score attacks on both partitions. On validation, most added detections
+had no score match. The union is a research output and the default
+transcription pipeline is unchanged.
+
 To try the experimental onset ranker, first cache separated train and
 validation stems and frozen model activations. Use the optional guitar
 environment for both commands:

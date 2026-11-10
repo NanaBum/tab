@@ -1,0 +1,27 @@
+{
+  "comparison": "Frozen detectors on the same separated guitar stems",
+  "agreement_tolerance_seconds": 0.05,
+  "scoring_tolerance_seconds": 0.075,
+  "counts_columns": ["predicted_attacks", "matched_attacks", "unmatched_attacks"],
+  "validation": {
+    "songs": 1,
+    "excerpts": 2,
+    "candidate_score_attacks": 96,
+    "gaps": [79, 33, 46],
+    "basic_pitch": [86, 33, 53],
+    "agreement": [22, 17, 5],
+    "union": [143, 49, 94]
+  },
+  "test": {
+    "songs": 2,
+    "excerpts": 3,
+    "candidate_score_attacks": 593,
+    "gaps": [229, 142, 87],
+    "basic_pitch": [129, 93, 36],
+    "agreement": [73, 53, 20],
+    "union": [285, 179, 106],
+    "matches_added_by_union_per_excerpt": [0, 14, 23]
+  },
+  "limits": "Weak score labels can omit played attacks and include score attacks absent from the stem. Agreement keeps GAPS timing and release. The test excludes the optional GAPS retry. Close repetitions can merge.",
+  "audition": "All 113 combined events from the second test excerpt exported to MIDI. The default five-fret solver failed on this event list, so no GP5 was produced for that excerpt."
+}
