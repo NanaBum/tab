@@ -91,3 +91,57 @@ def test_empty_guitar_result_saves_diagnostics_and_suggests_basic_pitch(
     assert load_events(diagnostic) == []
     assert not (output / "tab.gp5").exists()
     assert not (output / "notes.mid").exists()
+
+
+@pytest.mark.parametrize("empty_first_pass", [True, False])
+def test_guitar_retry_only_runs_after_an_empty_first_pass(tmp_path, monkeypatch, empty_first_pass):
+    source, output = tmp_path / "riff.wav", tmp_path / "results"
+    sf.write(source, [0.0, 0.1] * 4000, 16000)
+    notes = [Note(0.1, 0.3, 64)]
+    monkeypatch.setattr(
+        "tabber.cli.transcribe", lambda *args, **kwargs: [] if empty_first_pass else notes
+    )
+    calls = []
+
+    def retry(path, **settings):
+        calls.append((path, settings))
+        assert len(list((output / "diagnostics").glob("detected-*.json"))) == 1
+        return notes
+
+    monkeypatch.setattr("tabber.guitar_gaps.transcribe_gaps", retry)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "tabber",
+            str(source),
+            "--backend",
+            "guitar-gaps",
+            "--guitar-retry-empty",
+            "--onset-threshold",
+            "0.24",
+            "--notes-only",
+            "--output",
+            str(output),
+        ],
+    )
+    main()
+    [first] = list((output / "diagnostics").glob("detected-*.json"))
+    retry_events = list((output / "diagnostics").glob("retry-*.json"))
+    assert load_events(output / "detected-notes.json") == notes
+    if empty_first_pass:
+        assert calls == [
+            (
+                source.resolve(),
+                {
+                    "checkpoint": None,
+                    "onset_threshold": 0.24,
+                    "input_gain": 0.5,
+                },
+            )
+        ]
+        assert load_events(first) == []
+        [second] = retry_events
+        assert load_events(second) == notes
+    else:
+        assert not calls and not retry_events
+        assert load_events(first) == notes

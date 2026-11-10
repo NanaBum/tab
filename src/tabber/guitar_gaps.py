@@ -100,14 +100,18 @@ def _load_model(checkpoint: Path):
     return model
 
 
-def gaps_activations(path: Path, *, checkpoint: Path | None = None):
+def gaps_activations(path: Path, *, checkpoint: Path | None = None, input_gain: float = 1.0):
     """Run the frozen network once for one or more decoder comparisons."""
+    if not math.isfinite(input_gain) or not 0 < input_gain <= 1:
+        raise ValueError("Guitar-model input gain must be above zero and at most one")
     model = _load_model((checkpoint or default_checkpoint()).resolve())
     import librosa
     from piano_transcription_inference.pytorch_utils import forward
 
     audio, rate = librosa.load(str(path), sr=16000, mono=True)
     duration = len(audio) / rate
+    if input_gain != 1:
+        audio = audio * input_gain
     segments = _make_segments(audio)
     output = forward(model, segments, batch_size=1)
     # Upstream's crop uses sample count against frame arrays. Crop in frame units
@@ -152,8 +156,12 @@ def decode_gaps(output, duration, *, onset_threshold=0.3) -> list[Note]:
 
 
 def transcribe_gaps(
-    path: Path, *, checkpoint: Path | None = None, onset_threshold: float = 0.3
+    path: Path,
+    *,
+    checkpoint: Path | None = None,
+    onset_threshold: float = 0.3,
+    input_gain: float = 1.0,
 ) -> list[Note]:
     _validate_onset_threshold(onset_threshold)
-    output, duration = gaps_activations(path, checkpoint=checkpoint)
+    output, duration = gaps_activations(path, checkpoint=checkpoint, input_gain=input_gain)
     return decode_gaps(output, duration, onset_threshold=onset_threshold)

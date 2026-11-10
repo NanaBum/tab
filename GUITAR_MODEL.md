@@ -126,3 +126,12 @@ itself peaked at 0.77 after mono averaging. Lowering the decoder threshold
 to 0.05 returned three events. If the guitar model returns no notes, try
 Basic Pitch on the same input. The [diagnostic results](reports/gaps-empty-diagnosis.json)
 also show why a lower threshold can add many unmatched detections.
+
+For an opt-in second attempt, add `--guitar-retry-empty` to a
+`--backend guitar-gaps` command. This retries at half input level only
+if the first pass returns zero notes. The retry uses the same attack
+threshold and guitar audio, including a separated stem if requested.
+The original recording and first-pass diagnostics are preserved.
+On the previously empty full-band excerpt, the retry recovered 17 events
+and exported them to GP5. Eleven matched the candidate score onsets.
+See the [retry check](reports/gaps-empty-retry-check.json).

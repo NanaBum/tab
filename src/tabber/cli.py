@@ -68,6 +68,11 @@ def main():
         "--guitar-checkpoint", type=Path, help="Location of the pinned published guitar checkpoint"
     )
     parser.add_argument(
+        "--guitar-retry-empty",
+        action="store_true",
+        help="Retry an empty guitar-model result once at half input level",
+    )
+    parser.add_argument(
         "--fretting",
         choices=("melodic", "polyphonic"),
         default="polyphonic",
@@ -116,7 +121,7 @@ def main():
         parser.error(
             "The experimental string-tone model has only been evaluated in standard tuning"
         )
-    if (args.onset_threshold is not None or args.guitar_checkpoint) and (
+    if (args.onset_threshold is not None or args.guitar_checkpoint or args.guitar_retry_empty) and (
         args.events or args.backend != "guitar-gaps"
     ):
         parser.error("Guitar-model options need --backend guitar-gaps and audio input")
@@ -225,8 +230,32 @@ def main():
             }
         stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
         diagnostic = args.output / "diagnostics" / f"detected-{stamp}.json"
+        if args.guitar_retry_empty:
+            metadata["guitar_empty_retry_requested"] = True
         save_events(detected, diagnostic, metadata)
         print(f"Detected note events saved to {diagnostic.resolve()}", flush=True)
+        if not detected and args.guitar_retry_empty:
+            from .guitar_gaps import transcribe_gaps
+
+            print(
+                "Detector note: No notes on the first pass. Retrying at half input level.",
+                flush=True,
+            )
+            first_diagnostic = diagnostic.resolve()
+            detected = transcribe_gaps(
+                path,
+                checkpoint=args.guitar_checkpoint,
+                onset_threshold=metadata["guitar_model_onset_threshold"],
+                input_gain=0.5,
+            )
+            diagnostic = args.output / "diagnostics" / f"retry-{stamp}.json"
+            metadata["guitar_empty_retry"] = {
+                "first_attempt_events": str(first_diagnostic),
+                "retry_events": str(diagnostic.resolve()),
+                "input_gain": 0.5,
+                "retry_note_count": len(detected),
+            }
+            save_events(detected, diagnostic, metadata)
         if not detected:
             if args.audio and args.backend == "guitar-gaps":
                 raise ValueError(
