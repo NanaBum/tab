@@ -128,6 +128,17 @@ displaced controls, and keeps all versions of a song in one split. It saves
 sample-exact WAV excerpts, weak score onsets, and a manifest. Durations in the
 event files describe score playback and are carried for inspection.
 
+Run `scripts/evaluate_onset_excerpts.py` in the chosen detector's
+environment to compare a fixed validation or test partition. It verifies
+recording and label hashes and reports missed and unmatched attacks at
+75 ms. For a full-band comparison, run once on the mix and once with
+`--separate` into distinct output folders. Compare a second detector on
+the exact same separated waveform with `--reuse-stems FIRST_OUTPUT`.
+Test labels remain score candidates and are used only to score the
+selected clips.
+See the [full-band onset benchmark](reports/full-band-onset-test.json) for
+the first test comparison with shared stems.
+
 The fixture check imported 108 notes from one selected guitar channel in the
 offline nine-track source bundle. Every pitch/start/end matched an independent
 Mido playback-iterator calculation to eight decimal places, with source bytes
