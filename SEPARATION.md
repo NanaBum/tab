@@ -70,6 +70,31 @@ events without recovering any more score attacks than GAPS alone.
 .venv-ml/Scripts/python.exe scripts/compare_controlled_mix_detectors.py runs/gaps-controlled-mixture-levels --output runs/controlled-mix-detector-comparison
 ```
 
+### Note evidence in the stem and residual
+
+`scripts/check_stem_note_contrast.py` compares each detected note's first four
+harmonics between the guitar stem and the remaining mix. It uses the interval
+20–120 ms after onset, clipped to the detected release. The tested rule kept
+notes with at least as much energy in the stem, and kept notes when the window
+was too short or quiet to measure. It uses saved detections and writes a new
+event list with evidence and source hashes. The two stems must share the same
+length and sample rate. Independent separator gains and wrongly routed notes
+can affect the comparison.
+
+| Partition | Model | All detections / matches | Screened detections / matches |
+| --- | --- | ---: | ---: |
+| Validation | Basic Pitch | 86 / 33 | 42 / 17 |
+| Validation | GAPS | 79 / 33 | 40 / 17 |
+| First held-out set | Basic Pitch | 129 / 93 | 111 / 76 |
+| First held-out set | GAPS | 229 / 142 | 187 / 115 |
+| Three newer songs | Basic Pitch | 107 / 37 | 97 / 32 |
+
+On the first held-out set the rule removed 17 Basic Pitch reference matches
+and only one unmatched event. GAPS lost 27 matches and 15 unmatched events.
+These are score-derived labels. In the controlled equal-RMS picked-lick
+example, all three of Basic Pitch's matches were rejected. The report tool
+is diagnostic and this rule is not used for tab creation.
+
 ### Original Basic Pitch smoke test
 
 After the separate ML and separation environments and GuitarSet archives exist:
