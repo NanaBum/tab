@@ -8,6 +8,7 @@ from types import ModuleType
 
 import pytest
 
+from scripts.audit_collected_pairs import audit
 from tabber.collect import collect_queue
 from tabber.collection import bundle_training_pair, fetch_local_tab_bundle, inspect_tab_bundle
 from tabber.media import convert_mp3, download_youtube, sha256_file, youtube_url
@@ -159,13 +160,15 @@ def test_pair_retains_sources_hashes_and_pending_alignment(tmp_path):
                 "format": "tabber-audio-download",
                 "schema_version": 1,
                 "source_url": "test",
+                "source_metadata": {"id": "recording-id"},
                 "assets": assets,
             }
         )
     )
     tab = tmp_path / "tab.zip"
     tab.write_bytes(source_zip())
-    output = tmp_path / "pair"
+    collection = tmp_path / "collection"
+    output = collection / "batch/artist-song/pair"
     result = bundle_training_pair(
         "Artist-Song",
         audio,
@@ -181,6 +184,26 @@ def test_pair_retains_sources_hashes_and_pending_alignment(tmp_path):
     for asset in result["assets"]:
         assert sha256_file(output / asset["path"]) == asset["sha256"]
     assert (download / "recording.webm").read_bytes() == b"original"
+    assert audit(collection)["verified_pairs"] == 1
+
+    alias = collection / "batch/other-song/pair"
+    bundle_training_pair("Other-Song", audio, tab, alias)
+    report = audit(collection)
+    assert report["song_groups"] == 2
+    assert len(report["duplicate_bundles"]) == 1
+    assert {entry["identity_type"] for entry in report["cross_group_source_conflicts"]} == {
+        "recording_id",
+        "recording_sha256",
+        "songsterr_song_id",
+        "score_sha256",
+        "score_midi_sha256",
+    }
+
+    (alias / "audio/recording.webm").write_bytes(b"changed!")
+    report = audit(collection)
+    assert report["verified_pairs"] == 1
+    assert report["duplicate_bundles"] == []
+    assert "Asset changed" in report["invalid_pairs"][0]["error"]
 
 
 def test_invalid_server_is_rejected_before_request(tmp_path):
