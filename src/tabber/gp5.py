@@ -10,7 +10,7 @@ from guitarpro import models as gp
 
 from .models import STANDARD_TUNING, FrettedNote
 from .rhythm import quantize
-from .tuning import validate_tuning
+from .tuning import pitch_name, validate_tuning
 
 
 def build_song(
@@ -58,14 +58,22 @@ def build_song(
         start = quantize(n.note.start, tempo, grid // 4)
         end = max(start + 1, quantize(n.note.end, tempo, grid // 4))
         previous = ends_by_string.get(n.string)
-        if previous and n.note.start < previous[0] - 1e-6:
+        if previous and n.note.start < previous[0].end - 1e-6:
             raise ValueError("Overlapping notes cannot occupy the same guitar string")
         if previous and start < previous[1]:
+            first = previous[0]
+            recovery = (
+                "Try a finer rhythm grid."
+                if grid < 64
+                else "Review these detections or save notes and MIDI without a tab."
+            )
             raise ValueError(
-                f"Notes collide on the GP5 1/{grid} grid; choose --grid 32 or --grid 64"
+                f"{pitch_name(first.pitch)} at {first.start:.3f}s and "
+                f"{pitch_name(n.note.pitch)} at {n.note.start:.3f}s collide on string "
+                f"{n.string + 1} on the GP5 1/{grid} grid. {recovery}"
             )
         events.append((start, end, n))
-        ends_by_string[n.string] = (n.note.end, end)
+        ends_by_string[n.string] = (n.note, end)
 
     song = gp.Song(title="Guitar transcription", tempo=tempo)
     song.instructions = "Draft transcription: verify notes and rhythm against the recording."
