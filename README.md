@@ -36,9 +36,10 @@ mode remains the default. See [NOTES_ONLY.md](NOTES_ONLY.md).
 To change tempo or rhythm detail after listening once, choose **Rebuild saved
 notes** under Method, then choose `detected-notes.json` from the earlier results
 folder (or a timestamped detected file under `diagnostics/` after a fingering
-failure). **Use saved detections** loads the unfiltered notes, turns off separation,
-and restores the prior run's BPM when available. You can change the BPM or tap it
-before creating a new tab. Rebuilding keeps every saved note unless you explicitly select the optional
+failure). Choosing a saved notes file restores its BPM when available. **Use saved
+detections** also selects the unfiltered notes and turns off separation. You can
+change the BPM or tap it before creating a new tab. On the command line, `--events`
+uses the saved BPM when you omit `--bpm`. Rebuilding keeps every saved note unless you explicitly select the optional
 instrument-range filter; sensitivity does not filter saved input.
 It assigns fingerings again and does not carry over edits made in TuxGuitar.
 

@@ -1,7 +1,6 @@
 """Small offline desktop front end; no web server or paid service."""
 
 import importlib.util
-import json
 import os
 import queue
 import subprocess
@@ -13,9 +12,9 @@ from datetime import datetime
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
-from .events import saved_detections
+from .events import load_event_document, saved_detections
 from .jobs import run_conversion
-from .tempo import TapTempo, parse_bpm
+from .tempo import TapTempo, parse_bpm, recorded_bpm
 
 SAVED_NOTES = "Rebuild saved notes"
 GUITAR_MODEL = "Guitar model (experimental)"
@@ -282,6 +281,8 @@ class TabberApp:
         )
         if filename:
             self.audio.set(filename)
+            if replay:
+                self.set_saved_tempo(Path(filename))
 
     def tap_tempo(self):
         bpm = self.taps.tap(time.monotonic())
@@ -459,12 +460,15 @@ class TabberApp:
         self.backend.set(SAVED_NOTES)
         self.audio.set(str(self.rebuild_input))
         self.separate.set(False)
+        self.set_saved_tempo(self.rebuild_input)
+
+    def set_saved_tempo(self, path):
         try:
-            payload = json.loads(self.rebuild_input.read_text(encoding="utf-8-sig"))
-            bpm = parse_bpm(str(payload["metadata"]["bpm"]))
-        except (KeyError, OSError, TypeError, ValueError):
+            _, metadata = load_event_document(path)
+            bpm = recorded_bpm(metadata)
+        except (OSError, ValueError):
             bpm = None
-        if bpm is None or bpm == "auto":
+        if bpm is None:
             self.status.set(
                 "Saved detections selected. Enter a BPM or tap the tempo before continuing."
             )

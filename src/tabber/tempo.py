@@ -46,6 +46,23 @@ def parse_bpm(value: str):
     return bpm
 
 
+def recorded_bpm(metadata: dict) -> float | None:
+    """Read a usable tempo from a saved detection file's metadata."""
+    value = metadata.get("bpm")
+    estimate = metadata.get("tempo_estimate")
+    if (
+        "bpm" not in metadata
+        and metadata.get("tempo_source") == "estimated"
+        and isinstance(estimate, dict)
+    ):
+        value = estimate.get("bpm")
+    try:
+        bpm = parse_bpm(str(value))
+    except ValueError:
+        return None
+    return bpm if bpm != "auto" else None
+
+
 def estimate_tempo(path: Path, max_seconds=60.0) -> TempoEstimate:
     if not math.isfinite(max_seconds) or max_seconds < 2:
         raise ValueError("Tempo analysis needs a window of at least 2 seconds")
