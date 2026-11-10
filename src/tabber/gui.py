@@ -35,6 +35,7 @@ def conversion_command(
     max_span=5,
     tuning="standard",
     notes_only=False,
+    guitar_retry_empty=False,
 ):
     """Route saved events directly to export; filtering requires explicit opt-in."""
     interpreter = Path(interpreter)
@@ -64,6 +65,8 @@ def conversion_command(
             )
             if method == GUITAR_RELEASE_MODEL:
                 command.append("--guitar-release-v1")
+            if guitar_retry_empty:
+                command.append("--guitar-retry-empty")
         else:
             backend = "basic-pitch" if method == "Machine learning" else "baseline"
             command.extend(
@@ -188,6 +191,7 @@ class TabberApp:
         self.guitar_range = tk.BooleanVar(value=False)
         self.wider_span = tk.BooleanVar(value=False)
         self.notes_only = tk.BooleanVar(value=False)
+        self.guitar_retry_empty = tk.BooleanVar(value=False)
         options = ttk.Frame(frame)
         options.grid(row=11, column=0, columnspan=3, sticky="w", pady=(0, 12))
         ttk.Checkbutton(
@@ -216,6 +220,15 @@ class TabberApp:
                 text="Separate guitar from a full mix (experimental; slower)",
                 variable=self.separate,
             ).grid(row=3, column=0, sticky="w")
+        if self.guitar:
+            self.retry_control = ttk.Checkbutton(
+                options,
+                text="Retry when the guitar model finds no notes (slower)",
+                variable=self.guitar_retry_empty,
+            )
+            self.retry_control.grid(row=4, column=0, sticky="w")
+            self.backend.trace_add("write", self.update_retry_control)
+            self.update_retry_control()
         actions = ttk.Frame(frame)
         actions.grid(row=12, column=0, columnspan=3, sticky="ew", pady=(0, 12))
         self.convert = ttk.Button(actions, text="Create guitar tab", command=self.start)
@@ -263,6 +276,11 @@ class TabberApp:
         self.stretch_control.configure(state="disabled" if notes_only else "normal")
         self.convert.configure(
             text="Detect notes and create MIDI" if notes_only else "Create guitar tab"
+        )
+
+    def update_retry_control(self, *_):
+        self.retry_control.configure(
+            state="normal" if self.backend.get() in GUITAR_METHODS else "disabled"
         )
 
     def choose_audio(self):
@@ -330,6 +348,7 @@ class TabberApp:
                 max_span=7 if self.wider_span.get() else 5,
                 tuning=self.tuning.get(),
                 notes_only=self.notes_only.get(),
+                guitar_retry_empty=self.guitar_retry_empty.get(),
             )
         except (ValueError, OSError) as error:
             messagebox.showerror("Check saved notes", str(error))
