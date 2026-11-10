@@ -18,7 +18,7 @@ both original scores and a bounded, reference-assisted start-shift diagnostic.
 The [local Guitar Pro reference importer](REFERENCE_IMPORT.md) can prepare
 candidate timed references with explicit track selection and score-feature checks.
 Local [audio download and source-pair collection](MEDIA_COLLECTION.md) tools can
-prepare explicit Songsterr/YouTube pairs with original audio, MP3, tab revision
+prepare explicit tab/YouTube pairs with original audio, MP3, tab revision
 identity and hashes. Packaging is separate from alignment and model training.
 The [MIDI reference importer](MIDI_REFERENCES.md) can select source channels from
 those bundles and preserve their playback timing as candidate note labels.
