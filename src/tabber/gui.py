@@ -13,6 +13,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
 from .jobs import run_conversion
+from .separate import saved_guitar_stem
 from .tempo import TapTempo
 
 SAVED_NOTES = "Rebuild saved notes"
@@ -249,6 +250,10 @@ class TabberApp:
             command=lambda: self.open_result(),
         )
         self.open_folder.pack(side="left", padx=8)
+        self.reuse_stem = ttk.Button(
+            buttons, text="Reuse guitar stem", state="disabled", command=self.use_saved_stem
+        )
+        self.reuse_stem.pack(side="left")
         self.window.after(150, self.poll)
 
     def update_output_mode(self):
@@ -337,6 +342,7 @@ class TabberApp:
         self.open_tab.configure(state="disabled")
         self.open_midi.configure(state="disabled")
         self.open_folder.configure(state="disabled")
+        self.reuse_stem.configure(state="disabled")
         self.progress.start(12)
         self.status.set(
             "Rebuilding the tab from saved notes…"
@@ -428,6 +434,9 @@ class TabberApp:
             self.stop_conversion.configure(state="disabled")
             self.browse.configure(state="normal")
             self.open_folder.configure(state="normal" if output.exists() else "disabled")
+            self.reuse_stem.configure(
+                state="normal" if saved_guitar_stem(output / "stems") else "disabled"
+            )
             self.open_tab.configure(
                 state="normal" if success and (output / "tab.gp5").is_file() else "disabled"
             )
@@ -436,6 +445,20 @@ class TabberApp:
             )
             self.status.set(message)
         self.window.after(150, self.poll)
+
+    def use_saved_stem(self):
+        if self.running or self.result is None:
+            return
+        stem = saved_guitar_stem(self.result / "stems")
+        if stem is None:
+            self.reuse_stem.configure(state="disabled")
+            self.status.set("The saved guitar stem is unavailable.")
+            return
+        self.audio.set(str(stem))
+        self.separate.set(False)
+        if self.backend.get() == SAVED_NOTES:
+            self.backend.set("Machine learning" if self.ml else "Simple melody detector")
+        self.status.set("Saved guitar stem selected. Choose a method and start a new conversion.")
 
     def open_result(self, filename=None):
         if self.result is None:
