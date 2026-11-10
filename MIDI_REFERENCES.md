@@ -145,11 +145,20 @@ To compare agreement and complementary detections, run
 `--output` pointing to a fresh folder. It verifies prediction files and
 the shared detector input. It pairs nearby same-pitch notes one-to-one,
 keeps the primary event for each pair, and saves the union with source
-indices. Pairing can merge close repetitions. In the
+indices. Pairing can merge close repetitions. It also scores a fallback
+that uses the secondary detector only when the primary produced zero notes
+for the entire excerpt. In the
 [fusion check](reports/detector-fusion-check.json), the union matched more
 score attacks on both partitions. On validation, most added detections
 had no score match. The union is a research output and the default
 transcription pipeline is unchanged.
+
+The [empty-result fallback check](reports/empty-detector-fallback-check.json)
+used three fresh songs. GAPS returned no notes on all four excerpts, so the
+fallback used Basic Pitch throughout. It recovered some score attacks in
+three excerpts and returned no notes on the fourth. These excerpt results
+describe fallback from a completely empty result. A full song can contain
+both empty and active sections and still bypass that rule.
 
 `scripts/screen_fusion_candidates.py` tests two ways to admit Basic Pitch
 additions while keeping the GAPS events. One uses Basic Pitch confidence.
