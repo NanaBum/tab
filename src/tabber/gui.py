@@ -14,6 +14,7 @@ from tkinter import filedialog, messagebox, ttk
 
 from .jobs import run_conversion
 from .tempo import TapTempo
+from .tuning import PRESETS, parse_tuning
 
 SAVED_NOTES = "Rebuild saved notes"
 GUITAR_MODEL = "Guitar model (experimental)"
@@ -39,8 +40,6 @@ def conversion_command(
     if interpreter.name.lower() == "pythonw.exe":
         interpreter = interpreter.with_name("python.exe")
     command = [str(interpreter), "-m", "tabber"]
-    from .tuning import parse_tuning
-
     parse_tuning(tuning)
     command.extend(("--tuning", tuning))
     if notes_only:
@@ -153,7 +152,7 @@ class TabberApp:
         ttk.Combobox(
             frame,
             textvariable=self.tuning,
-            values=("standard", "drop-d", "eb-standard", "d-standard"),
+            values=tuple(PRESETS),
             state="readonly",
         ).grid(row=6, column=1, sticky="ew", pady=(0, 12))
         self.grid = tk.StringVar(value="16")

@@ -1,6 +1,7 @@
 # Explicit guitar tuning
 
-The app offers `standard`, `drop-d`, `eb-standard` and `d-standard`. Standard is
+The app offers `standard`, `drop-d`, `eb-standard`, `d-standard`, and
+`c-sharp-standard`. Standard is
 still selected on startup. Choose the tuning actually used in the recording;
 the program does not infer it. The command line also accepts six comma-separated
 MIDI open-string pitches, in physical string order 1 through 6 (thin to thick):
@@ -11,6 +12,7 @@ MIDI open-string pitches, in physical string order 1 through 6 (thin to thick):
 | drop-d | 64, 59, 55, 50, 45, 38 |
 | eb-standard | 63, 58, 54, 49, 44, 39 |
 | d-standard | 62, 57, 53, 48, 43, 38 |
+| c-sharp-standard | 61, 56, 52, 47, 42, 37 |
 
 ```powershell
 uv run tabber riff.wav --backend basic-pitch --tuning drop-d --bpm 120 --output runs/drop-d
@@ -39,12 +41,11 @@ because its training/evaluation assumptions have not been checked there.
 
 ## What is verified
 
-All four presets preserve six simultaneous held open strings, including ties
+All presets preserve six simultaneous held open strings, including ties
 across a bar, through fretting, GP5 save/readback, MIDI and reference reimport.
 An actual saved-note CLI rebuild placed MIDI 38 on string 6 fret 0 and retained
 all seven known synthetic events. The optional range audit keeps low D (38) and
-reports every excluded event. The desktop selector and complete layout were
-visually checked with standard tuning selected and all four choices present.
+reports every excluded event.
 
 These are routing and file checks, not proof of real alternate-tuned guitar
 accuracy. A seven-tone synthetic audio trial exposed a detection limitation:
