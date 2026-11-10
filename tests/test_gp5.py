@@ -1,4 +1,7 @@
+import json
+
 import guitarpro
+import mido
 import pytest
 from guitarpro import models as gp
 
@@ -54,6 +57,28 @@ def test_dotted_duration_and_integer_tempo(tmp_path):
     assert song.tempo == 120
     assert beat.duration.isDotted
     assert beat.duration.value == 8
+
+
+def test_export_text_uses_same_rounded_tempo_as_gp5(tmp_path):
+    bpm = 120.4
+    notes = [
+        FrettedNote(Note(10.05, 10.058, 86), 0, 22),
+        FrettedNote(Note(10.07, 10.12, 87), 0, 23),
+    ]
+    write_outputs(notes, tmp_path, bpm)
+
+    score = read_gp5(tmp_path / "tab.gp5")
+    assert score.tempo == 120
+    text = (tmp_path / "tab.txt").read_text()
+    assert text.startswith("Tempo: 120 BPM")
+    top_string = "".join(line[2:-1] for line in text.splitlines() if line.startswith("e|"))
+    assert top_string[80 * 4 : 82 * 4] == "-22--23-"
+
+    saved = json.loads((tmp_path / "notes.json").read_text())
+    assert saved["bpm"] == bpm
+    assert [item["note"]["start"] for item in saved["notes"]] == [10.05, 10.07]
+    midi = mido.MidiFile(tmp_path / "notes.mid")
+    assert midi.tracks[0][0].tempo == mido.bpm2tempo(bpm)
 
 
 def test_empty_song_is_one_bar_of_rest(tmp_path):

@@ -19,23 +19,24 @@ def write_outputs(
     tuning = validate_tuning(tuning)
     quantize(0, bpm)
     song = build_song(notes, bpm, grid, tuning=tuning)
+    score_bpm = song.tempo
     payload = {"bpm": bpm, "string_order": "high E to low E", "notes": [asdict(n) for n in notes]}
     if tuning != STANDARD_TUNING:
         payload["string_order"] = "string 1 to string 6"
     payload["score_grid"] = grid
     payload["tuning_midi"] = list(tuning)
     payload["tuning_string_order"] = "string 1 (thin) to string 6 (thick)"
-    cells = max((quantize(n.note.end, bpm, grid // 4) for n in notes), default=1) + 1
+    cells = max((quantize(n.note.end, score_bpm, grid // 4) for n in notes), default=1) + 1
     rows = [["----"] * cells for _ in range(6)]
     occupied = set()
     for n in notes:
-        column = quantize(n.note.start, bpm, grid // 4)
+        column = quantize(n.note.start, score_bpm, grid // 4)
         if (n.string, column) in occupied:
             raise ValueError(f"Two notes collide on the 1/{grid} tab grid; choose a finer --grid")
         occupied.add((n.string, column))
         rows[n.string][column] = f"{n.fret:-^4}"
     text = [
-        f"Tempo: {bpm:g} BPM | one cell = 1/{grid} note; dashes show no new onset",
+        f"Tempo: {score_bpm} BPM | one cell = 1/{grid} note; dashes show no new onset",
         "Pre-quantization timing is in notes.json; MIDI rounds it to 480 ticks per quarter note.",
         "",
     ]
