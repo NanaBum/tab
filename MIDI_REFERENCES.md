@@ -157,6 +157,14 @@ same detection count on validation. Test audio and labels are kept out of
 both steps. This experiment predicts onset rankings, so it does not
 estimate note lengths or generate tabs.
 
+`scripts/evaluate_stem_onset_ranker.py` verifies and evaluates a saved
+checkpoint on the test partition without fitting. Point it at the training
+manifest, cache, and checkpoint directory, and at the earlier benchmark's
+stem results and corresponding manifest. It checks that the test rows
+match before reusing the exact stem files.
+The [first held-out comparison](reports/stem-onset-ranker-held-out.json)
+found fewer matches for the trained ranker at the same detection count.
+
 The fixture check imported 108 notes from one selected guitar channel in the
 offline nine-track source bundle. Every pitch/start/end matched an independent
 Mido playback-iterator calculation to eight decimal places, with source bytes
