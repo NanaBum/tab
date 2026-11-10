@@ -151,6 +151,20 @@ score attacks on both partitions. On validation, most added detections
 had no score match. The union is a research output and the default
 transcription pipeline is unchanged.
 
+`scripts/screen_fusion_candidates.py` tests two ways to admit Basic Pitch
+additions while keeping the GAPS events. One uses Basic Pitch confidence.
+The other looks for a GAPS activation on the same pitch within 50 ms of
+the candidate onset. Run it in `.venv-guitar` with `--validation-manifest`,
+`--test-manifest`, and the corresponding `--validation-results GAPS BASIC`
+and `--test-results GAPS BASIC` folders from the benchmark. Use `--output`
+with a new JSON path. The script selects each cutoff on validation and
+applies it unchanged to test. It uses the saved note events and recomputes
+the GAPS onset activations on the verified stems. The
+[screening check](reports/detector-fusion-screen-check.json) found that the
+GAPS screen removed every Basic Pitch candidate on the test excerpt where
+GAPS detected nothing. It also removed most of the union's added test
+matches, so the screen remains an experiment.
+
 To try the experimental onset ranker, first cache separated train and
 validation stems and frozen model activations. Use the optional guitar
 environment for both commands:
