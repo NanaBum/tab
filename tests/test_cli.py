@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import guitarpro
+import mido
 import pytest
 import soundfile as sf
 
@@ -55,6 +56,8 @@ def test_cli_saves_detections_if_fingering_fails_and_keeps_old_tab(tmp_path, mon
     output.mkdir()
     old_tab = output / "tab.gp5"
     old_tab.write_bytes(b"previous successful export")
+    old_midi = output / "notes.mid"
+    old_midi.write_bytes(b"previous MIDI export")
     monkeypatch.setattr("tabber.cli.transcribe", lambda *args: [Note(0, 1, 20)])
     monkeypatch.setattr("sys.argv", ["tabber", str(audio), "--output", str(output)])
     with pytest.raises(SystemExit) as error:
@@ -64,6 +67,32 @@ def test_cli_saves_detections_if_fingering_fails_and_keeps_old_tab(tmp_path, mon
     assert len(diagnostics) == 1
     assert load_events(diagnostics[0]) == [Note(0, 1, 20)]
     assert old_tab.read_bytes() == b"previous successful export"
+    assert old_midi.read_bytes() == b"previous MIDI export"
+    [preview] = (output / "diagnostics").glob("preview-*/notes.mid")
+    midi = mido.MidiFile(preview)
+    events = [
+        (message.type, message.note)
+        for message in midi.tracks[0]
+        if not message.is_meta and message.type in ("note_on", "note_off")
+    ]
+    assert events == [("note_on", 20), ("note_off", 20)]
+
+
+def test_cli_previews_notes_after_score_grid_collision(tmp_path, monkeypatch, capsys):
+    source, output = tmp_path / "events.json", tmp_path / "result"
+    notes = [Note(0, 0.02, 86), Note(0.03, 0.08, 87)]
+    save_events(notes, source)
+    monkeypatch.setattr("sys.argv", ["tabber", "--events", str(source), "--output", str(output)])
+    with pytest.raises(SystemExit) as error:
+        main()
+    assert error.value.code == 1
+    console = capsys.readouterr()
+    assert "collide" in console.err
+    assert "Detected-note MIDI saved" in console.out
+    assert not (output / "tab.gp5").exists()
+    [preview] = (output / "diagnostics").glob("preview-*/notes.mid")
+    midi = mido.MidiFile(preview)
+    assert [message.note for message in midi.tracks[0] if message.type == "note_on"] == [86, 87]
 
 
 def test_attack_lead_does_not_cross_an_earlier_release():

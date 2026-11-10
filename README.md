@@ -44,6 +44,9 @@ It assigns fingerings again and does not carry over edits made in TuxGuitar.
 If export fails, [recovery controls](FRETTING_RECOVERY.md) can explicitly exclude
 out-of-range detections with an audit, or allow a wider simultaneous fret span.
 They are separate choices and remain off by default in the app.
+If notes were detected but cannot be fitted to a tab, **Open detected MIDI**
+plays the notes selected for export at their original timing. The MIDI preview
+is saved under `diagnostics/` for that attempt.
 
 The desktop app needs Tkinter in the Python installation. The terminal setup
 below also works without Tkinter.
