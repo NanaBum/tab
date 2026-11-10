@@ -1,0 +1,21 @@
+{
+  "purpose": "Diagnose why an audible separated recording can yield no guitar-model events",
+  "empty_stem": {
+    "mono_peak": 0.77,
+    "mono_rms": 0.156,
+    "maximum_onset_activation": 0.09255,
+    "detections": {"0.30": 0, "0.12": 0, "0.08": 1, "0.05": 3}
+  },
+  "validation": {
+    "clips": 2,
+    "songs": 1,
+    "reference_attacks": 96,
+    "at_default_0.30_threshold": {
+      "half_amplitude": {"detections": 90, "matched": 44, "unmatched": 46},
+      "original_amplitude": {"detections": 79, "matched": 33, "unmatched": 46},
+      "double_amplitude": {"detections": 65, "matched": 26, "unmatched": 39}
+    },
+    "original_amplitude_threshold_0.05": {"detections": 288, "matched": 59, "unmatched": 229}
+  },
+  "limits": "The empty excerpt was inspected for activation strength and event counts only. Validation labels are aligned score candidates. These results do not support a universal change to gain or sensitivity."
+}

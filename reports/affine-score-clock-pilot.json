@@ -1,0 +1,17 @@
+{
+  "method": "Check the supplied score clock against pitch-specific attacks in five windows; refine only the intercept using the first window",
+  "fixed_shift_pair": {
+    "initial_shift_seconds": 0.464,
+    "first_window_refinement_seconds": 0.4001,
+    "local_peak_range_seconds": [0.4001, 0.435],
+    "later_windows_exceeding_displaced_controls_seconds": [[90, 102], [145, 157], [190, 202]]
+  },
+  "tempo_drift_pair": {
+    "scale": 0.998651,
+    "initial_shift_seconds": -0.673,
+    "first_window_refinement_seconds": -0.6672,
+    "later_windows_exceeding_displaced_controls_with_scale_seconds": [[55, 67], [190, 202]],
+    "later_windows_exceeding_displaced_controls_with_shift_only_seconds": []
+  },
+  "limits": "One full mix per pair. Displaced-control comparisons measure relative attack evidence. The coarse clock used score playback, and individual notes and durations remain candidates."
+}

@@ -1,0 +1,24 @@
+{
+  "purpose": "Check a grouped learned candidate filter and bounded attack timing alternatives",
+  "electric_development": {
+    "clips": 11,
+    "candidate_filter": {
+      "threshold_0.12": {"missed": 29, "extra": 34, "onsets_and_releases": 141},
+      "threshold_0.30": {"missed": 32, "extra": 27, "onsets_and_releases": 141},
+      "threshold_0.42": {"missed": 32, "extra": 24, "onsets_and_releases": 140},
+      "grouped_learned": {"missed": 47, "extra": 25, "onsets_and_releases": 130}
+    },
+    "timing_only": {
+      "raw": {"matched_onsets": 192, "onsets_and_releases": 141},
+      "fixed_20_ms_attack_lead": {"matched_onsets": 199, "onsets_and_releases": 145},
+      "local_audio_peak": {"matched_onsets": 198, "onsets_and_releases": 144}
+    }
+  },
+  "acoustic_development_fixed_20_ms": {
+    "clips": 12,
+    "raw": {"matched_onsets": 494, "onsets_and_releases": 423},
+    "shifted": {"matched_onsets": 493, "onsets_and_releases": 423}
+  },
+  "decision": "Leave the detector unchanged. The learned filter missed more notes. Treat attack lead as a candidate optional correction for some recordings.",
+  "limits": "Small development selections. Picked and muted takes of the same phrase and the two Pathetique versions were grouped for the learned filter. Timing checks reused saved predictions. Pretraining overlap is unresolved."
+}

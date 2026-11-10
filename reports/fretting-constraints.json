@@ -1,0 +1,116 @@
+{
+  "purpose": "Exact feasibility under standard tuning, 24 frets, fixed detected timings and span limits",
+  "constraints": "One position per note; simultaneous notes cannot share strings; non-open frets obey span",
+  "status_meaning": {
+    "0": "feasible/optimal",
+    "2": "proved infeasible",
+    "1": "limit, not a proof"
+  },
+  "results": [
+    {
+      "track": "00_Jazz1-130-D_comp",
+      "conditions": [
+        {
+          "max_span": 5,
+          "status": 2,
+          "message": "The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is None)"
+        },
+        {
+          "max_span": 7,
+          "status": 2,
+          "message": "The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is None)"
+        }
+      ]
+    },
+    {
+      "track": "00_Jazz3-137-Eb_solo",
+      "conditions": [
+        {
+          "max_span": 5,
+          "status": 2,
+          "message": "The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is None)"
+        },
+        {
+          "max_span": 7,
+          "status": 0,
+          "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)"
+        }
+      ]
+    },
+    {
+      "track": "05_Rock1-90-C#_solo",
+      "conditions": [
+        {
+          "max_span": 5,
+          "status": 2,
+          "message": "The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is None)"
+        },
+        {
+          "max_span": 7,
+          "status": 0,
+          "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)"
+        }
+      ]
+    },
+    {
+      "track": "00_SS1-100-C#_comp",
+      "conditions": [
+        {
+          "max_span": 5,
+          "status": 2,
+          "message": "The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is None)"
+        },
+        {
+          "max_span": 7,
+          "status": 0,
+          "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)"
+        }
+      ]
+    },
+    {
+      "track": "03_SS1-68-E_comp",
+      "conditions": [
+        {
+          "max_span": 5,
+          "status": 2,
+          "message": "The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is None)"
+        },
+        {
+          "max_span": 7,
+          "status": 2,
+          "message": "The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is None)"
+        }
+      ]
+    },
+    {
+      "track": "02_SS2-107-Ab_comp",
+      "conditions": [
+        {
+          "max_span": 5,
+          "status": 2,
+          "message": "The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is None)"
+        },
+        {
+          "max_span": 7,
+          "status": 2,
+          "message": "The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is None)"
+        }
+      ]
+    },
+    {
+      "track": "00_SS2-88-F_comp",
+      "conditions": [
+        {
+          "max_span": 5,
+          "status": 2,
+          "message": "The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is None)"
+        },
+        {
+          "max_span": 7,
+          "status": 0,
+          "message": "Optimization terminated successfully. (HiGHS Status 7: Optimal)"
+        }
+      ]
+    }
+  ]
+}

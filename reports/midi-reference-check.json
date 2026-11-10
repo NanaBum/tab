@@ -1,0 +1,31 @@
+{
+  "purpose": "Offline source-bundle MIDI selected-channel label import compared with independent Mido playback iteration",
+  "source_midi_sha256": "7fd3cf0098f6cf9bd54ab38806c728c4347f6df66495d85b5e39e1cce758f2ae",
+  "source_kind": "Deliberately unmatched offline tab fixture, excluded from training",
+  "midi_type": 0,
+  "physical_tracks": 1,
+  "channels_available_one_based": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    10
+  ],
+  "selected_physical_track": 1,
+  "selected_channels_one_based": [
+    3
+  ],
+  "selected_programs_zero_based": [
+    27
+  ],
+  "note_count": 108,
+  "all_pitch_start_end_values_match_playback_iterator_to_8_decimals": true,
+  "source_unchanged": true,
+  "approximate_expression": false,
+  "source_pair_excluded_from_training_preserved": true,
+  "limits": "Score-playback candidate labels only; no actual recording alignment, fingering or performance-accuracy claim. Input is a software fixture, not a collected training song."
+}

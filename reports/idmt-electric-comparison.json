@@ -1,0 +1,395 @@
+{
+  "purpose": "Five complete clean electric recordings; development comparison, checkpoint training overlap unresolved",
+  "source": "https://zenodo.org/records/7544110",
+  "reference_audit": "11 of 90 positions inconsistent with supplied pitch; pitch targets retained, positions excluded from conditional fingering",
+  "models": [
+    {
+      "backend": "guitar-gaps",
+      "settings": {
+        "min_confidence": null,
+        "onset_threshold": 0.3,
+        "checkpoint_sha256": "94a7c936ec9fde83686d29007dc256274384e832739cadece39e92cee3b69a7e"
+      },
+      "onsets": {
+        "reference_notes": 90,
+        "predicted_notes": 93,
+        "matched_notes": 78,
+        "evaluated_recordings": 5,
+        "f1": 0.8524590163934426
+      },
+      "onsets_offsets": {
+        "reference_notes": 90,
+        "predicted_notes": 93,
+        "matched_notes": 62,
+        "evaluated_recordings": 5,
+        "f1": 0.6775956284153005
+      },
+      "tracks": [
+        {
+          "track": "nocturneNr2",
+          "audio_sha256": "8333a6d3d224e35193defcd9724aa42085c6b71d0ba24ff1045f6f1c58acc25a",
+          "annotation_sha256": "8395037434bfd3af2cb9b0a52cac2bd7a965ecff13e904f0400e4773c9060cfe",
+          "instrument": "Ibanez RG 2820",
+          "reference_notes": 20,
+          "inconsistent_reference_positions": [
+            5,
+            10
+          ],
+          "onsets": {
+            "reference_notes": 20,
+            "predicted_notes": 20,
+            "matched_notes": 17,
+            "precision": 0.85,
+            "recall": 0.85,
+            "f1": 0.85
+          },
+          "onsets_offsets": {
+            "reference_notes": 20,
+            "predicted_notes": 20,
+            "matched_notes": 14,
+            "precision": 0.7,
+            "recall": 0.7,
+            "f1": 0.7
+          },
+          "conditional_fingering": {
+            "correct": 13,
+            "eligible_pitch_matches": 17,
+            "all_pitch_matches": 17
+          },
+          "export_status": "Exported all 20 detections; GP5 reopened and verified",
+          "error": null
+        },
+        {
+          "track": "pathetique_mono",
+          "audio_sha256": "c8f56672faadf3062e8cee33ddef77a71d3eb975c8a8a5d92292e64eb6383184",
+          "annotation_sha256": "fcb1226bebf2571c220bdf84d47e3f8bbaf31782b3be4cd8d0665b772cae88b3",
+          "instrument": "Ibanez RG 2820",
+          "reference_notes": 9,
+          "inconsistent_reference_positions": [],
+          "onsets": {
+            "reference_notes": 9,
+            "predicted_notes": 9,
+            "matched_notes": 9,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "onsets_offsets": {
+            "reference_notes": 9,
+            "predicted_notes": 9,
+            "matched_notes": 9,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "conditional_fingering": {
+            "correct": 7,
+            "eligible_pitch_matches": 9,
+            "all_pitch_matches": 9
+          },
+          "export_status": "Exported all 9 detections; GP5 reopened and verified",
+          "error": null
+        },
+        {
+          "track": "pathetique_poly",
+          "audio_sha256": "f4611abb9be67b67a4cf80c5e0225bb4a129e12a5c4278d90b648b92b922d854",
+          "annotation_sha256": "fcbd58e526b1bf899cec178f13472766a6eaa2b23346f571cb92ae780268582f",
+          "instrument": "Ibanez RG 2820",
+          "reference_notes": 19,
+          "inconsistent_reference_positions": [
+            4,
+            7,
+            13,
+            17
+          ],
+          "onsets": {
+            "reference_notes": 19,
+            "predicted_notes": 18,
+            "matched_notes": 15,
+            "precision": 0.8333333333333334,
+            "recall": 0.7894736842105263,
+            "f1": 0.8108108108108109
+          },
+          "onsets_offsets": {
+            "reference_notes": 19,
+            "predicted_notes": 18,
+            "matched_notes": 14,
+            "precision": 0.7777777777777778,
+            "recall": 0.7368421052631579,
+            "f1": 0.7567567567567568
+          },
+          "conditional_fingering": {
+            "correct": 6,
+            "eligible_pitch_matches": 14,
+            "all_pitch_matches": 15
+          },
+          "export_status": "Exported all 18 detections; GP5 reopened and verified",
+          "error": null
+        },
+        {
+          "track": "promenade_mono",
+          "audio_sha256": "b33b99b1d88319cc141b78ea58a4da4c507923d3e2af366e898ce55c9ad4f47e",
+          "annotation_sha256": "07a2d03eb0f25a89b5d51e214f9662ef4b6a61ce73af103cff70d3a9be57d17c",
+          "instrument": "Ibanez RG 2820",
+          "reference_notes": 13,
+          "inconsistent_reference_positions": [
+            12
+          ],
+          "onsets": {
+            "reference_notes": 13,
+            "predicted_notes": 13,
+            "matched_notes": 12,
+            "precision": 0.9230769230769231,
+            "recall": 0.9230769230769231,
+            "f1": 0.9230769230769231
+          },
+          "onsets_offsets": {
+            "reference_notes": 13,
+            "predicted_notes": 13,
+            "matched_notes": 11,
+            "precision": 0.8461538461538461,
+            "recall": 0.8461538461538461,
+            "f1": 0.8461538461538461
+          },
+          "conditional_fingering": {
+            "correct": 4,
+            "eligible_pitch_matches": 11,
+            "all_pitch_matches": 12
+          },
+          "export_status": "Exported all 13 detections; GP5 reopened and verified",
+          "error": null
+        },
+        {
+          "track": "quintfall",
+          "audio_sha256": "0863de6b236f12d1d2d82131132939d6bbe2bc8f126e7c2aadb71d962c58586b",
+          "annotation_sha256": "f17b23e85b954908bf65d08e35eca14b61e6c6982fc5f2f635275762ab1b422a",
+          "instrument": "Ibanez RG 2820",
+          "reference_notes": 29,
+          "inconsistent_reference_positions": [
+            8,
+            12,
+            15,
+            21
+          ],
+          "onsets": {
+            "reference_notes": 29,
+            "predicted_notes": 33,
+            "matched_notes": 25,
+            "precision": 0.7575757575757576,
+            "recall": 0.8620689655172413,
+            "f1": 0.8064516129032258
+          },
+          "onsets_offsets": {
+            "reference_notes": 29,
+            "predicted_notes": 33,
+            "matched_notes": 14,
+            "precision": 0.42424242424242425,
+            "recall": 0.4827586206896552,
+            "f1": 0.45161290322580644
+          },
+          "conditional_fingering": {
+            "correct": 9,
+            "eligible_pitch_matches": 24,
+            "all_pitch_matches": 25
+          },
+          "export_status": "Exported all 33 detections; GP5 reopened and verified",
+          "error": null
+        }
+      ]
+    },
+    {
+      "backend": "basic-pitch",
+      "settings": {
+        "min_confidence": 0.5,
+        "onset_threshold": null,
+        "checkpoint_sha256": null
+      },
+      "onsets": {
+        "reference_notes": 90,
+        "predicted_notes": 96,
+        "matched_notes": 77,
+        "evaluated_recordings": 5,
+        "f1": 0.8279569892473119
+      },
+      "onsets_offsets": {
+        "reference_notes": 90,
+        "predicted_notes": 96,
+        "matched_notes": 66,
+        "evaluated_recordings": 5,
+        "f1": 0.7096774193548387
+      },
+      "tracks": [
+        {
+          "track": "nocturneNr2",
+          "audio_sha256": "8333a6d3d224e35193defcd9724aa42085c6b71d0ba24ff1045f6f1c58acc25a",
+          "annotation_sha256": "8395037434bfd3af2cb9b0a52cac2bd7a965ecff13e904f0400e4773c9060cfe",
+          "instrument": "Ibanez RG 2820",
+          "reference_notes": 20,
+          "inconsistent_reference_positions": [
+            5,
+            10
+          ],
+          "onsets": {
+            "reference_notes": 20,
+            "predicted_notes": 21,
+            "matched_notes": 17,
+            "precision": 0.8095238095238095,
+            "recall": 0.85,
+            "f1": 0.8292682926829268
+          },
+          "onsets_offsets": {
+            "reference_notes": 20,
+            "predicted_notes": 21,
+            "matched_notes": 14,
+            "precision": 0.6666666666666666,
+            "recall": 0.7,
+            "f1": 0.6829268292682927
+          },
+          "conditional_fingering": {
+            "correct": 7,
+            "eligible_pitch_matches": 17,
+            "all_pitch_matches": 17
+          },
+          "export_status": "Exported all 21 detections; GP5 reopened and verified",
+          "error": null
+        },
+        {
+          "track": "pathetique_mono",
+          "audio_sha256": "c8f56672faadf3062e8cee33ddef77a71d3eb975c8a8a5d92292e64eb6383184",
+          "annotation_sha256": "fcb1226bebf2571c220bdf84d47e3f8bbaf31782b3be4cd8d0665b772cae88b3",
+          "instrument": "Ibanez RG 2820",
+          "reference_notes": 9,
+          "inconsistent_reference_positions": [],
+          "onsets": {
+            "reference_notes": 9,
+            "predicted_notes": 10,
+            "matched_notes": 9,
+            "precision": 0.9,
+            "recall": 1.0,
+            "f1": 0.9473684210526315
+          },
+          "onsets_offsets": {
+            "reference_notes": 9,
+            "predicted_notes": 10,
+            "matched_notes": 9,
+            "precision": 0.9,
+            "recall": 1.0,
+            "f1": 0.9473684210526315
+          },
+          "conditional_fingering": {
+            "correct": 6,
+            "eligible_pitch_matches": 9,
+            "all_pitch_matches": 9
+          },
+          "export_status": "Exported all 10 detections; GP5 reopened and verified",
+          "error": null
+        },
+        {
+          "track": "pathetique_poly",
+          "audio_sha256": "f4611abb9be67b67a4cf80c5e0225bb4a129e12a5c4278d90b648b92b922d854",
+          "annotation_sha256": "fcbd58e526b1bf899cec178f13472766a6eaa2b23346f571cb92ae780268582f",
+          "instrument": "Ibanez RG 2820",
+          "reference_notes": 19,
+          "inconsistent_reference_positions": [
+            4,
+            7,
+            13,
+            17
+          ],
+          "onsets": {
+            "reference_notes": 19,
+            "predicted_notes": 21,
+            "matched_notes": 15,
+            "precision": 0.7142857142857143,
+            "recall": 0.7894736842105263,
+            "f1": 0.75
+          },
+          "onsets_offsets": {
+            "reference_notes": 19,
+            "predicted_notes": 21,
+            "matched_notes": 14,
+            "precision": 0.6666666666666666,
+            "recall": 0.7368421052631579,
+            "f1": 0.7
+          },
+          "conditional_fingering": {
+            "correct": 9,
+            "eligible_pitch_matches": 14,
+            "all_pitch_matches": 15
+          },
+          "export_status": "Exported all 21 detections; GP5 reopened and verified",
+          "error": null
+        },
+        {
+          "track": "promenade_mono",
+          "audio_sha256": "b33b99b1d88319cc141b78ea58a4da4c507923d3e2af366e898ce55c9ad4f47e",
+          "annotation_sha256": "07a2d03eb0f25a89b5d51e214f9662ef4b6a61ce73af103cff70d3a9be57d17c",
+          "instrument": "Ibanez RG 2820",
+          "reference_notes": 13,
+          "inconsistent_reference_positions": [
+            12
+          ],
+          "onsets": {
+            "reference_notes": 13,
+            "predicted_notes": 13,
+            "matched_notes": 13,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "onsets_offsets": {
+            "reference_notes": 13,
+            "predicted_notes": 13,
+            "matched_notes": 13,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "conditional_fingering": {
+            "correct": 5,
+            "eligible_pitch_matches": 12,
+            "all_pitch_matches": 13
+          },
+          "export_status": "Exported all 13 detections; GP5 reopened and verified",
+          "error": null
+        },
+        {
+          "track": "quintfall",
+          "audio_sha256": "0863de6b236f12d1d2d82131132939d6bbe2bc8f126e7c2aadb71d962c58586b",
+          "annotation_sha256": "f17b23e85b954908bf65d08e35eca14b61e6c6982fc5f2f635275762ab1b422a",
+          "instrument": "Ibanez RG 2820",
+          "reference_notes": 29,
+          "inconsistent_reference_positions": [
+            8,
+            12,
+            15,
+            21
+          ],
+          "onsets": {
+            "reference_notes": 29,
+            "predicted_notes": 31,
+            "matched_notes": 23,
+            "precision": 0.7419354838709677,
+            "recall": 0.7931034482758621,
+            "f1": 0.7666666666666667
+          },
+          "onsets_offsets": {
+            "reference_notes": 29,
+            "predicted_notes": 31,
+            "matched_notes": 16,
+            "precision": 0.5161290322580645,
+            "recall": 0.5517241379310345,
+            "f1": 0.5333333333333333
+          },
+          "conditional_fingering": {
+            "correct": 20,
+            "eligible_pitch_matches": 22,
+            "all_pitch_matches": 23
+          },
+          "export_status": "Exported all 31 detections; GP5 reopened and verified",
+          "error": null
+        }
+      ]
+    }
+  ]
+}

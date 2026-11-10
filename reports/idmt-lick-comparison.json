@@ -1,0 +1,242 @@
+{
+  "purpose": "Three fixed picked electric licks; development comparison, checkpoint training overlap unresolved",
+  "source": "https://zenodo.org/records/7544110",
+  "selection": "AR_Lick1_KN, AR_Lick6_KN, AR_Lick12_KN",
+  "reference_audit": "All 67 supplied pitches consistent with declared string/fret and tuning",
+  "models": [
+    {
+      "backend": "guitar-gaps",
+      "settings": {
+        "min_confidence": null,
+        "onset_threshold": 0.3,
+        "checkpoint_sha256": "94a7c936ec9fde83686d29007dc256274384e832739cadece39e92cee3b69a7e"
+      },
+      "onsets": {
+        "reference_notes": 67,
+        "predicted_notes": 68,
+        "matched_notes": 60,
+        "evaluated_recordings": 3,
+        "f1": 0.8888888888888888
+      },
+      "onsets_offsets": {
+        "reference_notes": 67,
+        "predicted_notes": 68,
+        "matched_notes": 45,
+        "evaluated_recordings": 3,
+        "f1": 0.6666666666666666
+      },
+      "tracks": [
+        {
+          "track": "AR_Lick1_KN",
+          "audio_sha256": "18597b2dc85aff01395a638ef848e529ef789796a9be7ff5a904165b0ab61ce6",
+          "annotation_sha256": "412d30e12a1e79f4fa64f69854f7f08de65a814a308b7dc46a023f40fe602af6",
+          "instrument": "Aristides 010",
+          "reference_notes": 13,
+          "inconsistent_reference_positions": [],
+          "onsets": {
+            "reference_notes": 13,
+            "predicted_notes": 13,
+            "matched_notes": 12,
+            "precision": 0.9230769230769231,
+            "recall": 0.9230769230769231,
+            "f1": 0.9230769230769231
+          },
+          "onsets_offsets": {
+            "reference_notes": 13,
+            "predicted_notes": 13,
+            "matched_notes": 11,
+            "precision": 0.8461538461538461,
+            "recall": 0.8461538461538461,
+            "f1": 0.8461538461538461
+          },
+          "conditional_fingering": {
+            "correct": 10,
+            "eligible_pitch_matches": 12,
+            "all_pitch_matches": 12
+          },
+          "export_status": "Exported all 13 detections; GP5 reopened and verified",
+          "error": null
+        },
+        {
+          "track": "AR_Lick6_KN",
+          "audio_sha256": "3b757b97faf92ac6b925dce69a918a694c6794553e27e7b8ae2b10e2cf09d9dc",
+          "annotation_sha256": "be6438c7a17d7112fc0014c2e8fc18fd93b3f354c4456e03029287f4ea8cda55",
+          "instrument": "Aristides 010",
+          "reference_notes": 10,
+          "inconsistent_reference_positions": [],
+          "onsets": {
+            "reference_notes": 10,
+            "predicted_notes": 11,
+            "matched_notes": 10,
+            "precision": 0.9090909090909091,
+            "recall": 1.0,
+            "f1": 0.9523809523809523
+          },
+          "onsets_offsets": {
+            "reference_notes": 10,
+            "predicted_notes": 11,
+            "matched_notes": 10,
+            "precision": 0.9090909090909091,
+            "recall": 1.0,
+            "f1": 0.9523809523809523
+          },
+          "conditional_fingering": {
+            "correct": 6,
+            "eligible_pitch_matches": 10,
+            "all_pitch_matches": 10
+          },
+          "export_status": "Exported all 11 detections; GP5 reopened and verified",
+          "error": null
+        },
+        {
+          "track": "AR_Lick12_KN",
+          "audio_sha256": "e7f786c769cff6438db8f1225d15db2e0c0e1e97f75f92d8bb71de3beed57e9c",
+          "annotation_sha256": "5d342d786c5d47eeca1dd5954177306ab7b29ad6c19a13c2c2ea2c5595d158d4",
+          "instrument": "Aristides 010",
+          "reference_notes": 44,
+          "inconsistent_reference_positions": [],
+          "onsets": {
+            "reference_notes": 44,
+            "predicted_notes": 44,
+            "matched_notes": 38,
+            "precision": 0.8636363636363636,
+            "recall": 0.8636363636363636,
+            "f1": 0.8636363636363636
+          },
+          "onsets_offsets": {
+            "reference_notes": 44,
+            "predicted_notes": 44,
+            "matched_notes": 24,
+            "precision": 0.5454545454545454,
+            "recall": 0.5454545454545454,
+            "f1": 0.5454545454545454
+          },
+          "conditional_fingering": {
+            "correct": 28,
+            "eligible_pitch_matches": 38,
+            "all_pitch_matches": 38
+          },
+          "export_status": "Exported all 44 detections; GP5 reopened and verified",
+          "error": null
+        }
+      ]
+    },
+    {
+      "backend": "basic-pitch",
+      "settings": {
+        "min_confidence": 0.5,
+        "onset_threshold": null,
+        "checkpoint_sha256": null
+      },
+      "onsets": {
+        "reference_notes": 67,
+        "predicted_notes": 90,
+        "matched_notes": 61,
+        "evaluated_recordings": 3,
+        "f1": 0.7770700636942676
+      },
+      "onsets_offsets": {
+        "reference_notes": 67,
+        "predicted_notes": 90,
+        "matched_notes": 37,
+        "evaluated_recordings": 3,
+        "f1": 0.4713375796178344
+      },
+      "tracks": [
+        {
+          "track": "AR_Lick1_KN",
+          "audio_sha256": "18597b2dc85aff01395a638ef848e529ef789796a9be7ff5a904165b0ab61ce6",
+          "annotation_sha256": "412d30e12a1e79f4fa64f69854f7f08de65a814a308b7dc46a023f40fe602af6",
+          "instrument": "Aristides 010",
+          "reference_notes": 13,
+          "inconsistent_reference_positions": [],
+          "onsets": {
+            "reference_notes": 13,
+            "predicted_notes": 15,
+            "matched_notes": 12,
+            "precision": 0.8,
+            "recall": 0.9230769230769231,
+            "f1": 0.8571428571428571
+          },
+          "onsets_offsets": {
+            "reference_notes": 13,
+            "predicted_notes": 15,
+            "matched_notes": 10,
+            "precision": 0.6666666666666666,
+            "recall": 0.7692307692307693,
+            "f1": 0.7142857142857143
+          },
+          "conditional_fingering": {
+            "correct": 10,
+            "eligible_pitch_matches": 12,
+            "all_pitch_matches": 12
+          },
+          "export_status": "Exported all 15 detections; GP5 reopened and verified",
+          "error": null
+        },
+        {
+          "track": "AR_Lick6_KN",
+          "audio_sha256": "3b757b97faf92ac6b925dce69a918a694c6794553e27e7b8ae2b10e2cf09d9dc",
+          "annotation_sha256": "be6438c7a17d7112fc0014c2e8fc18fd93b3f354c4456e03029287f4ea8cda55",
+          "instrument": "Aristides 010",
+          "reference_notes": 10,
+          "inconsistent_reference_positions": [],
+          "onsets": {
+            "reference_notes": 10,
+            "predicted_notes": 10,
+            "matched_notes": 10,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "onsets_offsets": {
+            "reference_notes": 10,
+            "predicted_notes": 10,
+            "matched_notes": 10,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "conditional_fingering": {
+            "correct": 8,
+            "eligible_pitch_matches": 10,
+            "all_pitch_matches": 10
+          },
+          "export_status": "Exported all 10 detections; GP5 reopened and verified",
+          "error": null
+        },
+        {
+          "track": "AR_Lick12_KN",
+          "audio_sha256": "e7f786c769cff6438db8f1225d15db2e0c0e1e97f75f92d8bb71de3beed57e9c",
+          "annotation_sha256": "5d342d786c5d47eeca1dd5954177306ab7b29ad6c19a13c2c2ea2c5595d158d4",
+          "instrument": "Aristides 010",
+          "reference_notes": 44,
+          "inconsistent_reference_positions": [],
+          "onsets": {
+            "reference_notes": 44,
+            "predicted_notes": 65,
+            "matched_notes": 39,
+            "precision": 0.6,
+            "recall": 0.8863636363636364,
+            "f1": 0.7155963302752294
+          },
+          "onsets_offsets": {
+            "reference_notes": 44,
+            "predicted_notes": 65,
+            "matched_notes": 17,
+            "precision": 0.26153846153846155,
+            "recall": 0.38636363636363635,
+            "f1": 0.3119266055045872
+          },
+          "conditional_fingering": {
+            "correct": 28,
+            "eligible_pitch_matches": 39,
+            "all_pitch_matches": 39
+          },
+          "export_status": "Exported all 65 detections; GP5 reopened and verified",
+          "error": null
+        }
+      ]
+    }
+  ]
+}

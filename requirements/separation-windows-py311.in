@@ -1,0 +1,6 @@
+# CPU-only Windows / Python 3.11 environment; kept separate from transcription.
+torch @ https://download.pytorch.org/whl/cpu/torch-2.5.1%2Bcpu-cp311-cp311-win_amd64.whl
+torchaudio @ https://download.pytorch.org/whl/cpu/torchaudio-2.5.1%2Bcpu-cp311-cp311-win_amd64.whl
+demucs==4.0.1
+numpy>=1.26,<2
+soundfile>=0.12,<1

@@ -1,0 +1,7 @@
+# Separate local ML environment. TensorFlow 2.14 wheels require NumPy 1.x.
+-e .
+basic-pitch==0.4.0
+tensorflow==2.14.0
+numpy>=1.26,<2
+# resampy 0.4.2 imports pkg_resources, removed in newer setuptools.
+setuptools>=70,<81

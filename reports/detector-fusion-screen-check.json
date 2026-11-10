@@ -1,0 +1,24 @@
+{
+  "comparison": "Keep GAPS events and screen unmatched Basic Pitch additions on shared stems",
+  "selection": "Choose each cutoff on validation micro F1, breaking ties by fewer unmatched detections. Apply the same cutoff to held-out excerpts.",
+  "selected_cutoffs": {"gaps_onset_within_50_ms": 0.05, "basic_pitch_confidence": 0.05},
+  "counts_columns": ["predicted_attacks", "matched_attacks", "unmatched_attacks"],
+  "validation": {
+    "songs": 1,
+    "candidate_score_attacks": 96,
+    "gaps": [79, 33, 46],
+    "union": [143, 49, 94],
+    "gaps_onset_screen": [106, 43, 63],
+    "basic_pitch_confidence_screen": [143, 49, 94]
+  },
+  "test": {
+    "songs": 2,
+    "candidate_score_attacks": 593,
+    "gaps": [229, 142, 87],
+    "union": [285, 179, 106],
+    "gaps_onset_screen": [242, 147, 95],
+    "basic_pitch_confidence_screen": [285, 179, 106]
+  },
+  "empty_gaps_test_excerpt": {"candidate_score_attacks": 215, "union": [29, 23, 6], "gaps_onset_screen": [0, 0, 0]},
+  "limits": "Small benchmark with score-derived labels. No network weights were fitted. The screen was evaluated as a diagnostic and is not used by the app."
+}

@@ -1,0 +1,1524 @@
+{
+  "purpose": "Fixed eleven-electric-recording control comparison; deterministic baseline beside unchanged ML outputs",
+  "source": "https://zenodo.org/records/7544110",
+  "pair_count": 33,
+  "manifest_sha256": "8bbf346a2e9fe7e0a3b5d5e70cc5556cf99b7e889a8a0220d45e5c76f1c01bfd",
+  "all_saved_raw_counts_reproduced": true,
+  "baseline_settings": "Standard tuning, original 75 Hz floor, confidence request .5 with effective .65 minimum; no threshold selection",
+  "selections": [
+    {
+      "selection": "pieces",
+      "models": [
+        {
+          "backend": "baseline",
+          "onsets": {
+            "reference_notes": 90,
+            "predicted_notes": 51,
+            "matched_notes": 27,
+            "evaluated_recordings": 5,
+            "f1": 0.3829787234042553
+          },
+          "onsets_offsets": {
+            "reference_notes": 90,
+            "predicted_notes": 51,
+            "matched_notes": 20,
+            "evaluated_recordings": 5,
+            "f1": 0.28368794326241137
+          },
+          "tracks": [
+            {
+              "track": "nocturneNr2",
+              "reference_notes": 20,
+              "onsets": {
+                "reference_notes": 20,
+                "predicted_notes": 5,
+                "matched_notes": 3,
+                "precision": 0.6,
+                "recall": 0.15,
+                "f1": 0.24
+              },
+              "onsets_offsets": {
+                "reference_notes": 20,
+                "predicted_notes": 5,
+                "matched_notes": 3,
+                "precision": 0.6,
+                "recall": 0.15,
+                "f1": 0.24
+              },
+              "inconsistent_reference_positions": [
+                5,
+                10
+              ],
+              "conditional_fingering": {
+                "correct": 3,
+                "eligible_pitch_matches": 3,
+                "all_pitch_matches": 3
+              },
+              "export_status": "Exported all 5 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "pathetique_mono",
+              "reference_notes": 9,
+              "onsets": {
+                "reference_notes": 9,
+                "predicted_notes": 9,
+                "matched_notes": 5,
+                "precision": 0.5555555555555556,
+                "recall": 0.5555555555555556,
+                "f1": 0.5555555555555556
+              },
+              "onsets_offsets": {
+                "reference_notes": 9,
+                "predicted_notes": 9,
+                "matched_notes": 4,
+                "precision": 0.4444444444444444,
+                "recall": 0.4444444444444444,
+                "f1": 0.4444444444444444
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 2,
+                "eligible_pitch_matches": 5,
+                "all_pitch_matches": 5
+              },
+              "export_status": "Exported all 9 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "pathetique_poly",
+              "reference_notes": 19,
+              "onsets": {
+                "reference_notes": 19,
+                "predicted_notes": 17,
+                "matched_notes": 4,
+                "precision": 0.23529411764705882,
+                "recall": 0.21052631578947367,
+                "f1": 0.2222222222222222
+              },
+              "onsets_offsets": {
+                "reference_notes": 19,
+                "predicted_notes": 17,
+                "matched_notes": 2,
+                "precision": 0.11764705882352941,
+                "recall": 0.10526315789473684,
+                "f1": 0.1111111111111111
+              },
+              "inconsistent_reference_positions": [
+                4,
+                7,
+                13,
+                17
+              ],
+              "conditional_fingering": {
+                "correct": 2,
+                "eligible_pitch_matches": 3,
+                "all_pitch_matches": 4
+              },
+              "export_status": "Exported all 17 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "promenade_mono",
+              "reference_notes": 13,
+              "onsets": {
+                "reference_notes": 13,
+                "predicted_notes": 13,
+                "matched_notes": 11,
+                "precision": 0.8461538461538461,
+                "recall": 0.8461538461538461,
+                "f1": 0.8461538461538461
+              },
+              "onsets_offsets": {
+                "reference_notes": 13,
+                "predicted_notes": 13,
+                "matched_notes": 9,
+                "precision": 0.6923076923076923,
+                "recall": 0.6923076923076923,
+                "f1": 0.6923076923076923
+              },
+              "inconsistent_reference_positions": [
+                12
+              ],
+              "conditional_fingering": {
+                "correct": 3,
+                "eligible_pitch_matches": 10,
+                "all_pitch_matches": 11
+              },
+              "export_status": "Exported all 13 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "quintfall",
+              "reference_notes": 29,
+              "onsets": {
+                "reference_notes": 29,
+                "predicted_notes": 7,
+                "matched_notes": 4,
+                "precision": 0.5714285714285714,
+                "recall": 0.13793103448275862,
+                "f1": 0.2222222222222222
+              },
+              "onsets_offsets": {
+                "reference_notes": 29,
+                "predicted_notes": 7,
+                "matched_notes": 2,
+                "precision": 0.2857142857142857,
+                "recall": 0.06896551724137931,
+                "f1": 0.1111111111111111
+              },
+              "inconsistent_reference_positions": [
+                8,
+                12,
+                15,
+                21
+              ],
+              "conditional_fingering": {
+                "correct": 0,
+                "eligible_pitch_matches": 4,
+                "all_pitch_matches": 4
+              },
+              "export_status": "Exported all 7 detections; GP5 reopened and verified"
+            }
+          ]
+        },
+        {
+          "backend": "basic-pitch",
+          "onsets": {
+            "reference_notes": 90,
+            "predicted_notes": 96,
+            "matched_notes": 77,
+            "evaluated_recordings": 5,
+            "f1": 0.8279569892473119
+          },
+          "onsets_offsets": {
+            "reference_notes": 90,
+            "predicted_notes": 96,
+            "matched_notes": 66,
+            "evaluated_recordings": 5,
+            "f1": 0.7096774193548387
+          },
+          "tracks": [
+            {
+              "track": "nocturneNr2",
+              "reference_notes": 20,
+              "onsets": {
+                "reference_notes": 20,
+                "predicted_notes": 21,
+                "matched_notes": 17,
+                "precision": 0.8095238095238095,
+                "recall": 0.85,
+                "f1": 0.8292682926829268
+              },
+              "onsets_offsets": {
+                "reference_notes": 20,
+                "predicted_notes": 21,
+                "matched_notes": 14,
+                "precision": 0.6666666666666666,
+                "recall": 0.7,
+                "f1": 0.6829268292682927
+              },
+              "inconsistent_reference_positions": [
+                5,
+                10
+              ],
+              "conditional_fingering": {
+                "correct": 7,
+                "eligible_pitch_matches": 17,
+                "all_pitch_matches": 17
+              },
+              "export_status": "Exported all 21 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "pathetique_mono",
+              "reference_notes": 9,
+              "onsets": {
+                "reference_notes": 9,
+                "predicted_notes": 10,
+                "matched_notes": 9,
+                "precision": 0.9,
+                "recall": 1.0,
+                "f1": 0.9473684210526315
+              },
+              "onsets_offsets": {
+                "reference_notes": 9,
+                "predicted_notes": 10,
+                "matched_notes": 9,
+                "precision": 0.9,
+                "recall": 1.0,
+                "f1": 0.9473684210526315
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 6,
+                "eligible_pitch_matches": 9,
+                "all_pitch_matches": 9
+              },
+              "export_status": "Exported all 10 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "pathetique_poly",
+              "reference_notes": 19,
+              "onsets": {
+                "reference_notes": 19,
+                "predicted_notes": 21,
+                "matched_notes": 15,
+                "precision": 0.7142857142857143,
+                "recall": 0.7894736842105263,
+                "f1": 0.75
+              },
+              "onsets_offsets": {
+                "reference_notes": 19,
+                "predicted_notes": 21,
+                "matched_notes": 14,
+                "precision": 0.6666666666666666,
+                "recall": 0.7368421052631579,
+                "f1": 0.7
+              },
+              "inconsistent_reference_positions": [
+                4,
+                7,
+                13,
+                17
+              ],
+              "conditional_fingering": {
+                "correct": 9,
+                "eligible_pitch_matches": 14,
+                "all_pitch_matches": 15
+              },
+              "export_status": "Exported all 21 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "promenade_mono",
+              "reference_notes": 13,
+              "onsets": {
+                "reference_notes": 13,
+                "predicted_notes": 13,
+                "matched_notes": 13,
+                "precision": 1.0,
+                "recall": 1.0,
+                "f1": 1.0
+              },
+              "onsets_offsets": {
+                "reference_notes": 13,
+                "predicted_notes": 13,
+                "matched_notes": 13,
+                "precision": 1.0,
+                "recall": 1.0,
+                "f1": 1.0
+              },
+              "inconsistent_reference_positions": [
+                12
+              ],
+              "conditional_fingering": {
+                "correct": 5,
+                "eligible_pitch_matches": 12,
+                "all_pitch_matches": 13
+              },
+              "export_status": "Exported all 13 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "quintfall",
+              "reference_notes": 29,
+              "onsets": {
+                "reference_notes": 29,
+                "predicted_notes": 31,
+                "matched_notes": 23,
+                "precision": 0.7419354838709677,
+                "recall": 0.7931034482758621,
+                "f1": 0.7666666666666667
+              },
+              "onsets_offsets": {
+                "reference_notes": 29,
+                "predicted_notes": 31,
+                "matched_notes": 16,
+                "precision": 0.5161290322580645,
+                "recall": 0.5517241379310345,
+                "f1": 0.5333333333333333
+              },
+              "inconsistent_reference_positions": [
+                8,
+                12,
+                15,
+                21
+              ],
+              "conditional_fingering": {
+                "correct": 20,
+                "eligible_pitch_matches": 22,
+                "all_pitch_matches": 23
+              },
+              "export_status": "Exported all 31 detections; GP5 reopened and verified"
+            }
+          ]
+        },
+        {
+          "backend": "guitar-gaps",
+          "onsets": {
+            "reference_notes": 90,
+            "predicted_notes": 93,
+            "matched_notes": 78,
+            "evaluated_recordings": 5,
+            "f1": 0.8524590163934426
+          },
+          "onsets_offsets": {
+            "reference_notes": 90,
+            "predicted_notes": 93,
+            "matched_notes": 62,
+            "evaluated_recordings": 5,
+            "f1": 0.6775956284153005
+          },
+          "tracks": [
+            {
+              "track": "nocturneNr2",
+              "reference_notes": 20,
+              "onsets": {
+                "reference_notes": 20,
+                "predicted_notes": 20,
+                "matched_notes": 17,
+                "precision": 0.85,
+                "recall": 0.85,
+                "f1": 0.85
+              },
+              "onsets_offsets": {
+                "reference_notes": 20,
+                "predicted_notes": 20,
+                "matched_notes": 14,
+                "precision": 0.7,
+                "recall": 0.7,
+                "f1": 0.7
+              },
+              "inconsistent_reference_positions": [
+                5,
+                10
+              ],
+              "conditional_fingering": {
+                "correct": 13,
+                "eligible_pitch_matches": 17,
+                "all_pitch_matches": 17
+              },
+              "export_status": "Exported all 20 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "pathetique_mono",
+              "reference_notes": 9,
+              "onsets": {
+                "reference_notes": 9,
+                "predicted_notes": 9,
+                "matched_notes": 9,
+                "precision": 1.0,
+                "recall": 1.0,
+                "f1": 1.0
+              },
+              "onsets_offsets": {
+                "reference_notes": 9,
+                "predicted_notes": 9,
+                "matched_notes": 9,
+                "precision": 1.0,
+                "recall": 1.0,
+                "f1": 1.0
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 7,
+                "eligible_pitch_matches": 9,
+                "all_pitch_matches": 9
+              },
+              "export_status": "Exported all 9 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "pathetique_poly",
+              "reference_notes": 19,
+              "onsets": {
+                "reference_notes": 19,
+                "predicted_notes": 18,
+                "matched_notes": 15,
+                "precision": 0.8333333333333334,
+                "recall": 0.7894736842105263,
+                "f1": 0.8108108108108109
+              },
+              "onsets_offsets": {
+                "reference_notes": 19,
+                "predicted_notes": 18,
+                "matched_notes": 14,
+                "precision": 0.7777777777777778,
+                "recall": 0.7368421052631579,
+                "f1": 0.7567567567567568
+              },
+              "inconsistent_reference_positions": [
+                4,
+                7,
+                13,
+                17
+              ],
+              "conditional_fingering": {
+                "correct": 6,
+                "eligible_pitch_matches": 14,
+                "all_pitch_matches": 15
+              },
+              "export_status": "Exported all 18 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "promenade_mono",
+              "reference_notes": 13,
+              "onsets": {
+                "reference_notes": 13,
+                "predicted_notes": 13,
+                "matched_notes": 12,
+                "precision": 0.9230769230769231,
+                "recall": 0.9230769230769231,
+                "f1": 0.9230769230769231
+              },
+              "onsets_offsets": {
+                "reference_notes": 13,
+                "predicted_notes": 13,
+                "matched_notes": 11,
+                "precision": 0.8461538461538461,
+                "recall": 0.8461538461538461,
+                "f1": 0.8461538461538461
+              },
+              "inconsistent_reference_positions": [
+                12
+              ],
+              "conditional_fingering": {
+                "correct": 4,
+                "eligible_pitch_matches": 11,
+                "all_pitch_matches": 12
+              },
+              "export_status": "Exported all 13 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "quintfall",
+              "reference_notes": 29,
+              "onsets": {
+                "reference_notes": 29,
+                "predicted_notes": 33,
+                "matched_notes": 25,
+                "precision": 0.7575757575757576,
+                "recall": 0.8620689655172413,
+                "f1": 0.8064516129032258
+              },
+              "onsets_offsets": {
+                "reference_notes": 29,
+                "predicted_notes": 33,
+                "matched_notes": 14,
+                "precision": 0.42424242424242425,
+                "recall": 0.4827586206896552,
+                "f1": 0.45161290322580644
+              },
+              "inconsistent_reference_positions": [
+                8,
+                12,
+                15,
+                21
+              ],
+              "conditional_fingering": {
+                "correct": 9,
+                "eligible_pitch_matches": 24,
+                "all_pitch_matches": 25
+              },
+              "export_status": "Exported all 33 detections; GP5 reopened and verified"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "selection": "licks",
+      "models": [
+        {
+          "backend": "baseline",
+          "onsets": {
+            "reference_notes": 67,
+            "predicted_notes": 50,
+            "matched_notes": 29,
+            "evaluated_recordings": 3,
+            "f1": 0.49572649572649574
+          },
+          "onsets_offsets": {
+            "reference_notes": 67,
+            "predicted_notes": 50,
+            "matched_notes": 20,
+            "evaluated_recordings": 3,
+            "f1": 0.3418803418803419
+          },
+          "tracks": [
+            {
+              "track": "AR_Lick1_KN",
+              "reference_notes": 13,
+              "onsets": {
+                "reference_notes": 13,
+                "predicted_notes": 13,
+                "matched_notes": 13,
+                "precision": 1.0,
+                "recall": 1.0,
+                "f1": 1.0
+              },
+              "onsets_offsets": {
+                "reference_notes": 13,
+                "predicted_notes": 13,
+                "matched_notes": 11,
+                "precision": 0.8461538461538461,
+                "recall": 0.8461538461538461,
+                "f1": 0.8461538461538461
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 11,
+                "eligible_pitch_matches": 13,
+                "all_pitch_matches": 13
+              },
+              "export_status": "Exported all 13 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "AR_Lick6_KN",
+              "reference_notes": 10,
+              "onsets": {
+                "reference_notes": 10,
+                "predicted_notes": 10,
+                "matched_notes": 8,
+                "precision": 0.8,
+                "recall": 0.8,
+                "f1": 0.8
+              },
+              "onsets_offsets": {
+                "reference_notes": 10,
+                "predicted_notes": 10,
+                "matched_notes": 7,
+                "precision": 0.7,
+                "recall": 0.7,
+                "f1": 0.7
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 6,
+                "eligible_pitch_matches": 8,
+                "all_pitch_matches": 8
+              },
+              "export_status": "Exported all 10 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "AR_Lick12_KN",
+              "reference_notes": 44,
+              "onsets": {
+                "reference_notes": 44,
+                "predicted_notes": 27,
+                "matched_notes": 8,
+                "precision": 0.2962962962962963,
+                "recall": 0.18181818181818182,
+                "f1": 0.22535211267605634
+              },
+              "onsets_offsets": {
+                "reference_notes": 44,
+                "predicted_notes": 27,
+                "matched_notes": 2,
+                "precision": 0.07407407407407407,
+                "recall": 0.045454545454545456,
+                "f1": 0.056338028169014086
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 4,
+                "eligible_pitch_matches": 8,
+                "all_pitch_matches": 8
+              },
+              "export_status": "Exported all 27 detections; GP5 reopened and verified"
+            }
+          ]
+        },
+        {
+          "backend": "basic-pitch",
+          "onsets": {
+            "reference_notes": 67,
+            "predicted_notes": 90,
+            "matched_notes": 61,
+            "evaluated_recordings": 3,
+            "f1": 0.7770700636942676
+          },
+          "onsets_offsets": {
+            "reference_notes": 67,
+            "predicted_notes": 90,
+            "matched_notes": 37,
+            "evaluated_recordings": 3,
+            "f1": 0.4713375796178344
+          },
+          "tracks": [
+            {
+              "track": "AR_Lick1_KN",
+              "reference_notes": 13,
+              "onsets": {
+                "reference_notes": 13,
+                "predicted_notes": 15,
+                "matched_notes": 12,
+                "precision": 0.8,
+                "recall": 0.9230769230769231,
+                "f1": 0.8571428571428571
+              },
+              "onsets_offsets": {
+                "reference_notes": 13,
+                "predicted_notes": 15,
+                "matched_notes": 10,
+                "precision": 0.6666666666666666,
+                "recall": 0.7692307692307693,
+                "f1": 0.7142857142857143
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 10,
+                "eligible_pitch_matches": 12,
+                "all_pitch_matches": 12
+              },
+              "export_status": "Exported all 15 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "AR_Lick6_KN",
+              "reference_notes": 10,
+              "onsets": {
+                "reference_notes": 10,
+                "predicted_notes": 10,
+                "matched_notes": 10,
+                "precision": 1.0,
+                "recall": 1.0,
+                "f1": 1.0
+              },
+              "onsets_offsets": {
+                "reference_notes": 10,
+                "predicted_notes": 10,
+                "matched_notes": 10,
+                "precision": 1.0,
+                "recall": 1.0,
+                "f1": 1.0
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 8,
+                "eligible_pitch_matches": 10,
+                "all_pitch_matches": 10
+              },
+              "export_status": "Exported all 10 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "AR_Lick12_KN",
+              "reference_notes": 44,
+              "onsets": {
+                "reference_notes": 44,
+                "predicted_notes": 65,
+                "matched_notes": 39,
+                "precision": 0.6,
+                "recall": 0.8863636363636364,
+                "f1": 0.7155963302752294
+              },
+              "onsets_offsets": {
+                "reference_notes": 44,
+                "predicted_notes": 65,
+                "matched_notes": 17,
+                "precision": 0.26153846153846155,
+                "recall": 0.38636363636363635,
+                "f1": 0.3119266055045872
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 28,
+                "eligible_pitch_matches": 39,
+                "all_pitch_matches": 39
+              },
+              "export_status": "Exported all 65 detections; GP5 reopened and verified"
+            }
+          ]
+        },
+        {
+          "backend": "guitar-gaps",
+          "onsets": {
+            "reference_notes": 67,
+            "predicted_notes": 68,
+            "matched_notes": 60,
+            "evaluated_recordings": 3,
+            "f1": 0.8888888888888888
+          },
+          "onsets_offsets": {
+            "reference_notes": 67,
+            "predicted_notes": 68,
+            "matched_notes": 45,
+            "evaluated_recordings": 3,
+            "f1": 0.6666666666666666
+          },
+          "tracks": [
+            {
+              "track": "AR_Lick1_KN",
+              "reference_notes": 13,
+              "onsets": {
+                "reference_notes": 13,
+                "predicted_notes": 13,
+                "matched_notes": 12,
+                "precision": 0.9230769230769231,
+                "recall": 0.9230769230769231,
+                "f1": 0.9230769230769231
+              },
+              "onsets_offsets": {
+                "reference_notes": 13,
+                "predicted_notes": 13,
+                "matched_notes": 11,
+                "precision": 0.8461538461538461,
+                "recall": 0.8461538461538461,
+                "f1": 0.8461538461538461
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 10,
+                "eligible_pitch_matches": 12,
+                "all_pitch_matches": 12
+              },
+              "export_status": "Exported all 13 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "AR_Lick6_KN",
+              "reference_notes": 10,
+              "onsets": {
+                "reference_notes": 10,
+                "predicted_notes": 11,
+                "matched_notes": 10,
+                "precision": 0.9090909090909091,
+                "recall": 1.0,
+                "f1": 0.9523809523809523
+              },
+              "onsets_offsets": {
+                "reference_notes": 10,
+                "predicted_notes": 11,
+                "matched_notes": 10,
+                "precision": 0.9090909090909091,
+                "recall": 1.0,
+                "f1": 0.9523809523809523
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 6,
+                "eligible_pitch_matches": 10,
+                "all_pitch_matches": 10
+              },
+              "export_status": "Exported all 11 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "AR_Lick12_KN",
+              "reference_notes": 44,
+              "onsets": {
+                "reference_notes": 44,
+                "predicted_notes": 44,
+                "matched_notes": 38,
+                "precision": 0.8636363636363636,
+                "recall": 0.8636363636363636,
+                "f1": 0.8636363636363636
+              },
+              "onsets_offsets": {
+                "reference_notes": 44,
+                "predicted_notes": 44,
+                "matched_notes": 24,
+                "precision": 0.5454545454545454,
+                "recall": 0.5454545454545454,
+                "f1": 0.5454545454545454
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 28,
+                "eligible_pitch_matches": 38,
+                "all_pitch_matches": 38
+              },
+              "export_status": "Exported all 44 detections; GP5 reopened and verified"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "selection": "muted",
+      "models": [
+        {
+          "backend": "baseline",
+          "onsets": {
+            "reference_notes": 67,
+            "predicted_notes": 42,
+            "matched_notes": 35,
+            "evaluated_recordings": 3,
+            "f1": 0.6422018348623854
+          },
+          "onsets_offsets": {
+            "reference_notes": 67,
+            "predicted_notes": 42,
+            "matched_notes": 9,
+            "evaluated_recordings": 3,
+            "f1": 0.1651376146788991
+          },
+          "tracks": [
+            {
+              "track": "AR_Lick1_MN",
+              "reference_notes": 13,
+              "onsets": {
+                "reference_notes": 13,
+                "predicted_notes": 13,
+                "matched_notes": 13,
+                "precision": 1.0,
+                "recall": 1.0,
+                "f1": 1.0
+              },
+              "onsets_offsets": {
+                "reference_notes": 13,
+                "predicted_notes": 13,
+                "matched_notes": 5,
+                "precision": 0.38461538461538464,
+                "recall": 0.38461538461538464,
+                "f1": 0.38461538461538464
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 11,
+                "eligible_pitch_matches": 13,
+                "all_pitch_matches": 13
+              },
+              "export_status": "Exported all 13 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "AR_Lick6_MN",
+              "reference_notes": 10,
+              "onsets": {
+                "reference_notes": 10,
+                "predicted_notes": 9,
+                "matched_notes": 6,
+                "precision": 0.6666666666666666,
+                "recall": 0.6,
+                "f1": 0.631578947368421
+              },
+              "onsets_offsets": {
+                "reference_notes": 10,
+                "predicted_notes": 9,
+                "matched_notes": 1,
+                "precision": 0.1111111111111111,
+                "recall": 0.1,
+                "f1": 0.10526315789473684
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 0,
+                "eligible_pitch_matches": 6,
+                "all_pitch_matches": 6
+              },
+              "export_status": "Exported all 9 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "AR_Lick12_MN",
+              "reference_notes": 44,
+              "onsets": {
+                "reference_notes": 44,
+                "predicted_notes": 20,
+                "matched_notes": 16,
+                "precision": 0.8,
+                "recall": 0.36363636363636365,
+                "f1": 0.5
+              },
+              "onsets_offsets": {
+                "reference_notes": 44,
+                "predicted_notes": 20,
+                "matched_notes": 3,
+                "precision": 0.15,
+                "recall": 0.06818181818181818,
+                "f1": 0.09375
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 8,
+                "eligible_pitch_matches": 16,
+                "all_pitch_matches": 16
+              },
+              "export_status": "Exported all 20 detections; GP5 reopened and verified"
+            }
+          ]
+        },
+        {
+          "backend": "basic-pitch",
+          "onsets": {
+            "reference_notes": 67,
+            "predicted_notes": 67,
+            "matched_notes": 52,
+            "evaluated_recordings": 3,
+            "f1": 0.7761194029850746
+          },
+          "onsets_offsets": {
+            "reference_notes": 67,
+            "predicted_notes": 67,
+            "matched_notes": 34,
+            "evaluated_recordings": 3,
+            "f1": 0.5074626865671642
+          },
+          "tracks": [
+            {
+              "track": "AR_Lick1_MN",
+              "reference_notes": 13,
+              "onsets": {
+                "reference_notes": 13,
+                "predicted_notes": 16,
+                "matched_notes": 13,
+                "precision": 0.8125,
+                "recall": 1.0,
+                "f1": 0.896551724137931
+              },
+              "onsets_offsets": {
+                "reference_notes": 13,
+                "predicted_notes": 16,
+                "matched_notes": 12,
+                "precision": 0.75,
+                "recall": 0.9230769230769231,
+                "f1": 0.8275862068965517
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 11,
+                "eligible_pitch_matches": 13,
+                "all_pitch_matches": 13
+              },
+              "export_status": "Exported all 16 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "AR_Lick6_MN",
+              "reference_notes": 10,
+              "onsets": {
+                "reference_notes": 10,
+                "predicted_notes": 1,
+                "matched_notes": 1,
+                "precision": 1.0,
+                "recall": 0.1,
+                "f1": 0.18181818181818182
+              },
+              "onsets_offsets": {
+                "reference_notes": 10,
+                "predicted_notes": 1,
+                "matched_notes": 1,
+                "precision": 1.0,
+                "recall": 0.1,
+                "f1": 0.18181818181818182
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 1,
+                "eligible_pitch_matches": 1,
+                "all_pitch_matches": 1
+              },
+              "export_status": "Exported all 1 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "AR_Lick12_MN",
+              "reference_notes": 44,
+              "onsets": {
+                "reference_notes": 44,
+                "predicted_notes": 50,
+                "matched_notes": 38,
+                "precision": 0.76,
+                "recall": 0.8636363636363636,
+                "f1": 0.8085106382978723
+              },
+              "onsets_offsets": {
+                "reference_notes": 44,
+                "predicted_notes": 50,
+                "matched_notes": 21,
+                "precision": 0.42,
+                "recall": 0.4772727272727273,
+                "f1": 0.44680851063829785
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 21,
+                "eligible_pitch_matches": 38,
+                "all_pitch_matches": 38
+              },
+              "export_status": "Exported all 50 detections; GP5 reopened and verified"
+            }
+          ]
+        },
+        {
+          "backend": "guitar-gaps",
+          "onsets": {
+            "reference_notes": 67,
+            "predicted_notes": 58,
+            "matched_notes": 54,
+            "evaluated_recordings": 3,
+            "f1": 0.864
+          },
+          "onsets_offsets": {
+            "reference_notes": 67,
+            "predicted_notes": 58,
+            "matched_notes": 34,
+            "evaluated_recordings": 3,
+            "f1": 0.544
+          },
+          "tracks": [
+            {
+              "track": "AR_Lick1_MN",
+              "reference_notes": 13,
+              "onsets": {
+                "reference_notes": 13,
+                "predicted_notes": 13,
+                "matched_notes": 12,
+                "precision": 0.9230769230769231,
+                "recall": 0.9230769230769231,
+                "f1": 0.9230769230769231
+              },
+              "onsets_offsets": {
+                "reference_notes": 13,
+                "predicted_notes": 13,
+                "matched_notes": 8,
+                "precision": 0.6153846153846154,
+                "recall": 0.6153846153846154,
+                "f1": 0.6153846153846154
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 8,
+                "eligible_pitch_matches": 12,
+                "all_pitch_matches": 12
+              },
+              "export_status": "Exported all 13 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "AR_Lick6_MN",
+              "reference_notes": 10,
+              "onsets": {
+                "reference_notes": 10,
+                "predicted_notes": 4,
+                "matched_notes": 4,
+                "precision": 1.0,
+                "recall": 0.4,
+                "f1": 0.5714285714285714
+              },
+              "onsets_offsets": {
+                "reference_notes": 10,
+                "predicted_notes": 4,
+                "matched_notes": 2,
+                "precision": 0.5,
+                "recall": 0.2,
+                "f1": 0.2857142857142857
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 4,
+                "eligible_pitch_matches": 4,
+                "all_pitch_matches": 4
+              },
+              "export_status": "Exported all 4 detections; GP5 reopened and verified"
+            },
+            {
+              "track": "AR_Lick12_MN",
+              "reference_notes": 44,
+              "onsets": {
+                "reference_notes": 44,
+                "predicted_notes": 41,
+                "matched_notes": 38,
+                "precision": 0.926829268292683,
+                "recall": 0.8636363636363636,
+                "f1": 0.8941176470588236
+              },
+              "onsets_offsets": {
+                "reference_notes": 44,
+                "predicted_notes": 41,
+                "matched_notes": 24,
+                "precision": 0.5853658536585366,
+                "recall": 0.5454545454545454,
+                "f1": 0.5647058823529412
+              },
+              "inconsistent_reference_positions": [],
+              "conditional_fingering": {
+                "correct": 24,
+                "eligible_pitch_matches": 38,
+                "all_pitch_matches": 38
+              },
+              "export_status": "Exported all 41 detections; GP5 reopened and verified"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "all_recording_aggregates": [
+    {
+      "split": "development",
+      "model_id": "baseline",
+      "pairs": 11,
+      "raw": {
+        "onsets": {
+          "reference_notes": 224,
+          "predicted_notes": 143,
+          "matched_notes": 91,
+          "precision": 0.6363636363636364,
+          "recall": 0.40625,
+          "f1": 0.49591280653950953
+        },
+        "onsets_offsets": {
+          "reference_notes": 224,
+          "predicted_notes": 143,
+          "matched_notes": 49,
+          "precision": 0.34265734265734266,
+          "recall": 0.21875,
+          "f1": 0.2670299727520436
+        }
+      },
+      "shifted": {
+        "onsets": {
+          "reference_notes": 224,
+          "predicted_notes": 143,
+          "matched_notes": 101,
+          "precision": 0.7062937062937062,
+          "recall": 0.45089285714285715,
+          "f1": 0.5504087193460491
+        },
+        "onsets_offsets": {
+          "reference_notes": 224,
+          "predicted_notes": 143,
+          "matched_notes": 58,
+          "precision": 0.40559440559440557,
+          "recall": 0.25892857142857145,
+          "f1": 0.31607629427792916
+        }
+      }
+    },
+    {
+      "split": "development",
+      "model_id": "basic-pitch",
+      "pairs": 11,
+      "raw": {
+        "onsets": {
+          "reference_notes": 224,
+          "predicted_notes": 253,
+          "matched_notes": 190,
+          "precision": 0.7509881422924901,
+          "recall": 0.8482142857142857,
+          "f1": 0.7966457023060797
+        },
+        "onsets_offsets": {
+          "reference_notes": 224,
+          "predicted_notes": 253,
+          "matched_notes": 137,
+          "precision": 0.541501976284585,
+          "recall": 0.6116071428571429,
+          "f1": 0.5744234800838575
+        }
+      },
+      "shifted": {
+        "onsets": {
+          "reference_notes": 224,
+          "predicted_notes": 253,
+          "matched_notes": 194,
+          "precision": 0.766798418972332,
+          "recall": 0.8660714285714286,
+          "f1": 0.8134171907756813
+        },
+        "onsets_offsets": {
+          "reference_notes": 224,
+          "predicted_notes": 253,
+          "matched_notes": 142,
+          "precision": 0.5612648221343873,
+          "recall": 0.6339285714285714,
+          "f1": 0.5953878406708596
+        }
+      }
+    },
+    {
+      "split": "development",
+      "model_id": "guitar-gaps",
+      "pairs": 11,
+      "raw": {
+        "onsets": {
+          "reference_notes": 224,
+          "predicted_notes": 219,
+          "matched_notes": 192,
+          "precision": 0.8767123287671232,
+          "recall": 0.8571428571428571,
+          "f1": 0.8668171557562077
+        },
+        "onsets_offsets": {
+          "reference_notes": 224,
+          "predicted_notes": 219,
+          "matched_notes": 141,
+          "precision": 0.6438356164383562,
+          "recall": 0.6294642857142857,
+          "f1": 0.636568848758465
+        }
+      },
+      "shifted": {
+        "onsets": {
+          "reference_notes": 224,
+          "predicted_notes": 219,
+          "matched_notes": 203,
+          "precision": 0.9269406392694064,
+          "recall": 0.90625,
+          "f1": 0.9164785553047404
+        },
+        "onsets_offsets": {
+          "reference_notes": 224,
+          "predicted_notes": 219,
+          "matched_notes": 152,
+          "precision": 0.6940639269406392,
+          "recall": 0.6785714285714286,
+          "f1": 0.6862302483069977
+        }
+      }
+    }
+  ],
+  "source_identities": [
+    {
+      "selection": "pieces",
+      "track": "nocturneNr2",
+      "backend": "baseline",
+      "audio_sha256": "8333a6d3d224e35193defcd9724aa42085c6b71d0ba24ff1045f6f1c58acc25a",
+      "reference_sha256": "8395037434bfd3af2cb9b0a52cac2bd7a965ecff13e904f0400e4773c9060cfe",
+      "prediction_sha256": "fcefc3f00729c4ae4626e16d2e5b236be2cd8a2c64444265b2091290baadc357"
+    },
+    {
+      "selection": "pieces",
+      "track": "pathetique_mono",
+      "backend": "baseline",
+      "audio_sha256": "c8f56672faadf3062e8cee33ddef77a71d3eb975c8a8a5d92292e64eb6383184",
+      "reference_sha256": "fcb1226bebf2571c220bdf84d47e3f8bbaf31782b3be4cd8d0665b772cae88b3",
+      "prediction_sha256": "ccf76e275ccaea09d7ab731c2bbad313efe9a7b43bfdb425e931f5c11cd05a56"
+    },
+    {
+      "selection": "pieces",
+      "track": "pathetique_poly",
+      "backend": "baseline",
+      "audio_sha256": "f4611abb9be67b67a4cf80c5e0225bb4a129e12a5c4278d90b648b92b922d854",
+      "reference_sha256": "fcbd58e526b1bf899cec178f13472766a6eaa2b23346f571cb92ae780268582f",
+      "prediction_sha256": "11662a4128be1f8c9c378eebdbdf3377a6753f9f9617e5d01a4221a0db814ba4"
+    },
+    {
+      "selection": "pieces",
+      "track": "promenade_mono",
+      "backend": "baseline",
+      "audio_sha256": "b33b99b1d88319cc141b78ea58a4da4c507923d3e2af366e898ce55c9ad4f47e",
+      "reference_sha256": "07a2d03eb0f25a89b5d51e214f9662ef4b6a61ce73af103cff70d3a9be57d17c",
+      "prediction_sha256": "b6f49c3db6893d1b67bcbd316d6e356e5217cb74ad3c061ebc2d4da62ea42e53"
+    },
+    {
+      "selection": "pieces",
+      "track": "quintfall",
+      "backend": "baseline",
+      "audio_sha256": "0863de6b236f12d1d2d82131132939d6bbe2bc8f126e7c2aadb71d962c58586b",
+      "reference_sha256": "f17b23e85b954908bf65d08e35eca14b61e6c6982fc5f2f635275762ab1b422a",
+      "prediction_sha256": "ba83c10cf7edb82a9941b86d564943e6a6d118c7753f37a730f79e9632cb395e"
+    },
+    {
+      "selection": "pieces",
+      "track": "nocturneNr2",
+      "backend": "basic-pitch",
+      "audio_sha256": "8333a6d3d224e35193defcd9724aa42085c6b71d0ba24ff1045f6f1c58acc25a",
+      "reference_sha256": "8395037434bfd3af2cb9b0a52cac2bd7a965ecff13e904f0400e4773c9060cfe",
+      "prediction_sha256": "3d3498577cbfcb8694234dc855c05faa82995ce2fccb4289a228c4d858da21e3"
+    },
+    {
+      "selection": "pieces",
+      "track": "pathetique_mono",
+      "backend": "basic-pitch",
+      "audio_sha256": "c8f56672faadf3062e8cee33ddef77a71d3eb975c8a8a5d92292e64eb6383184",
+      "reference_sha256": "fcb1226bebf2571c220bdf84d47e3f8bbaf31782b3be4cd8d0665b772cae88b3",
+      "prediction_sha256": "e9f00b9231ef416cf9f4d227c930e32c5ad713117f9dc05709c4b81f78309147"
+    },
+    {
+      "selection": "pieces",
+      "track": "pathetique_poly",
+      "backend": "basic-pitch",
+      "audio_sha256": "f4611abb9be67b67a4cf80c5e0225bb4a129e12a5c4278d90b648b92b922d854",
+      "reference_sha256": "fcbd58e526b1bf899cec178f13472766a6eaa2b23346f571cb92ae780268582f",
+      "prediction_sha256": "a8c62818404fc4772e8e6ab4f64ed7febbe51afbdb53ae8477ad67c1cef8e54b"
+    },
+    {
+      "selection": "pieces",
+      "track": "promenade_mono",
+      "backend": "basic-pitch",
+      "audio_sha256": "b33b99b1d88319cc141b78ea58a4da4c507923d3e2af366e898ce55c9ad4f47e",
+      "reference_sha256": "07a2d03eb0f25a89b5d51e214f9662ef4b6a61ce73af103cff70d3a9be57d17c",
+      "prediction_sha256": "a5796d73dc012f655bcd40e8678fb3e773f6e34df5d239b44dcae96757920c7b"
+    },
+    {
+      "selection": "pieces",
+      "track": "quintfall",
+      "backend": "basic-pitch",
+      "audio_sha256": "0863de6b236f12d1d2d82131132939d6bbe2bc8f126e7c2aadb71d962c58586b",
+      "reference_sha256": "f17b23e85b954908bf65d08e35eca14b61e6c6982fc5f2f635275762ab1b422a",
+      "prediction_sha256": "8f6d750499dcca919b38e06711e6b4682eb9c61b670f36899586ca447cbe6fcc"
+    },
+    {
+      "selection": "pieces",
+      "track": "nocturneNr2",
+      "backend": "guitar-gaps",
+      "audio_sha256": "8333a6d3d224e35193defcd9724aa42085c6b71d0ba24ff1045f6f1c58acc25a",
+      "reference_sha256": "8395037434bfd3af2cb9b0a52cac2bd7a965ecff13e904f0400e4773c9060cfe",
+      "prediction_sha256": "6759923948161df919658bb94503cafef118c887c554781db40ba1218c61994b"
+    },
+    {
+      "selection": "pieces",
+      "track": "pathetique_mono",
+      "backend": "guitar-gaps",
+      "audio_sha256": "c8f56672faadf3062e8cee33ddef77a71d3eb975c8a8a5d92292e64eb6383184",
+      "reference_sha256": "fcb1226bebf2571c220bdf84d47e3f8bbaf31782b3be4cd8d0665b772cae88b3",
+      "prediction_sha256": "951aae15117c5f20934e8945620383b5007812fcd8474e092e7576345577e359"
+    },
+    {
+      "selection": "pieces",
+      "track": "pathetique_poly",
+      "backend": "guitar-gaps",
+      "audio_sha256": "f4611abb9be67b67a4cf80c5e0225bb4a129e12a5c4278d90b648b92b922d854",
+      "reference_sha256": "fcbd58e526b1bf899cec178f13472766a6eaa2b23346f571cb92ae780268582f",
+      "prediction_sha256": "5853fe30dd933fb317210ad1d25d3e037ad1d1ea778ed237f692a11e98decbbe"
+    },
+    {
+      "selection": "pieces",
+      "track": "promenade_mono",
+      "backend": "guitar-gaps",
+      "audio_sha256": "b33b99b1d88319cc141b78ea58a4da4c507923d3e2af366e898ce55c9ad4f47e",
+      "reference_sha256": "07a2d03eb0f25a89b5d51e214f9662ef4b6a61ce73af103cff70d3a9be57d17c",
+      "prediction_sha256": "2a7a747fd9523c54431e363d7ba8c174de90e8aa5006b7498635bb1231b9d3de"
+    },
+    {
+      "selection": "pieces",
+      "track": "quintfall",
+      "backend": "guitar-gaps",
+      "audio_sha256": "0863de6b236f12d1d2d82131132939d6bbe2bc8f126e7c2aadb71d962c58586b",
+      "reference_sha256": "f17b23e85b954908bf65d08e35eca14b61e6c6982fc5f2f635275762ab1b422a",
+      "prediction_sha256": "2cd235f23a371e900e19592b238b9728258107acc5378f0d8d05456676003b58"
+    },
+    {
+      "selection": "licks",
+      "track": "AR_Lick1_KN",
+      "backend": "baseline",
+      "audio_sha256": "18597b2dc85aff01395a638ef848e529ef789796a9be7ff5a904165b0ab61ce6",
+      "reference_sha256": "412d30e12a1e79f4fa64f69854f7f08de65a814a308b7dc46a023f40fe602af6",
+      "prediction_sha256": "e7c0eb9ae4f8688ae69a8fc33e772c38a0fabad46db6a5c96464b8150cfd3b01"
+    },
+    {
+      "selection": "licks",
+      "track": "AR_Lick6_KN",
+      "backend": "baseline",
+      "audio_sha256": "3b757b97faf92ac6b925dce69a918a694c6794553e27e7b8ae2b10e2cf09d9dc",
+      "reference_sha256": "be6438c7a17d7112fc0014c2e8fc18fd93b3f354c4456e03029287f4ea8cda55",
+      "prediction_sha256": "45c6399a2266f625de5d6df1f7fd564c202e1ff9e7cb81232bbb2f0165c65bce"
+    },
+    {
+      "selection": "licks",
+      "track": "AR_Lick12_KN",
+      "backend": "baseline",
+      "audio_sha256": "e7f786c769cff6438db8f1225d15db2e0c0e1e97f75f92d8bb71de3beed57e9c",
+      "reference_sha256": "5d342d786c5d47eeca1dd5954177306ab7b29ad6c19a13c2c2ea2c5595d158d4",
+      "prediction_sha256": "6fd41839d044472aa9bc6783bf46b97d7b1a0392d06db3b204e3168708677a44"
+    },
+    {
+      "selection": "licks",
+      "track": "AR_Lick1_KN",
+      "backend": "basic-pitch",
+      "audio_sha256": "18597b2dc85aff01395a638ef848e529ef789796a9be7ff5a904165b0ab61ce6",
+      "reference_sha256": "412d30e12a1e79f4fa64f69854f7f08de65a814a308b7dc46a023f40fe602af6",
+      "prediction_sha256": "f5eefefe271f5067820f4a4008b7ead854545979cebac2b94547e9dfc86f76e8"
+    },
+    {
+      "selection": "licks",
+      "track": "AR_Lick6_KN",
+      "backend": "basic-pitch",
+      "audio_sha256": "3b757b97faf92ac6b925dce69a918a694c6794553e27e7b8ae2b10e2cf09d9dc",
+      "reference_sha256": "be6438c7a17d7112fc0014c2e8fc18fd93b3f354c4456e03029287f4ea8cda55",
+      "prediction_sha256": "9749b9b9a8506b38ea670c83f93bcc9291f2ba38de0ef317fb13cb66a3214aca"
+    },
+    {
+      "selection": "licks",
+      "track": "AR_Lick12_KN",
+      "backend": "basic-pitch",
+      "audio_sha256": "e7f786c769cff6438db8f1225d15db2e0c0e1e97f75f92d8bb71de3beed57e9c",
+      "reference_sha256": "5d342d786c5d47eeca1dd5954177306ab7b29ad6c19a13c2c2ea2c5595d158d4",
+      "prediction_sha256": "9b2fc3a59b6fc8e59843232160ed0f2100a65176f083dae951bb931dacf4ec01"
+    },
+    {
+      "selection": "licks",
+      "track": "AR_Lick1_KN",
+      "backend": "guitar-gaps",
+      "audio_sha256": "18597b2dc85aff01395a638ef848e529ef789796a9be7ff5a904165b0ab61ce6",
+      "reference_sha256": "412d30e12a1e79f4fa64f69854f7f08de65a814a308b7dc46a023f40fe602af6",
+      "prediction_sha256": "a65b8935042f31a4daaa8d7d7227d456f156831291161949fa5c19d6ca7ce206"
+    },
+    {
+      "selection": "licks",
+      "track": "AR_Lick6_KN",
+      "backend": "guitar-gaps",
+      "audio_sha256": "3b757b97faf92ac6b925dce69a918a694c6794553e27e7b8ae2b10e2cf09d9dc",
+      "reference_sha256": "be6438c7a17d7112fc0014c2e8fc18fd93b3f354c4456e03029287f4ea8cda55",
+      "prediction_sha256": "a98d14f58625951b45c70a28bd2b9b7ef4bdcb8be79a48e8e31b32f0542aad23"
+    },
+    {
+      "selection": "licks",
+      "track": "AR_Lick12_KN",
+      "backend": "guitar-gaps",
+      "audio_sha256": "e7f786c769cff6438db8f1225d15db2e0c0e1e97f75f92d8bb71de3beed57e9c",
+      "reference_sha256": "5d342d786c5d47eeca1dd5954177306ab7b29ad6c19a13c2c2ea2c5595d158d4",
+      "prediction_sha256": "8035f3001d496bf8b28e8d512602d1826306aac7627532a5a370e98402cd9b25"
+    },
+    {
+      "selection": "muted",
+      "track": "AR_Lick1_MN",
+      "backend": "baseline",
+      "audio_sha256": "f53d237d237f5655004ea729e52f2cdff3c2b31ff4e6494fd1bdbcc99da76815",
+      "reference_sha256": "92c128e0e99db04bba2c8d88bc5d57fb0b52722f81a5971afb5c5177340ddaa1",
+      "prediction_sha256": "02022ecca2a1655791b1b32c7a207c79722795ca9f3895b3ba254cc134077dbb"
+    },
+    {
+      "selection": "muted",
+      "track": "AR_Lick6_MN",
+      "backend": "baseline",
+      "audio_sha256": "c04e7d591e17358377a54b34b590e3410ce25abb598be4b8c8e2922f54b36cd0",
+      "reference_sha256": "d33974db4eb8930e31d452a8e14db14c845a2f875b5ae2e62cc35703956dd09a",
+      "prediction_sha256": "833f95b6ad3798bcf14644f87e3a08c2416d971afca60cfbb1b26a0912b84a61"
+    },
+    {
+      "selection": "muted",
+      "track": "AR_Lick12_MN",
+      "backend": "baseline",
+      "audio_sha256": "79d46b455ad0454b013172c83661dec985f3abd705433d50b275968a6d2191c9",
+      "reference_sha256": "b3ca268d37114f858b415db2343f5db1ec932878f828c987d5c2a261423ff265",
+      "prediction_sha256": "6e02897f02df84c619d7273b81da6ca43405618d988c5572919a792904bccf1a"
+    },
+    {
+      "selection": "muted",
+      "track": "AR_Lick1_MN",
+      "backend": "basic-pitch",
+      "audio_sha256": "f53d237d237f5655004ea729e52f2cdff3c2b31ff4e6494fd1bdbcc99da76815",
+      "reference_sha256": "92c128e0e99db04bba2c8d88bc5d57fb0b52722f81a5971afb5c5177340ddaa1",
+      "prediction_sha256": "d3026103e79eccb36583bec3267cdc0a5871c89d0b3bd045c9ed35ff0cc7f0d1"
+    },
+    {
+      "selection": "muted",
+      "track": "AR_Lick6_MN",
+      "backend": "basic-pitch",
+      "audio_sha256": "c04e7d591e17358377a54b34b590e3410ce25abb598be4b8c8e2922f54b36cd0",
+      "reference_sha256": "d33974db4eb8930e31d452a8e14db14c845a2f875b5ae2e62cc35703956dd09a",
+      "prediction_sha256": "be9e71baf53c46a0fbd7fb3ad3eddea84de9d467bded26f719760f8a79b0666a"
+    },
+    {
+      "selection": "muted",
+      "track": "AR_Lick12_MN",
+      "backend": "basic-pitch",
+      "audio_sha256": "79d46b455ad0454b013172c83661dec985f3abd705433d50b275968a6d2191c9",
+      "reference_sha256": "b3ca268d37114f858b415db2343f5db1ec932878f828c987d5c2a261423ff265",
+      "prediction_sha256": "c04eff08b81817dd620288bf0f328d6485415f189836a5c7505a2082fd31bc68"
+    },
+    {
+      "selection": "muted",
+      "track": "AR_Lick1_MN",
+      "backend": "guitar-gaps",
+      "audio_sha256": "f53d237d237f5655004ea729e52f2cdff3c2b31ff4e6494fd1bdbcc99da76815",
+      "reference_sha256": "92c128e0e99db04bba2c8d88bc5d57fb0b52722f81a5971afb5c5177340ddaa1",
+      "prediction_sha256": "597230e7e62a99521714e427feed8d6648e9ed09ecaddd432176cbd7f3beebda"
+    },
+    {
+      "selection": "muted",
+      "track": "AR_Lick6_MN",
+      "backend": "guitar-gaps",
+      "audio_sha256": "c04e7d591e17358377a54b34b590e3410ce25abb598be4b8c8e2922f54b36cd0",
+      "reference_sha256": "d33974db4eb8930e31d452a8e14db14c845a2f875b5ae2e62cc35703956dd09a",
+      "prediction_sha256": "313f6b98dcc7f9fd92b876a4e8512dadc8d6c526b011090ea9928689f86939cc"
+    },
+    {
+      "selection": "muted",
+      "track": "AR_Lick12_MN",
+      "backend": "guitar-gaps",
+      "audio_sha256": "79d46b455ad0454b013172c83661dec985f3abd705433d50b275968a6d2191c9",
+      "reference_sha256": "b3ca268d37114f858b415db2343f5db1ec932878f828c987d5c2a261423ff265",
+      "prediction_sha256": "c900877c87aff6f6e414d27ef4bf8b174cceb504a5b48210ea83047091c957dd"
+    }
+  ],
+  "limits": "Development comparison, 11 inconsistent source position entries retained as pitch/timing targets and excluded only from conditional fingering. Global shifts fit references; raw metrics retained. Related performances are not independent songs. Pretrained training overlap unresolved. Baseline is monophonic and can merge repeated notes; export validity is not accuracy. No defaults changed, no new downloads/training/ML inference."
+}
