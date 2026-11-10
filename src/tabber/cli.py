@@ -31,7 +31,7 @@ def main():
     parser.add_argument(
         "--string-model",
         type=Path,
-        help="Experimental local string-timbre NPZ model (audio input, polyphonic mode)",
+        help="Experimental local string-timbre NPZ model (standard-tuned audio input)",
     )
     parser.add_argument("--output", type=Path, default=Path("runs/latest"))
     parser.add_argument(
@@ -113,8 +113,8 @@ def main():
         parser.error("--max-span must be from 0 to 24")
     if args.fretting == "melodic" and args.max_span != 5:
         parser.error("--max-span applies to polyphonic fretting")
-    if args.string_model and (args.events or args.fretting != "polyphonic"):
-        parser.error("--string-model needs audio input and polyphonic fretting")
+    if args.string_model and args.events:
+        parser.error("--string-model needs audio input")
     if args.notes_only and args.string_model:
         parser.error("--string-model does not apply to --notes-only output")
     if args.string_model and args.tuning != STANDARD_TUNING:
