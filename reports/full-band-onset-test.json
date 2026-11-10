@@ -1,0 +1,17 @@
+{
+  "purpose": "Establish a held-out full-band baseline against weak candidate score onsets",
+  "songs_held_out_from_pilot_fitting": 2,
+  "excerpts": 3,
+  "seconds": 36,
+  "candidate_attacks": 593,
+  "onset_tolerance_seconds": 0.075,
+  "detectors_used_byte_identical_stem_inputs": true,
+  "conditions": {
+    "basic_pitch_mix": {"predicted": 89, "matched": 35, "missed": 558, "unmatched": 54},
+    "basic_pitch_stem": {"predicted": 129, "matched": 93, "missed": 500, "unmatched": 36},
+    "guitar_gaps_mix": {"predicted": 134, "matched": 63, "missed": 530, "unmatched": 71},
+    "guitar_gaps_stem": {"predicted": 229, "matched": 142, "missed": 451, "unmatched": 87}
+  },
+  "guitar_gaps_zero_detection_excerpts": {"mix": 2, "stem": 1},
+  "limits": "Three excerpts scored against aligned tabs, not manual note-by-note audio labels. Unmatched includes timing errors and score omissions. This measures pitch and onset only. Pretrained checkpoint overlap is unresolved."
+}
