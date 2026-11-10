@@ -8,7 +8,23 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from tabber.jobs import run_conversion
+from tabber.jobs import latest_conversion_progress, run_conversion
+
+
+def test_latest_progress_reads_only_completed_stage_lines(tmp_path):
+    log = tmp_path / "run.log"
+    assert latest_conversion_progress(log) is None
+    log.write_bytes(
+        b"x" * 10000
+        + b"Progress: truncated prefix\n"
+        + b"Progress: Separating guitar from the mix.\r\n"
+        + b"\rSeparator output\n"
+        + b"Progress: Detecting"
+    )
+    assert latest_conversion_progress(log) == "Separating guitar from the mix."
+    with log.open("ab") as stream:
+        stream.write(b" guitar notes.\n")
+    assert latest_conversion_progress(log) == "Detecting guitar notes."
 
 
 def test_completed_job_keeps_stdout_stderr_and_exit_status(tmp_path):

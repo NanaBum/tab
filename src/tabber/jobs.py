@@ -13,6 +13,22 @@ class RunResult:
     cancelled: bool = False
 
 
+def latest_conversion_progress(log_path):
+    """Read a complete stage message without loading a long process log."""
+    try:
+        with log_path.open("rb") as log:
+            start = max(0, log.seek(0, os.SEEK_END) - 8192)
+            log.seek(start)
+            lines = log.read(8192).split(b"\n")
+    except OSError:
+        return None
+    complete = lines[1:-1] if start else lines[:-1]
+    for line in reversed(complete):
+        if line.startswith(b"Progress: "):
+            return line.removeprefix(b"Progress: ").strip().decode("utf-8", errors="replace")
+    return None
+
+
 class WindowsJob:
     """A kernel-owned process group; termination never searches by executable/PID."""
 

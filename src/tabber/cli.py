@@ -135,6 +135,7 @@ def main():
             raise ValueError(f"Input file does not exist: {path}")
         health = None
         if args.audio:
+            print("Progress: Preparing audio.", flush=True)
             path = prepare_audio(path, args.output / "diagnostics")
             health = inspect_audio(path)
             stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
@@ -143,7 +144,10 @@ def main():
             check_path.write_text(json.dumps(health, indent=2) + "\n", encoding="utf-8")
             for warning in health["warnings"]:
                 print("Audio note: " + warning, flush=True)
-        tempo = estimate_tempo(path) if args.bpm == "auto" else None
+        tempo = None
+        if args.bpm == "auto":
+            print("Progress: Estimating tempo.", flush=True)
+            tempo = estimate_tempo(path)
         bpm = tempo.bpm if tempo else args.bpm
         quantize(0, bpm)
         if (
@@ -161,7 +165,14 @@ def main():
                 flush=True,
             )
         if args.separate:
+            print("Progress: Separating guitar from the mix.", flush=True)
             path = separate_guitar(path, args.output / "stems")
+        print(
+            "Progress: Reading saved notes."
+            if args.events
+            else "Progress: Detecting guitar notes.",
+            flush=True,
+        )
         if args.events:
             detected = load_events(path)
         elif args.backend == "guitar-gaps":
@@ -237,6 +248,7 @@ def main():
         if not detected and args.guitar_retry_empty:
             from .guitar_gaps import transcribe_gaps
 
+            print("Progress: Retrying guitar detection at a lower input level.", flush=True)
             print(
                 "Detector note: No notes on the first pass. Retrying at half input level.",
                 flush=True,
@@ -308,6 +320,7 @@ def main():
                     "The requested range filter excluded every detection. Review the raw notes in diagnostics."
                 )
         if args.notes_only:
+            print("Progress: Saving detected notes and MIDI.", flush=True)
             write_pitch_midi(selected, args.output, bpm)
             metadata["fingering_applied"] = False
             metadata["midi_timing"] = (
@@ -318,6 +331,7 @@ def main():
                 f"Wrote {len(selected)} detected events and MIDI to {args.output.resolve()} without fingering or score-grid snapping."
             )
             return
+        print("Progress: Fitting notes to guitar strings.", flush=True)
         assign = assign_frets if args.fretting == "melodic" else assign_polyphonic_frets
         assignment_options = {} if args.fretting == "melodic" else {"max_span": args.max_span}
         if args.string_model:
@@ -348,6 +362,7 @@ def main():
                 flush=True,
             )
         notes = assign(export_events, tuning=args.tuning, **assignment_options)
+        print("Progress: Writing and verifying the editable score.", flush=True)
         timing = write_outputs(notes, args.output, bpm, args.grid, tuning=args.tuning)
         save_events(selected, args.output / "detected-notes.json", metadata)
     except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError) as exc:

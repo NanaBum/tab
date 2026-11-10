@@ -20,8 +20,9 @@ Create guitar tab. Use the simple melody detector for single-note audio or set
 up the optional Basic Pitch environment below to select **Machine learning**.
 Each conversion gets its own results folder. Open the editable GP5 in TuxGuitar
 to play and correct it.
-The app runs locally, offers note sensitivity and rhythm detail, and saves a log
-when a conversion fails. It does not download dependencies or upload audio.
+The app runs locally, offers note sensitivity and rhythm detail, and shows the
+current conversion stage. It saves a log and does not download dependencies
+or upload audio.
 
 Use **Stop conversion** to stop a long run. Its log and any saved diagnostics
 remain in that run's results folder; partial outputs are not a completed tab.

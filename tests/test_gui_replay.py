@@ -115,6 +115,26 @@ def test_notes_only_or_cancelled_result_never_enables_a_missing_or_partial_tab(
     assert states["convert"]["state"] == "normal"
 
 
+def test_running_conversion_shows_stage_without_overwriting_cancellation(tmp_path):
+    app = object.__new__(TabberApp)
+    app.running = True
+    app.run_log = tmp_path / "run.log"
+    app.last_progress = None
+    app.cancel_event = threading.Event()
+    app.messages = queue.Queue()
+    app.window = SimpleNamespace(after=lambda *args: None)
+    updates = []
+    app.status = SimpleNamespace(set=updates.append)
+    app.run_log.write_text("Progress: Separating guitar from the mix.\n", encoding="utf-8")
+    app.poll()
+    app.poll()
+    assert updates == ["Separating guitar from the mix."]
+    app.cancel_event.set()
+    app.run_log.write_text("Progress: Detecting guitar notes.\n", encoding="utf-8")
+    app.poll()
+    assert updates == ["Separating guitar from the mix."]
+
+
 @pytest.mark.parametrize("notes_only", [True, False])
 def test_output_mode_disables_and_restores_score_only_controls(notes_only):
     states = {}

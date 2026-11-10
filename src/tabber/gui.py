@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
-from .jobs import run_conversion
+from .jobs import latest_conversion_progress, run_conversion
 from .tempo import TapTempo
 
 SAVED_NOTES = "Rebuild saved notes"
@@ -96,6 +96,8 @@ class TabberApp:
         self.running = False
         self.cancel_event = threading.Event()
         self.result = None
+        self.run_log = None
+        self.last_progress = None
         self.ml = ml_python(self.root)
         from .guitar_gaps import default_checkpoint
 
@@ -331,6 +333,8 @@ class TabberApp:
         self.running = True
         self.cancel_event.clear()
         self.result = None
+        self.run_log = output / "run.log"
+        self.last_progress = None
         self.convert.configure(state="disabled")
         self.stop_conversion.configure(state="normal")
         self.browse.configure(state="disabled")
@@ -419,9 +423,14 @@ class TabberApp:
         try:
             success, output, message = self.messages.get_nowait()
         except queue.Empty:
-            pass
+            if self.running and self.run_log and not self.cancel_event.is_set():
+                progress = latest_conversion_progress(self.run_log)
+                if progress and progress != self.last_progress:
+                    self.last_progress = progress
+                    self.status.set(progress)
         else:
             self.running = False
+            self.run_log = None
             self.result = output
             self.progress.stop()
             self.convert.configure(state="normal")
