@@ -94,7 +94,10 @@ def test_empty_guitar_result_saves_diagnostics_and_suggests_basic_pitch(
 
 
 @pytest.mark.parametrize("empty_first_pass", [True, False])
-def test_guitar_retry_only_runs_after_an_empty_first_pass(tmp_path, monkeypatch, empty_first_pass):
+@pytest.mark.parametrize("release", [True, False])
+def test_guitar_retry_only_runs_after_an_empty_first_pass(
+    tmp_path, monkeypatch, empty_first_pass, release
+):
     source, output = tmp_path / "riff.wav", tmp_path / "results"
     sf.write(source, [0.0, 0.1] * 4000, 16000)
     notes = [Note(0.1, 0.3, 64)]
@@ -122,12 +125,15 @@ def test_guitar_retry_only_runs_after_an_empty_first_pass(tmp_path, monkeypatch,
             "--notes-only",
             "--output",
             str(output),
-        ],
+        ]
+        + (["--guitar-release-v1"] if release else []),
     )
     main()
     [first] = list((output / "diagnostics").glob("detected-*.json"))
     retry_events = list((output / "diagnostics").glob("retry-*.json"))
     assert load_events(output / "detected-notes.json") == notes
+    metadata = json.loads((output / "detected-notes.json").read_text())["metadata"]
+    assert ("release_projection" in metadata["guitar_model"]) == release
     if empty_first_pass:
         assert calls == [
             (
@@ -136,6 +142,7 @@ def test_guitar_retry_only_runs_after_an_empty_first_pass(tmp_path, monkeypatch,
                     "checkpoint": None,
                     "onset_threshold": 0.24,
                     "input_gain": 0.5,
+                    **({"release_v1": True} if release else {}),
                 },
             )
         ]

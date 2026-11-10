@@ -1,3 +1,4 @@
+import hashlib
 import sys
 from types import SimpleNamespace
 
@@ -29,6 +30,18 @@ def test_unverified_checkpoint_is_rejected_before_loading_optional_code(tmp_path
     monkeypatch.setitem(sys.modules, "torch", None)
     with pytest.raises(ValueError, match="checksum"):
         _load_model(checkpoint)
+
+
+def test_unverified_release_is_rejected_before_loading_optional_code(tmp_path, monkeypatch):
+    checkpoint, release = tmp_path / "base.pth", tmp_path / "release.pt"
+    checkpoint.write_bytes(b"known base")
+    release.write_bytes(b"unexpected release")
+    monkeypatch.setattr(
+        "tabber.guitar_gaps.CHECKPOINT_SHA256", hashlib.sha256(checkpoint.read_bytes()).hexdigest()
+    )
+    monkeypatch.setitem(sys.modules, "torch", None)
+    with pytest.raises(ValueError, match="release checkpoint checksum"):
+        _load_model(checkpoint, release)
 
 
 def test_guitar_route_keeps_low_activations_and_uses_attack_threshold(monkeypatch, tmp_path):

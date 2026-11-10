@@ -68,6 +68,9 @@ def main():
         "--guitar-checkpoint", type=Path, help="Location of the pinned published guitar checkpoint"
     )
     parser.add_argument(
+        "--guitar-release-v1", action="store_true", help="Use the optional local release checkpoint"
+    )
+    parser.add_argument(
         "--guitar-retry-empty",
         action="store_true",
         help="Retry an empty guitar-model result once at half input level",
@@ -121,9 +124,12 @@ def main():
         parser.error(
             "The experimental string-tone model has only been evaluated in standard tuning"
         )
-    if (args.onset_threshold is not None or args.guitar_checkpoint or args.guitar_retry_empty) and (
-        args.events or args.backend != "guitar-gaps"
-    ):
+    if (
+        args.onset_threshold is not None
+        or args.guitar_checkpoint
+        or args.guitar_release_v1
+        or args.guitar_retry_empty
+    ) and (args.events or args.backend != "guitar-gaps"):
         parser.error("Guitar-model options need --backend guitar-gaps and audio input")
     try:
         if args.attack_lead_ms and args.output.exists() and any(args.output.iterdir()):
@@ -171,6 +177,7 @@ def main():
                 args.min_confidence,
                 guitar_onset=args.onset_threshold if args.onset_threshold is not None else 0.3,
                 guitar_checkpoint=args.guitar_checkpoint,
+                guitar_release_v1=args.guitar_release_v1,
             )
         elif args.backend == "baseline" and baseline_frequency_floor(min(args.tuning)) < 75:
             detected = transcribe(
@@ -228,6 +235,13 @@ def main():
                 "checkpoint": str((args.guitar_checkpoint or default_checkpoint()).resolve()),
                 "verification": "Pinned checksum verified before loading weights",
             }
+            if args.guitar_release_v1:
+                from .guitar_gaps import RELEASE_V1_SHA256, release_v1_checkpoint
+
+                metadata["guitar_model"]["release_projection"] = {
+                    "path": str(release_v1_checkpoint().resolve()),
+                    "sha256": RELEASE_V1_SHA256,
+                }
         stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
         diagnostic = args.output / "diagnostics" / f"detected-{stamp}.json"
         if args.guitar_retry_empty:
@@ -242,11 +256,13 @@ def main():
                 flush=True,
             )
             first_diagnostic = diagnostic.resolve()
+            options = {"release_v1": True} if args.guitar_release_v1 else {}
             detected = transcribe_gaps(
                 path,
                 checkpoint=args.guitar_checkpoint,
                 onset_threshold=metadata["guitar_model_onset_threshold"],
                 input_gain=0.5,
+                **options,
             )
             diagnostic = args.output / "diagnostics" / f"retry-{stamp}.json"
             metadata["guitar_empty_retry"] = {

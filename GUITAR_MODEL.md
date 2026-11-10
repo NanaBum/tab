@@ -18,7 +18,16 @@ uv pip sync --python .venv-guitar/Scripts/python.exe requirements/guitar-windows
 The explicit download is 99,256,753 bytes (about 99 MB). Inference never downloads
 weights automatically or uploads recordings. Dependencies, audio and weights stay
 outside Git. The desktop offers **Guitar model (experimental)** when its separate
-environment and checkpoint exist. No training or fine-tuning is performed.
+environment and checkpoint exist.
+
+## Optional note endings
+
+With the separately supplied local release checkpoint at
+`models/guitar-offset-projection-v1/reg_offset_fc.pt`, the desktop also offers
+**Guitar model (experimental note endings)**. For the command line, add
+`--guitar-release-v1` to a `--backend guitar-gaps` run. The option loads a
+verified release layer with the same published base model and records its
+checksum in the saved results. The regular method uses the original weights.
 
 `--onset-threshold` defaults to the author's 0.3; lower values admit weaker
 attacks. Desktop More notes/Balanced/Fewer notes use 0.2/0.3/0.5. Other decoding

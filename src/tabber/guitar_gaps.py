@@ -15,12 +15,17 @@ from .models import Note
 
 CHECKPOINT_NAME = "guitar-gaps-paper-version-12200_iterations.pth"
 CHECKPOINT_SHA256 = "94a7c936ec9fde83686d29007dc256274384e832739cadece39e92cee3b69a7e"
+RELEASE_V1_SHA256 = "b89cf4dba3e18b26a867c62353329dc6f6e7c316a798d4f69159d32a5c938185"
 MODEL_REVISION = "b7bec65a2b860aca72856b0feef58b5df407b777"
 MODEL_REPOSITORY = "xavriley/midi-transcription-models"
 
 
 def default_checkpoint() -> Path:
     return Path(__file__).resolve().parents[2] / "models/guitar-gaps" / CHECKPOINT_NAME
+
+
+def release_v1_checkpoint() -> Path:
+    return default_checkpoint().parents[1] / "guitar-offset-projection-v1" / "reg_offset_fc.pt"
 
 
 def checkpoint_digest(path: Path) -> str:
@@ -65,14 +70,21 @@ def _make_segments(audio: np.ndarray, segment_samples: int = 160000) -> np.ndarr
     )
 
 
-@lru_cache(maxsize=1)
-def _load_model(checkpoint: Path):
+@lru_cache(maxsize=2)
+def _load_model(checkpoint: Path, release_checkpoint: Path | None = None):
     if not checkpoint.is_file():
         raise ValueError("Guitar model weights are missing; run scripts/download_guitar_model.py")
     if checkpoint_digest(checkpoint) != CHECKPOINT_SHA256:
         raise ValueError(
             "Guitar model checkpoint checksum does not match the pinned published weights"
         )
+    if release_checkpoint is not None:
+        if not release_checkpoint.is_file():
+            raise ValueError("The optional local guitar release weights are missing")
+        if checkpoint_digest(release_checkpoint) != RELEASE_V1_SHA256:
+            raise ValueError(
+                "Guitar release checkpoint checksum does not match the verified weights"
+            )
     try:
         import torch
         from piano_transcription_inference.models import Regress_onset_offset_frame_velocity_CRNN
@@ -96,15 +108,25 @@ def _load_model(checkpoint: Path):
         checkpoint_data = torch.load(checkpoint, map_location="cpu", weights_only=True)
     model = Regress_onset_offset_frame_velocity_CRNN(frames_per_second=100, classes_num=88)
     model.load_state_dict(checkpoint_data["model"], strict=True)
+    if release_checkpoint is not None:
+        state = torch.load(release_checkpoint, map_location="cpu", weights_only=True)
+        model.reg_offset_model.fc.load_state_dict(state, strict=True)
     model.eval()
     return model
 
 
-def gaps_activations(path: Path, *, checkpoint: Path | None = None, input_gain: float = 1.0):
+def gaps_activations(
+    path: Path, *, checkpoint: Path | None = None, input_gain: float = 1.0, release_v1=False
+):
     """Run the frozen network once for one or more decoder comparisons."""
     if not math.isfinite(input_gain) or not 0 < input_gain <= 1:
         raise ValueError("Guitar-model input gain must be above zero and at most one")
-    model = _load_model((checkpoint or default_checkpoint()).resolve())
+    original = (checkpoint or default_checkpoint()).resolve()
+    model = (
+        _load_model(original, release_v1_checkpoint().resolve())
+        if release_v1
+        else _load_model(original)
+    )
     import librosa
     from piano_transcription_inference.pytorch_utils import forward
 
@@ -161,7 +183,10 @@ def transcribe_gaps(
     checkpoint: Path | None = None,
     onset_threshold: float = 0.3,
     input_gain: float = 1.0,
+    release_v1=False,
 ) -> list[Note]:
     _validate_onset_threshold(onset_threshold)
-    output, duration = gaps_activations(path, checkpoint=checkpoint, input_gain=input_gain)
+    output, duration = gaps_activations(
+        path, checkpoint=checkpoint, input_gain=input_gain, release_v1=release_v1
+    )
     return decode_gaps(output, duration, onset_threshold=onset_threshold)
