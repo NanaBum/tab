@@ -347,8 +347,21 @@ def main():
                 f"Timing note: Applied a {args.attack_lead_ms:g} ms attack lead for export. Original events are preserved.",
                 flush=True,
             )
-        notes = assign(export_events, tuning=args.tuning, **assignment_options)
-        timing = write_outputs(notes, args.output, bpm, args.grid, tuning=args.tuning)
+        try:
+            notes = assign(export_events, tuning=args.tuning, **assignment_options)
+            timing = write_outputs(notes, args.output, bpm, args.grid, tuning=args.tuning)
+        except ValueError:
+            preview = args.output / "diagnostics" / f"preview-{stamp}"
+            try:
+                write_pitch_midi(selected, preview, bpm)
+            except (ValueError, OSError, OverflowError) as error:
+                print(f"Playback note: Could not save detected-note MIDI ({error}).", flush=True)
+            else:
+                print(
+                    f"Playback note: Detected-note MIDI saved to {(preview / 'notes.mid').resolve()}",
+                    flush=True,
+                )
+            raise
         save_events(selected, args.output / "detected-notes.json", metadata)
     except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f"Could not transcribe: {exc}\n")

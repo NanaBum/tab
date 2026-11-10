@@ -1,6 +1,7 @@
 import queue
 import sys
 import threading
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -88,15 +89,22 @@ def test_app_notes_only_replay_has_no_fret_stretch_request(tmp_path):
     assert "--notes-only" in command and "--max-span" not in command
 
 
-@pytest.mark.parametrize("success,tab_exists", [(True, False), (False, True)])
+@pytest.mark.parametrize(
+    "success,tab_exists,preview_exists",
+    [(True, False, False), (False, True, False), (False, True, True)],
+)
 def test_notes_only_or_cancelled_result_never_enables_a_missing_or_partial_tab(
-    tmp_path, success, tab_exists
+    tmp_path, success, tab_exists, preview_exists
 ):
     states = {}
     app = object.__new__(TabberApp)
     app.messages = queue.Queue()
     app.messages.put((success, tmp_path, "result"))
     (tmp_path / "notes.mid").write_bytes(b"test output")
+    preview = Path("diagnostics/preview-attempt/notes.mid")
+    if preview_exists:
+        (tmp_path / preview).parent.mkdir(parents=True)
+        (tmp_path / preview).write_bytes(b"detected note preview")
     if tab_exists:
         (tmp_path / "tab.gp5").write_bytes(b"cancelled partial file")
     app.window = SimpleNamespace(after=lambda *args: None)
@@ -111,7 +119,11 @@ def test_notes_only_or_cancelled_result_never_enables_a_missing_or_partial_tab(
     app.poll()
     assert app.running is False
     assert states["open_tab"]["state"] == "disabled"
-    assert states["open_midi"]["state"] == ("normal" if success else "disabled")
+    assert states["open_midi"]["state"] == ("normal" if success or preview_exists else "disabled")
+    assert app.midi_result == (
+        Path("notes.mid") if success else preview if preview_exists else None
+    )
+    assert ("Use Open detected MIDI" in states["message"]) == preview_exists
     assert states["convert"]["state"] == "normal"
 
 

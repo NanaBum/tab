@@ -96,6 +96,7 @@ class TabberApp:
         self.running = False
         self.cancel_event = threading.Event()
         self.result = None
+        self.midi_result = None
         self.ml = ml_python(self.root)
         from .guitar_gaps import default_checkpoint
 
@@ -239,7 +240,7 @@ class TabberApp:
             buttons,
             text="Open MIDI",
             state="disabled",
-            command=lambda: self.open_result("notes.mid"),
+            command=lambda: self.open_result(self.midi_result),
         )
         self.open_midi.pack(side="left", padx=(8, 0))
         self.open_folder = ttk.Button(
@@ -431,9 +432,18 @@ class TabberApp:
             self.open_tab.configure(
                 state="normal" if success and (output / "tab.gp5").is_file() else "disabled"
             )
-            self.open_midi.configure(
-                state="normal" if success and (output / "notes.mid").is_file() else "disabled"
+            midi = (
+                output / "notes.mid"
+                if success
+                else max(output.glob("diagnostics/preview-*/notes.mid"), default=None)
             )
+            self.midi_result = midi.relative_to(output) if midi and midi.is_file() else None
+            self.open_midi.configure(
+                text="Open MIDI" if success else "Open detected MIDI",
+                state="normal" if self.midi_result else "disabled",
+            )
+            if not success and self.midi_result:
+                message += " Use Open detected MIDI to hear the notes."
             self.status.set(message)
         self.window.after(150, self.poll)
 
