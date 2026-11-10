@@ -22,6 +22,8 @@ explicit. Original recordings remain valuable for later string-timbre inference.
 
 Keep data/, models/, runs/, audio, weights and credentials out of Git.
 Use branches for changes; never force-push. Preserve existing remote work.
+Periodically merge locally verified working snapshots into `main` for public use.
+Review the diff for private data and check the documented install and demo first.
 Add meaningful tests for changes to transcription, timing, or fingering behavior.
 Keep heavy ML dependencies optional and document their separate environments.
 Use local computing for now. Do not start paid cloud jobs or increase spending

@@ -1,6 +1,6 @@
 # Tabber
 
-A local audio-to-guitar-tab research prototype. Clean guitar audio becomes editable
+A local, open-source audio-to-guitar-tab research prototype. Clean guitar audio becomes editable
 GP5 scores for TuxGuitar 2.1, MIDI playback, text tabs, and JSON with original note
 timings and suggested string/fret positions. The lightweight default detector is
 monophonic; optional local Basic Pitch ML can detect chords and overlapping notes.
@@ -27,11 +27,14 @@ standard tuning remains the default. This changes fret mapping, not detected pit
 
 ## Quick start
 
-### On this Windows computer
+### Windows desktop app
 
-Double-click **Start Tabber.cmd**. Choose an audio file, use Machine learning,
-enter its tempo if known, and click Create guitar tab. Each conversion gets its
-own results folder. Open the editable GP5 in TuxGuitar to play and correct it.
+Run `uv sync --locked` from the repository folder, then double-click
+**Start Tabber.cmd**. Choose an audio file, enter its tempo if known, and click
+Create guitar tab. Use the simple melody detector for single-note audio or set
+up the optional Basic Pitch environment below to select **Machine learning**.
+Each conversion gets its own results folder. Open the editable GP5 in TuxGuitar
+to play and correct it.
 The app runs locally, offers note sensitivity and rhythm detail, and saves a log
 when a conversion fails. It does not download dependencies or upload audio.
 
@@ -57,17 +60,15 @@ If export fails, [recovery controls](FRETTING_RECOVERY.md) can explicitly exclud
 out-of-range detections with an audit, or allow a wider simultaneous fret span.
 They are separate choices and remain off by default in the app.
 
-The core and ML environments are already set up on the development computer.
-For a fresh clone, follow the commands below; `uv sync` sets up the core app and
-the separate ML recipe below enables Machine learning. Tkinter must be available
-in the Python installation. The simple detector remains available without ML.
+The desktop app needs Tkinter in the Python installation. The terminal setup
+below also works without Tkinter.
 
 ### Terminal setup
 
 Install Git and [uv](https://docs.astral.sh/uv/), then open a terminal in this folder:
 
 ```powershell
-uv sync
+uv sync --locked
 uv run python scripts/make_demo.py
 uv run tabber runs/demo.wav --output runs/demo --bpm 120
 ```
@@ -224,8 +225,8 @@ uv run ruff check .
 
 See AGENTS.md for conventions. The pipeline lives in `src/tabber/`, with separate
 modules for separation, transcription, fingering, timing, and export. Use a branch
-for each change and review before merging. Keep audio, data, weights, and secrets
-outside Git. No project license has been selected yet.
+for each change and review before merging. The default branch carries locally
+verified snapshots. Keep audio, data, weights, and secrets outside Git.
 
 [VALIDATION_STATUS.md](VALIDATION_STATUS.md) maps the working features to their
 evidence and remaining acceptance checks. [INSTALL_VALIDATION.md](INSTALL_VALIDATION.md)
@@ -245,5 +246,11 @@ reference timestamps, [SEQUENCE_EVALUATION.md](SEQUENCE_EVALUATION.md) describes
 an offline sequence comparison. It reports wrong, missing and extra pitches,
 plus conditional fingering agreement; it does not score rhythm.
 
-Hosted CI is manual-only for now because GitHub reported an account billing block.
-Run the checks above locally; pushes and pull requests do not start hosted jobs.
+Hosted CI is manual-only. Run the checks above locally.
+
+## License
+
+Tabber's source code and documentation are available under the [MIT License](LICENSE).
+Third-party dependencies, model weights, datasets, recordings, and reference tabs
+have their own terms. See [model provenance](MODEL_PROVENANCE.md) and
+[data collection](MEDIA_COLLECTION.md) for details.

@@ -3,6 +3,8 @@ name = "tabber"
 version = "0.1.0"
 description = "An experimental, local audio-to-guitar-tab pipeline"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11,<3.14"
 dependencies = [
     "numpy>=1.26,<3",
@@ -24,6 +26,7 @@ build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 
 [tool.ruff]
 line-length = 100
