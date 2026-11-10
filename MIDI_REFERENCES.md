@@ -22,6 +22,24 @@ renderer supplies repeat, tempo and articulation playback. Pitch bends are
 reduced to the generated MIDI key, and the saved durations are renderer gates.
 Each output is a new file containing unaligned candidate events.
 
+Add `--include-positions` and use a new output filename to retain the
+written string/fret beside each entry in `metadata.playback_notes`. It
+uses alphaTab 1.8.1 to carry the source note through repeat playback,
+including simultaneous unisons on different strings. String zero is the
+highest string. Fret numbers are relative to the capo and each record
+includes the staff, capo, effective open pitch, pitch consistency, and
+flags for dead notes and selected pitch effects. A generated event without
+a source fret has a null position. Existing pitch/timing data is identical
+with or without the option.
+
+The optional `node --test tests/test_gp7_positions.mjs` uses the sibling
+alphaTab installation to check repeats and overlapping unisons on a
+generated GP7 fixture. An import of nine guitar tracks from three collected
+songs retained positions for all 13,411 playback events with identical
+pitch and timing. Three events differed from open pitch plus fret. These
+are written score positions. Audio alignment and performance review are
+still needed before using them as string targets.
+
 For a MIDI source, first inspect the actual MIDI file:
 
 ```powershell

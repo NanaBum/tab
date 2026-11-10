@@ -9,11 +9,32 @@ import { parseArgs } from 'node:util';
 const ticksPerQuarter = 960; // alphaTab's playback clock
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
-function playback(score, settings, midi, track) {
+function sourcePosition(note, pitch, model) {
+  if (!note?.isStringed || !Number.isInteger(note.fret) || note.fret < 0) return null;
+  const staff = note.beat.voice.bar.staff;
+  const string = staff.tuning.length - note.string;
+  if (string < 0 || string >= staff.tuning.length) return null;
+  const openPitch = note.stringTuning;
+  return {
+    staff: staff.index,
+    string,
+    fret: note.fret,
+    open_pitch_with_capo: openPitch,
+    capo: staff.capo,
+    pitch_consistent: openPitch + note.fret === pitch,
+    pitch_effect: note.hasBend || note.isHarmonic || note.beat.hasWhammyBar ||
+      note.slideInType !== model.SlideInType.None || note.slideOutType !== model.SlideOutType.None ||
+      note.ornament !== model.NoteOrnament.None || note.isTrill,
+    dead_note: note.isDead,
+  };
+}
+
+function playback(score, settings, midi, track, positionModel) {
   const notes = [];
   const tempos = new Map([[0, 500000]]);
   let shift = 0;
   let bendEvents = 0;
+  let sourceNote = null;
   const handler = {
     addTickShift(ticks) { shift = ticks; },
     addTempo(tick, bpm) {
@@ -29,7 +50,9 @@ function playback(score, settings, midi, track) {
           pitch < 0 || pitch > 127 || velocity <= 0) {
         throw new Error('Score contains an invalid generated note');
       }
-      notes.push({ attack, release, pitch, velocity });
+      const event = { attack, release, pitch, velocity };
+      if (positionModel) event.source_position = sourcePosition(sourceNote, pitch, positionModel);
+      notes.push(event);
     },
     addBend(index, _tick, _channel, value) {
       if (index === track.index && value !== 8192) bendEvents++;
@@ -43,7 +66,22 @@ function playback(score, settings, midi, track) {
     addProgramChange() {},
     finishTrack() {},
   };
-  new midi.MidiFileGenerator(score, settings, handler).generate();
+  const generator = new midi.MidiFileGenerator(score, settings, handler);
+  if (positionModel) {
+    // alphaTab's public MIDI handler emits only pitch and timing. The audited
+    // 1.8.1 generator calls the handler synchronously from this note method.
+    const generateNote = generator._generateNote;
+    if (typeof generateNote !== 'function') throw new Error('alphaTab note hook is unavailable');
+    generator._generateNote = function (note, ...args) {
+      sourceNote = note;
+      try {
+        return generateNote.call(this, note, ...args);
+      } finally {
+        sourceNote = null;
+      }
+    };
+  }
+  generator.generate();
   if (!notes.length) throw new Error('Selected track generated no notes');
 
   const tempoMap = [];
@@ -79,6 +117,7 @@ function main() {
       track: { type: 'string' },
       output: { type: 'string' },
       downloader: { type: 'string' },
+      'include-positions': { type: 'boolean' },
     },
   });
   if (positionals.length !== 1 || (!values['list-tracks'] && (!values.track || !values.output))) {
@@ -98,7 +137,7 @@ function main() {
     throw new Error('GP7 file does not match the score declared by the pair');
   }
   const downloader = values.downloader ?? fileURLToPath(new URL('../../songsterr-downloader/', import.meta.url));
-  const { Settings, importer, midi } = createRequire(resolve(downloader, 'package.json'))('@coderline/alphatab');
+  const { Settings, importer, meta, midi, model } = createRequire(resolve(downloader, 'package.json'))('@coderline/alphatab');
   const settings = new Settings();
   const score = importer.ScoreLoader.loadScoreFromBytes(bytes, settings);
   const tracks = score.tracks.map((track) => ({
@@ -113,7 +152,13 @@ function main() {
   }
   const selected = tracks.find((track) => track.track === Number(values.track));
   if (!selected?.pitched_strings) throw new Error('Choose a one-based pitched string track');
-  const { events, ticks, tempoMap, bendEvents } = playback(score, settings, midi, score.tracks[selected.track - 1]);
+  const includePositions = values['include-positions'];
+  if (includePositions && meta?.version !== '1.8.1') {
+    throw new Error('Score positions require the verified alphaTab 1.8.1 note hook');
+  }
+  const { events, ticks, tempoMap, bendEvents } = playback(
+    score, settings, midi, score.tracks[selected.track - 1], includePositions ? model : null,
+  );
   const sourcePair = { songsterr: pair.sources?.songsterr };
   for (const key of [
     'song_id', 'split', 'label_status', 'recording_version_review', 'alignment',
@@ -140,6 +185,15 @@ function main() {
     },
     notes: events,
   };
+  if (includePositions) {
+    payload.metadata.score_positions = {
+      renderer_version: meta.version,
+      string_order: 'zero-based, highest string first',
+      known: ticks.filter((note) => note.source_position !== null).length,
+      pitch_consistent: ticks.filter((note) => note.source_position?.pitch_consistent).length,
+      limits: 'Written positions, not performed positions. Generated effects can differ from the written fret.',
+    };
+  }
   const output = resolve(values.output);
   mkdirSync(dirname(output), { recursive: true });
   writeFileSync(output, JSON.stringify(payload, null, 2) + '\n', { flag: 'wx' });
