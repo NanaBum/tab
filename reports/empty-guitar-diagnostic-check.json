@@ -1,0 +1,17 @@
+{
+  "candidate_score_attacks": 377,
+  "test_excerpts": 4,
+  "onset_tolerance_seconds": 0.075,
+  "columns": ["predicted_attacks", "matched_attacks", "unmatched_attacks"],
+  "full_mix": {"0.3": [0, 0, 0], "0.12": [0, 0, 0], "0.05": [0, 0, 0]},
+  "guitar_stem": {"0.3": [0, 0, 0], "0.12": [0, 0, 0], "0.05": [2, 1, 1]},
+  "half_amplitude_guitar_stem": {"0.3": [7, 4, 3], "0.12": [17, 8, 9], "0.05": [27, 11, 16]},
+  "maximum_onset_per_excerpt": {
+    "full_mix": [0.0031, 0.0025, 0.0014, 0.0025],
+    "guitar_stem": [0.0126, 0.0642, 0.0135, 0.0606],
+    "half_amplitude_guitar_stem": [0.0198, 0.5851, 0.0302, 0.1230]
+  },
+  "clean_electric_control": {"reference_attacks": 13, "counts_at_default": [13, 12, 1], "maximum_onset": 0.9146, "onset_tolerance_seconds": 0.05},
+  "editable_example": "Seven events from the half-amplitude condition round-tripped in drop D at 94 BPM on an explicit 1/32 grid after a 1/16 collision.",
+  "limits": "The four excerpts were selected before the fallback comparison. This diagnostic revisits them with weak score-derived labels and does not establish a new default threshold or gain. All new matches at half amplitude came from one excerpt."
+}
