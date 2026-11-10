@@ -110,6 +110,31 @@ labeled evaluation set to assess a trained classifier.
 
 ## Reproduce locally
 
+### Independent electric-guitar check
+
+The saved GuitarSet model was tested on 11 labeled IDMT electric recordings
+using their annotated pitch, onset, and duration. This isolates fingering
+from note detection. On 80 isolated notes playable on multiple strings, the
+classifier picked the right string 31 times using timbre and 33 times with
+its timbre inputs held at their training means.
+
+| Fingering cost | Correct among 80 ambiguous isolated notes | Correct among 198 consistent positions |
+| --- | ---: | ---: |
+| Ergonomic solver alone | 50 | 134 |
+| Solver and pitch component | 36 | 119 |
+| Solver and pitch plus timbre | 31 | 119 |
+
+Ten recordings completed all three assignments. One contained an annotated
+MIDI pitch below standard tuning and was excluded from solver totals. The
+pitch-component comparison is an ablation of the same model. No weights
+or costs were fit on IDMT. Keep this model experimental for electric guitar.
+
+```powershell
+.venv-ml/Scripts/python.exe scripts/evaluate_idmt_string_priors.py --data data/idmt --weights models/string-timbre-v1.npz --output runs/idmt-string-priors.json
+```
+
+### Original GuitarSet evaluation
+
 Use the tested ML environment and downloaded GuitarSet archives:
 
 ```powershell
