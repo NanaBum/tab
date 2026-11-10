@@ -1,24 +1,38 @@
 import numpy as np
 import pytest
 
-from tabber.fretting import assign_polyphonic_frets
+from tabber.fretting import assign_frets, assign_polyphonic_frets
 from tabber.models import Note
 from tabber.string_model import StringModel, isolated_features
 
 
-def test_string_priors_change_fingering_without_changing_notes():
+@pytest.mark.parametrize("assign", [assign_frets, assign_polyphonic_frets])
+def test_string_priors_change_fingering_without_changing_notes(assign):
     notes = [Note(0, 1, 64)]
-    assert assign_polyphonic_frets(notes)[0].string == 0
+    assert assign(notes)[0].string == 0
     prior = [[0.01, 0.95, 0.01, 0.01, 0.01, 0.01]]
-    assigned = assign_polyphonic_frets(notes, string_priors=prior)
+    assigned = assign(notes, string_priors=prior)
     assert (assigned[0].string, assigned[0].fret) == (1, 5)
     assert assigned[0].note is notes[0]
 
 
 @pytest.mark.parametrize("priors", [[], [[0] * 6], [[float("nan")] * 6], [[1, 0]]])
-def test_invalid_priors_are_rejected(priors):
+@pytest.mark.parametrize("assign", [assign_frets, assign_polyphonic_frets])
+def test_invalid_priors_are_rejected(assign, priors):
     with pytest.raises(ValueError):
-        assign_polyphonic_frets([Note(0, 1, 64)], string_priors=priors)
+        assign([Note(0, 1, 64)], string_priors=priors)
+
+
+def test_melodic_prior_rows_follow_unsorted_notes():
+    first, second = Note(0, 1, 64), Note(1, 2, 64)
+    notes = [second, first]
+    priors = [[0, 0, 1, 0, 0, 0], [0, 1, 0, 0, 0, 0]]
+    assigned = assign_frets(notes, string_priors=priors)
+    assert [(item.note, item.string, item.fret) for item in assigned] == [
+        (first, 1, 5),
+        (second, 2, 9),
+    ]
+    assert assign_frets(notes, string_priors=[[1] * 6] * 2) == assign_frets(notes)
 
 
 def test_model_masks_impossible_strings_before_softmax(tmp_path):

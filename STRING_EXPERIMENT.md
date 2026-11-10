@@ -34,9 +34,17 @@ matrices and balanced accuracy are in reports/string-classification.json.
 
 Inference applies tone preferences only to sufficiently long windows without other
 detected notes. Mixed/short windows receive no preference and retain the original
-ergonomic heuristic. The beam-search cost uses fixed prior weight 2. GP5 output
+ergonomic heuristic. Both the melodic dynamic program and the polyphonic beam
+search use fixed prior weight 2. To choose melodic fingering, pass
+`--fretting melodic` with standard-tuned audio and `--string-model`. The model
+uses isolated note windows in either mode. GP5 output
 still follows the selected score grid. The file contains numeric arrays loaded
 without pickle; weights and feature caches stay under ignored models/.
+
+In a single IDMT electric-lick check, the melodic solver matched 11 of 13
+annotated string/fret positions with its normal costs and 12 of 13 with the
+saved timbre model. Both GP5 files contained the same 13 detected notes.
+This checks the integration on one recording.
 
 On the first 10 seconds of the 30 held-out-performer solo clips, the initial
 end-to-end check improved exact string/fret agreement from 513/952 (53.9%) to

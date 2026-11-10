@@ -6,9 +6,36 @@ import math
 from .models import STANDARD_TUNING, FrettedNote, Note
 
 
-def assign_frets(notes: list[Note], tuning=STANDARD_TUNING, max_fret=24) -> list[FrettedNote]:
+def _string_costs(notes, tuning, string_priors, prior_weight):
+    if not math.isfinite(prior_weight) or prior_weight < 0:
+        raise ValueError("String-prior weight must be finite and nonnegative")
+    costs = {}
+    if string_priors is not None:
+        if len(string_priors) != len(notes):
+            raise ValueError("Provide one string-prior row per note")
+        for note, row in zip(notes, string_priors, strict=True):
+            total = sum(row)
+            if (
+                len(row) != len(tuning)
+                or not all(math.isfinite(p) and p >= 0 for p in row)
+                or not math.isfinite(total)
+                or total <= 0
+            ):
+                raise ValueError(
+                    "String priors must be finite, nonnegative rows with positive sums"
+                )
+            if max(row) - min(row) > 1e-12:
+                costs[id(note)] = tuple(-prior_weight * math.log(max(1e-8, p / total)) for p in row)
+    return costs
+
+
+def assign_frets(
+    notes: list[Note], tuning=STANDARD_TUNING, max_fret=24, *, string_priors=None, prior_weight=2.0
+) -> list[FrettedNote]:
     if max_fret < 0 or not tuning:
         raise ValueError("Provide a tuning and nonnegative maximum fret")
+    string_costs = _string_costs(notes, tuning, string_priors, prior_weight)
+    neutral = (0.0,) * len(tuning)
     notes = sorted(notes, key=lambda n: n.start)
     if any(b.start < a.end - 1e-6 for a, b in itertools.pairwise(notes)):
         raise ValueError(
@@ -30,9 +57,11 @@ def assign_frets(notes: list[Note], tuning=STANDARD_TUNING, max_fret=24) -> list
                 f"MIDI pitch {note.pitch} at {note.start:.3f}s is outside this guitar's playable range "
                 f"({min(tuning)}-{max(tuning) + max_fret}); no notes were dropped"
             )
-    costs = [f * 0.05 for _, f in positions[0]]
+    first_costs = string_costs.get(id(notes[0]), neutral)
+    costs = [fret * 0.05 + first_costs[string] for string, fret in positions[0]]
     parents = []
-    for previous, current in itertools.pairwise(positions):
+    for note, (previous, current) in zip(notes[1:], itertools.pairwise(positions), strict=True):
+        note_costs = string_costs.get(id(note), neutral)
         new_costs, back = [], []
         for string, fret in current:
             transitions = [
@@ -43,7 +72,7 @@ def assign_frets(notes: list[Note], tuning=STANDARD_TUNING, max_fret=24) -> list
                 for cost, (ps, pf) in zip(costs, previous)
             ]
             best = min(range(len(transitions)), key=transitions.__getitem__)
-            new_costs.append(transitions[best])
+            new_costs.append(transitions[best] + note_costs[string])
             back.append(best)
         parents.append(back)
         costs = new_costs
@@ -74,28 +103,13 @@ def assign_polyphonic_frets(
     """
     if not tuning or max_fret < 0 or max_span < 0 or beam_width < 1:
         raise ValueError("Provide tuning and positive search limits")
-    if not math.isfinite(prior_weight) or prior_weight < 0:
-        raise ValueError("String-prior weight must be finite and nonnegative")
-    priors = {}
-    if string_priors is not None:
-        if len(string_priors) != len(notes):
-            raise ValueError("Provide one string-prior row per note")
-        for note, row in zip(notes, string_priors):
-            if (
-                len(row) != len(tuning)
-                or not all(math.isfinite(p) and p >= 0 for p in row)
-                or sum(row) <= 0
-            ):
-                raise ValueError(
-                    "String priors must be finite, nonnegative rows with positive sums"
-                )
-            total = sum(row)
-            if max(row) - min(row) > 1e-12:
-                priors[id(note)] = tuple(p / total for p in row)
+    string_costs = _string_costs(notes, tuning, string_priors, prior_weight)
+    neutral = (0.0,) * len(tuning)
     ordered = sorted(notes, key=lambda n: (n.start, -n.pitch))
     # cost, complete history, active positions, last hand position, last string
     states = [(0.0, (), (), 0.0, 0)]
     for index, note in enumerate(ordered):
+        note_costs = string_costs.get(id(note), neutral)
         candidates = [
             (s, note.pitch - p) for s, p in enumerate(tuning) if 0 <= note.pitch - p <= max_fret
         ]
@@ -121,8 +135,7 @@ def assign_polyphonic_frets(
                 movement = abs(position - hand) if hand and position else 0
                 new_cost = cost + movement + span * 0.3 + fret * 0.04
                 new_cost += abs(string - last_string) * 0.15
-                if id(note) in priors:
-                    new_cost -= prior_weight * math.log(max(1e-8, priors[id(note)][string]))
+                new_cost += note_costs[string]
                 key = (
                     tuple(sorted((n.string, n.fret, n.note.end) for n in current)),
                     position,
