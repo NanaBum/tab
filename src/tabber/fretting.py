@@ -58,6 +58,19 @@ def assign_frets(notes: list[Note], tuning=STANDARD_TUNING, max_fret=24) -> list
     ]
 
 
+def _can_share_strings(pitches, tuning, max_fret):
+    # As pitches rise, both ends of the eligible open-pitch interval rise.
+    # Assigning the lowest eligible string leaves all higher choices available.
+    available = iter(sorted(tuning))
+    for pitch in pitches:
+        open_pitch = next(
+            (open_pitch for open_pitch in available if open_pitch >= pitch - max_fret), None
+        )
+        if open_pitch is None or open_pitch > pitch:
+            return False
+    return True
+
+
 def assign_polyphonic_frets(
     notes: list[Note],
     tuning=STANDARD_TUNING,
@@ -132,6 +145,17 @@ def assign_polyphonic_frets(
                 if key not in expanded or new_cost < expanded[key][0]:
                     expanded[key] = state
         if not expanded:
+            overlapping = sorted(
+                [note.pitch]
+                + [prior.pitch for prior in ordered[:index] if prior.end > note.start + 1e-6]
+            )
+            if not _can_share_strings(overlapping, tuning, max_fret):
+                pitches = ", ".join(map(str, overlapping))
+                raise ValueError(
+                    f"No fingering at {note.start:.3f}s for event {index + 1} (MIDI pitch {note.pitch}). "
+                    f"Overlapping MIDI pitches {pitches} cannot use distinct strings in this tuning and fret range. "
+                    "Review these attacks and releases; no notes were dropped."
+                )
             raise ValueError(
                 f"No fingering at {note.start:.3f}s for event {index + 1} (MIDI pitch {note.pitch}): sustained strings "
                 f"or the {max_span}-fret span limit conflict. Review detections; no notes were dropped."

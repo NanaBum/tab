@@ -30,6 +30,21 @@ def test_unplayable_seven_voice_chord_fails_without_dropping_notes():
         assign_polyphonic_frets(notes)
 
 
+def test_overlap_can_exhaust_eligible_strings_with_only_three_notes():
+    notes = [Note(0, 1, 48), Note(0.98, 1.4, 40), Note(0.99, 1.5, 47)]
+    with pytest.raises(
+        ValueError, match="Overlapping MIDI pitches 40, 47, 48 cannot use distinct strings"
+    ):
+        assign_polyphonic_frets(notes, max_span=24)
+
+
+def test_stretch_conflict_does_not_report_missing_strings():
+    notes = [Note(0, 1, 41), Note(0, 1, 52)]
+    with pytest.raises(ValueError, match="0-fret span limit"):
+        assign_polyphonic_frets(notes, max_span=0)
+    assert len(assign_polyphonic_frets(notes, max_span=1)) == 2
+
+
 def test_chord_export_preserves_independent_attacks_and_durations(tmp_path):
     notes = [Note(0, 2.5, 40), Note(0, 0.5, 64), Note(0.5, 1, 65), Note(1.5, 2, 67)]
     assigned = assign_polyphonic_frets(notes)
