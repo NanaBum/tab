@@ -90,6 +90,19 @@ ZIP entries, declared track completeness, asset membership, sizes and hashes are
 checked before copying. Original input files remain unchanged. The resulting
 manifest explicitly identifies original audio versus MP3, score and MIDI roles.
 
+### Check the local collection
+
+```powershell
+uv run python scripts/audit_collected_pairs.py data/training-pairs --output runs/collection-audit.json
+```
+
+The audit checks every saved bundle under a batch folder, including its asset
+hashes and the embedded audio and tab records. It flags reused recording IDs,
+tab IDs, and content hashes across different song groups, plus byte-identical
+audio/score pairs. Use a fresh report filename. A successful integrity check
+establishes which assets are present. Use the separate alignment screen in
+[MIDI_REFERENCES.md](MIDI_REFERENCES.md) to compare the music and timing.
+
 ## Runtime and verification
 
 Media dependencies are isolated in `.venv-media` (Python 3.13), pinned in
