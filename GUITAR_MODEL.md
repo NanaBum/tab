@@ -76,9 +76,12 @@ An audible guitar stem can still produce weak attack scores. If the guitar
 model returns no notes, try Basic Pitch on the same input. Lower attack
 thresholds may add spurious detections.
 
-For an opt-in second attempt, select **Retry when the guitar model finds no
-notes** in the desktop app, or add `--guitar-retry-empty` to a
-`--backend guitar-gaps` command. This retries at half input level only
-if the first pass returns zero notes. The retry uses the same attack
-threshold and guitar audio, including a separated stem if requested.
-The original recording and first-pass diagnostics are preserved.
+The **Guitar model input level** control defaults to **Normal**. Try
+**Half level** for a separate pass at half amplitude, or **Retry at half
+if empty** to run at normal level first and retry only after zero detections.
+The corresponding options for `--backend guitar-gaps` are
+`--guitar-half-input` and `--guitar-retry-empty`. Both use the selected attack
+threshold and guitar audio, including a separated stem if requested. Lowering
+the level can recover missed notes or make detection worse, depending on the
+recording. The app preserves the source recording and saves the input gain
+with the detected events. The retry saves both attempts.

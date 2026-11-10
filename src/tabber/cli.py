@@ -70,10 +70,14 @@ def main():
     parser.add_argument(
         "--guitar-release-v1", action="store_true", help="Use the optional local release checkpoint"
     )
-    parser.add_argument(
+    guitar_level = parser.add_mutually_exclusive_group()
+    guitar_level.add_argument(
         "--guitar-retry-empty",
         action="store_true",
         help="Retry an empty guitar-model result once at half input level",
+    )
+    guitar_level.add_argument(
+        "--guitar-half-input", action="store_true", help="Run the guitar model at half input level"
     )
     parser.add_argument(
         "--fretting",
@@ -129,6 +133,7 @@ def main():
         or args.guitar_checkpoint
         or args.guitar_release_v1
         or args.guitar_retry_empty
+        or args.guitar_half_input
     ) and (args.events or args.backend != "guitar-gaps"):
         parser.error("Guitar-model options need --backend guitar-gaps and audio input")
     try:
@@ -171,6 +176,9 @@ def main():
         if args.events:
             detected = load_events(path)
         elif args.backend == "guitar-gaps":
+            level_options = {"guitar_input_gain": 0.5} if args.guitar_half_input else {}
+            if args.guitar_half_input:
+                print("Detector note: Running the guitar model at half input level.", flush=True)
             detected = transcribe(
                 path,
                 args.backend,
@@ -178,6 +186,7 @@ def main():
                 guitar_onset=args.onset_threshold if args.onset_threshold is not None else 0.3,
                 guitar_checkpoint=args.guitar_checkpoint,
                 guitar_release_v1=args.guitar_release_v1,
+                **level_options,
             )
         elif args.backend == "baseline" and baseline_frequency_floor(min(args.tuning)) < 75:
             detected = transcribe(
@@ -234,6 +243,7 @@ def main():
                 "sha256": CHECKPOINT_SHA256,
                 "checkpoint": str((args.guitar_checkpoint or default_checkpoint()).resolve()),
                 "verification": "Pinned checksum verified before loading weights",
+                "input_gain": 0.5 if args.guitar_half_input else 1.0,
             }
             if args.guitar_release_v1:
                 from .guitar_gaps import RELEASE_V1_SHA256, release_v1_checkpoint
@@ -271,6 +281,7 @@ def main():
                 "input_gain": 0.5,
                 "retry_note_count": len(detected),
             }
+            metadata["guitar_model"]["input_gain"] = 0.5
             save_events(detected, diagnostic, metadata)
         if not detected:
             if args.audio and args.backend == "guitar-gaps":

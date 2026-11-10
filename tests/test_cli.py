@@ -23,6 +23,40 @@ def test_cli_rebuilds_gp5_from_events_without_audio_or_ml(tmp_path, monkeypatch)
     assert track.strings[note.string - 1].value + note.value == 65
 
 
+@pytest.mark.parametrize("release", [False, True])
+def test_explicit_half_input_runs_once_and_is_recorded(tmp_path, monkeypatch, release):
+    source, output = tmp_path / "riff.wav", tmp_path / "out"
+    sf.write(source, [0.0, 0.1] * 4000, 16000)
+    original = source.read_bytes()
+    calls = []
+
+    def detect(path, **options):
+        calls.append((path, options))
+        return [Note(0.1, 0.4, 64)]
+
+    monkeypatch.setattr("tabber.guitar_gaps.transcribe_gaps", detect)
+    args = [
+        "tabber",
+        str(source),
+        "--backend",
+        "guitar-gaps",
+        "--guitar-half-input",
+        "--output",
+        str(output),
+    ]
+    monkeypatch.setattr("sys.argv", args + (["--guitar-release-v1"] if release else []))
+
+    main()
+
+    expected = {"checkpoint": None, "onset_threshold": 0.3, "input_gain": 0.5}
+    if release:
+        expected["release_v1"] = True
+    assert calls == [(source.resolve(), expected)]
+    metadata = json.loads((output / "detected-notes.json").read_text())["metadata"]
+    assert metadata["guitar_model"]["input_gain"] == 0.5
+    assert source.read_bytes() == original
+
+
 def test_attack_lead_affects_export_but_preserves_raw_events(tmp_path, monkeypatch):
     events, output = tmp_path / "input.json", tmp_path / "adjusted"
     original = [Note(0.081, 0.5, 65, 0.7)]

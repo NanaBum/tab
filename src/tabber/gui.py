@@ -19,6 +19,9 @@ SAVED_NOTES = "Rebuild saved notes"
 GUITAR_MODEL = "Guitar model (experimental)"
 GUITAR_RELEASE_MODEL = "Guitar model (experimental note endings)"
 GUITAR_METHODS = (GUITAR_MODEL, GUITAR_RELEASE_MODEL)
+NORMAL_LEVEL = "Normal"
+HALF_LEVEL = "Half level"
+RETRY_HALF_LEVEL = "Retry at half if empty"
 
 
 def conversion_command(
@@ -36,6 +39,7 @@ def conversion_command(
     tuning="standard",
     notes_only=False,
     guitar_retry_empty=False,
+    guitar_half_input=False,
 ):
     """Route saved events directly to export; filtering requires explicit opt-in."""
     interpreter = Path(interpreter)
@@ -67,6 +71,8 @@ def conversion_command(
                 command.append("--guitar-release-v1")
             if guitar_retry_empty:
                 command.append("--guitar-retry-empty")
+            if guitar_half_input:
+                command.append("--guitar-half-input")
         else:
             backend = "basic-pitch" if method == "Machine learning" else "baseline"
             command.extend(
@@ -191,7 +197,7 @@ class TabberApp:
         self.guitar_range = tk.BooleanVar(value=False)
         self.wider_span = tk.BooleanVar(value=False)
         self.notes_only = tk.BooleanVar(value=False)
-        self.guitar_retry_empty = tk.BooleanVar(value=False)
+        self.guitar_input_level = tk.StringVar(value=NORMAL_LEVEL)
         options = ttk.Frame(frame)
         options.grid(row=11, column=0, columnspan=3, sticky="w", pady=(0, 12))
         ttk.Checkbutton(
@@ -221,14 +227,18 @@ class TabberApp:
                 variable=self.separate,
             ).grid(row=3, column=0, sticky="w")
         if self.guitar:
-            self.retry_control = ttk.Checkbutton(
-                options,
-                text="Retry when the guitar model finds no notes (slower)",
-                variable=self.guitar_retry_empty,
+            level = ttk.Frame(options)
+            level.grid(row=4, column=0, sticky="w")
+            ttk.Label(level, text="Guitar model input level").pack(side="left", padx=(0, 8))
+            self.input_level_control = ttk.Combobox(
+                level,
+                textvariable=self.guitar_input_level,
+                values=(NORMAL_LEVEL, HALF_LEVEL, RETRY_HALF_LEVEL),
+                state="readonly",
             )
-            self.retry_control.grid(row=4, column=0, sticky="w")
-            self.backend.trace_add("write", self.update_retry_control)
-            self.update_retry_control()
+            self.input_level_control.pack(side="left")
+            self.backend.trace_add("write", self.update_input_level_control)
+            self.update_input_level_control()
         actions = ttk.Frame(frame)
         actions.grid(row=12, column=0, columnspan=3, sticky="ew", pady=(0, 12))
         self.convert = ttk.Button(actions, text="Create guitar tab", command=self.start)
@@ -278,9 +288,9 @@ class TabberApp:
             text="Detect notes and create MIDI" if notes_only else "Create guitar tab"
         )
 
-    def update_retry_control(self, *_):
-        self.retry_control.configure(
-            state="normal" if self.backend.get() in GUITAR_METHODS else "disabled"
+    def update_input_level_control(self, *_):
+        self.input_level_control.configure(
+            state="readonly" if self.backend.get() in GUITAR_METHODS else "disabled"
         )
 
     def choose_audio(self):
@@ -348,7 +358,8 @@ class TabberApp:
                 max_span=7 if self.wider_span.get() else 5,
                 tuning=self.tuning.get(),
                 notes_only=self.notes_only.get(),
-                guitar_retry_empty=self.guitar_retry_empty.get(),
+                guitar_retry_empty=self.guitar_input_level.get() == RETRY_HALF_LEVEL,
+                guitar_half_input=self.guitar_input_level.get() == HALF_LEVEL,
             )
         except (ValueError, OSError) as error:
             messagebox.showerror("Check saved notes", str(error))
