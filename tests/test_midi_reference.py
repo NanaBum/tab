@@ -1,11 +1,8 @@
-import json
-
 import mido
 import pytest
 
 from scripts.import_midi_reference import main
 from tabber.events import load_events
-from tabber.media import sha256_file
 from tabber.midi_reference import describe_midi, extract_midi_reference
 from tabber.models import Note
 from tabber.pitch_midi import write_pitch_midi
@@ -159,43 +156,3 @@ def test_cli_saved_roundtrip_preserves_source_and_existing_output_on_failure(tmp
     with pytest.raises(SystemExit):
         main()
     assert output.read_bytes() == saved
-
-
-def test_pair_provenance_warnings_and_training_exclusion_survive_label_import(
-    tmp_path, monkeypatch
-):
-    source, output, pair = tmp_path / "score.mid", tmp_path / "labels.json", tmp_path / "pair.json"
-    source_midi().save(source)
-    payload = {
-        "format": "tabber-training-pair",
-        "schema_version": 1,
-        "song_id": "fixture-song",
-        "roles": {"score_midi": "score.mid"},
-        "assets": [
-            {"path": "score.mid", "sha256": sha256_file(source), "bytes": source.stat().st_size}
-        ],
-        "tab_warnings": {"midi": ["candidate conversion warning"]},
-        "excluded_from_training": True,
-    }
-    pair.write_text(json.dumps(payload))
-    monkeypatch.setattr(
-        "sys.argv",
-        [
-            "import_midi_reference",
-            str(source),
-            "--pair-manifest",
-            str(pair),
-            "--output",
-            str(output),
-        ],
-    )
-    main()
-    metadata = json.loads(output.read_text())["metadata"]
-    assert metadata["source_pair"]["excluded_from_training"] is True
-    assert metadata["source_pair"]["tab_warnings"] == payload["tab_warnings"]
-    before = output.read_bytes()
-    payload["assets"][0]["sha256"] = "0" * 64
-    pair.write_text(json.dumps(payload))
-    with pytest.raises(SystemExit):
-        main()
-    assert output.read_bytes() == before

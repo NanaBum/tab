@@ -17,11 +17,8 @@ For timed references, the [global-offset comparison](GLOBAL_ALIGNMENT.md) report
 both original scores and a bounded, reference-assisted start-shift diagnostic.
 The [local Guitar Pro reference importer](REFERENCE_IMPORT.md) can prepare
 candidate timed references with explicit track selection and score-feature checks.
-Local [audio download and source-pair collection](MEDIA_COLLECTION.md) tools can
-prepare explicit tab/YouTube pairs with original audio, MP3, tab revision
-identity and hashes. Packaging is separate from alignment and model training.
-The [MIDI reference importer](MIDI_REFERENCES.md) can select source channels from
-those bundles and preserve their playback timing as candidate note labels.
+The [MIDI reference importer](MIDI_REFERENCES.md) can read note timing from
+local MIDI files.
 Explicit [alternate tuning](TUNING.md) is available in the app and command line;
 standard tuning remains the default. This changes fret mapping, not detected pitches.
 
@@ -228,9 +225,8 @@ modules for separation, transcription, fingering, timing, and export. Use a bran
 for each change and review before merging. The default branch carries locally
 verified snapshots. Keep audio, data, weights, and secrets outside Git.
 
-[VALIDATION_STATUS.md](VALIDATION_STATUS.md) maps the working features to their
-evidence and remaining acceptance checks. [INSTALL_VALIDATION.md](INSTALL_VALIDATION.md)
-records a clean core installation outside the development checkout.
+[INSTALL_VALIDATION.md](INSTALL_VALIDATION.md) records a clean core installation
+outside the development checkout.
 
 Each GP5 export is reopened and compared with its intended quantized note events
 before output files are replaced. See [EXPORT_VALIDATION.md](EXPORT_VALIDATION.md)
@@ -251,6 +247,5 @@ Hosted CI is manual-only. Run the checks above locally.
 ## License
 
 Tabber's source code and documentation are available under the [MIT License](LICENSE).
-Third-party dependencies, model weights, datasets, recordings, and reference tabs
-have their own terms. See [model provenance](MODEL_PROVENANCE.md) and
-[data collection](MEDIA_COLLECTION.md) for details.
+Installed dependencies and optional model weights have their own terms.
+See [model provenance](MODEL_PROVENANCE.md) for details.

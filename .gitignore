@@ -3,7 +3,6 @@
 .venv-separation/
 .venv-audio/
 .venv-guitar/
-.venv-media/
 __pycache__/
 *.py[cod]
 .pytest_cache/

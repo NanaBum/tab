@@ -80,12 +80,8 @@ reference-assisted single-global-shift diagnostic; the original events are
 unchanged. A global shift cannot fix tempo drift or a different arrangement.
 See [GLOBAL_ALIGNMENT.md](GLOBAL_ALIGNMENT.md).
 
-For a future paired corpus, record the exact tab revision, selected track and
-recording version, verify the applicable permissions, and check alignment before
-using the pair. A large noisy training collection and a small carefully reviewed
-evaluation subset serve different purposes. The [local source-pair tools](MEDIA_COLLECTION.md)
-retain source identities and permission notes alongside candidate labels; packaging
-does not establish that a recording and tab are the same performance/version.
+For comparisons with a recording, select the score track explicitly and check
+that its playback lines up with the recorded performance.
 
 ## Local evidence
 

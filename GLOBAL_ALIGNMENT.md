@@ -11,7 +11,7 @@ uv run python scripts/compare_timed_events.py reference.json predicted-detected-
 
 Inputs currently support `tabber-note-events` JSON, this project's exported
 `notes.json` (its original detected times, not the quantized GP5 times), and IDMT
-annotation XML. General Guitar Pro/Songsterr import and automatic audio-to-score
+annotation XML. General Guitar Pro import and automatic audio-to-score
 alignment are still separate work; this tool does not fetch music or establish
 dataset-use permission. It requires actual timed reference events, not just an
 untimed list of frets.

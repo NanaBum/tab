@@ -1,3 +1,0 @@
-# Separate local download/conversion environment; do not add to core/ML locks.
-yt-dlp[default]==2026.10.26
--e .

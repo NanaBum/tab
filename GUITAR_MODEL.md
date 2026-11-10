@@ -120,18 +120,12 @@ reports a collision. On the electric development set, this capped 20 ms
 adjustment increased onset matches from 192 to 199 and onset-plus-release
 matches from 141 to 145. One piece lost two onset matches.
 
-An audible guitar stem can still produce weak attack scores. One empty
-test excerpt peaked below 0.093 in the attack model, even though the audio
-itself peaked at 0.77 after mono averaging. Lowering the decoder threshold
-to 0.05 returned three events. If the guitar model returns no notes, try
-Basic Pitch on the same input. The [diagnostic results](reports/gaps-empty-diagnosis.json)
-also show why a lower threshold can add many unmatched detections.
+An audible guitar stem can still produce weak attack scores. If the guitar
+model returns no notes, try Basic Pitch on the same input. Lower attack
+thresholds may add spurious detections.
 
 For an opt-in second attempt, add `--guitar-retry-empty` to a
 `--backend guitar-gaps` command. This retries at half input level only
 if the first pass returns zero notes. The retry uses the same attack
 threshold and guitar audio, including a separated stem if requested.
 The original recording and first-pass diagnostics are preserved.
-On the previously empty full-band excerpt, the retry recovered 17 events
-and exported them to GP5. Eleven matched the candidate score onsets.
-See the [retry check](reports/gaps-empty-retry-check.json).
