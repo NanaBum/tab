@@ -147,3 +147,24 @@ Training took about 24 seconds on the development laptop, including feature
 extraction. This is a run observation, not a standardized speed claim. No GPU,
 paid compute, or additional dataset download was used. Test on the user's own
 recordings before recommending this model or enabling it by default.
+
+### Electric-guitar dataset pilot
+
+[Guitar-TECHS](https://zenodo.org/records/14963133) contains electric guitar
+recorded through direct input and microphones, with per-string MIDI from a
+multi-track pickup. The three-archive pilot uses single notes from performers
+P1 and P2 and reserves P3's musical recordings for evaluation. Keep all audio
+channels from the same take together. The dataset notes possible alignment
+errors up to 100 ms, so verify MIDI-to-audio timing before extracting features.
+
+```powershell
+uv run python scripts/download_guitar_techs.py
+```
+
+The downloader verifies the published sizes and checksums for the 354 MB
+pilot and keeps archives under ignored `data/guitar-techs/`. P1 and P2 are
+development candidates and P3 stays out of training and threshold selection.
+The [authors' dataset site](https://guitar-techs.github.io/) specifies CC BY
+4.0. Cite Pedroza et al., *Guitar-TECHS: An Electric Guitar Dataset Covering
+Techniques, Musical Excerpts, Chords and Scales Using a Diverse Array of
+Hardware*, ICASSP 2025. [Paper](https://doi.org/10.1109/ICASSP49660.2025.10887996)
