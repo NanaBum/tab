@@ -168,3 +168,18 @@ The [authors' dataset site](https://guitar-techs.github.io/) specifies CC BY
 4.0. Cite Pedroza et al., *Guitar-TECHS: An Electric Guitar Dataset Covering
 Techniques, Musical Excerpts, Chords and Scales Using a Diverse Array of
 Hardware*, ICASSP 2025. [Paper](https://doi.org/10.1109/ICASSP49660.2025.10887996)
+
+Run `scripts/audit_guitar_techs.py` in the ML environment to read the named
+MIDI tracks and compare attack evidence across three windows of each recording.
+The importer preserves independent strings even when MIDI channel numbers
+are reused. A negative offset moves the MIDI event earlier in the audio.
+
+| Player | Decoded attacks | Direct-input offset | Amplifier-mic offset |
+| --- | ---: | ---: | ---: |
+| P1 | 142 | −58.0 ms | −52.2 ms |
+| P2 | 137 | −46.4 ms | −40.6 ms |
+
+Each estimate beat the displaced controls in all three windows. Local peaks
+varied by up to 23.2 ms over a recording, so these are approximate clock
+corrections. The audit fits the offset to the first window and uses the later
+windows as checks. It does not fit model weights or use P3's audio.
