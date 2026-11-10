@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
+from .events import saved_detections
 from .jobs import run_conversion
 from .tempo import TapTempo
 
@@ -96,6 +97,7 @@ class TabberApp:
         self.running = False
         self.cancel_event = threading.Event()
         self.result = None
+        self.rebuild_input = None
         self.ml = ml_python(self.root)
         from .guitar_gaps import default_checkpoint
 
@@ -249,6 +251,13 @@ class TabberApp:
             command=lambda: self.open_result(),
         )
         self.open_folder.pack(side="left", padx=8)
+        self.rebuild_saved = ttk.Button(
+            buttons,
+            text="Use saved detections",
+            state="disabled",
+            command=self.use_saved_detections,
+        )
+        self.rebuild_saved.pack(side="left")
         self.window.after(150, self.poll)
 
     def update_output_mode(self):
@@ -331,12 +340,14 @@ class TabberApp:
         self.running = True
         self.cancel_event.clear()
         self.result = None
+        self.rebuild_input = None
         self.convert.configure(state="disabled")
         self.stop_conversion.configure(state="normal")
         self.browse.configure(state="disabled")
         self.open_tab.configure(state="disabled")
         self.open_midi.configure(state="disabled")
         self.open_folder.configure(state="disabled")
+        self.rebuild_saved.configure(state="disabled")
         self.progress.start(12)
         self.status.set(
             "Rebuilding the tab from saved notes…"
@@ -428,6 +439,8 @@ class TabberApp:
             self.stop_conversion.configure(state="disabled")
             self.browse.configure(state="normal")
             self.open_folder.configure(state="normal" if output.exists() else "disabled")
+            self.rebuild_input = saved_detections(output)
+            self.rebuild_saved.configure(state="normal" if self.rebuild_input else "disabled")
             self.open_tab.configure(
                 state="normal" if success and (output / "tab.gp5").is_file() else "disabled"
             )
@@ -436,6 +449,20 @@ class TabberApp:
             )
             self.status.set(message)
         self.window.after(150, self.poll)
+
+    def use_saved_detections(self):
+        if self.running or self.rebuild_input is None:
+            return
+        if not self.rebuild_input.is_file():
+            self.rebuild_saved.configure(state="disabled")
+            self.status.set("The saved detections file is unavailable.")
+            return
+        self.backend.set(SAVED_NOTES)
+        self.audio.set(str(self.rebuild_input))
+        self.separate.set(False)
+        self.status.set(
+            "Saved detections selected. Enter a BPM or tap the tempo before continuing."
+        )
 
     def open_result(self, filename=None):
         if self.result is None:
