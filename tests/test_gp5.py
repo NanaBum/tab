@@ -94,6 +94,16 @@ def test_finer_grid_preserves_fast_attacks(tmp_path):
     assert attacks == [(960, 0), (1080, 1)]
 
 
+def test_finest_grid_reports_both_conflicting_attacks():
+    notes = [
+        FrettedNote(Note(0.001, 0.002, 64), 0, 0),
+        FrettedNote(Note(0.002, 0.010, 65), 0, 1),
+    ]
+    with pytest.raises(ValueError, match=r"E4 at 0\.001s and F4 at 0\.002s collide on string 1") as exc:
+        build_song(notes, 120, grid=64)
+    assert "save notes and MIDI" in str(exc.value)
+
+
 def test_export_render_failure_preserves_existing_outputs(tmp_path, monkeypatch):
     target = tmp_path / "existing"
     target.mkdir()
