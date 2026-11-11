@@ -147,6 +147,34 @@ def test_cli_can_retry_a_finer_grid_without_changing_detections(
     assert f"Used a 1/{grid} grid after a collision at 1/16" in capsys.readouterr().out
 
 
+@pytest.mark.parametrize("simultaneous", [False, True])
+def test_overlap_recovery_preserves_original_detections(tmp_path, monkeypatch, simultaneous):
+    source, output = tmp_path / "events.json", tmp_path / "score"
+    events = [
+        Note(0, 1, 40, 0.8),
+        Note(0 if simultaneous else 0.5, 1, 41, 0.2 if simultaneous else 1.0),
+    ]
+    save_events(events, source)
+    monkeypatch.setattr("sys.argv", ["tabber", "--events", str(source), "--output", str(output)])
+
+    main()
+
+    assert load_events(output / "detected-notes.json") == events
+    song = read_gp5(output / "tab.gp5")
+    assert score_events(song) == (
+        [(960, 2880, 6, 0)] if simultaneous else [(960, 1920, 6, 0), (1920, 2880, 6, 1)]
+    )
+    [audit] = (output / "diagnostics").glob("overlap-recovery-*.json")
+    edits = json.loads(audit.read_text())
+    if simultaneous:
+        assert edits["omitted"][0]["source_index"] == 1
+        assert edits["shortened"] == []
+    else:
+        assert edits["shortened"][0]["source_index"] == 0
+        assert edits["shortened"][0]["new_end"] == 0.5
+        assert edits["omitted"] == []
+
+
 def test_attack_lead_affects_export_but_preserves_raw_events(tmp_path, monkeypatch):
     events, output = tmp_path / "input.json", tmp_path / "adjusted"
     original = [Note(0.081, 0.5, 65, 0.7)]

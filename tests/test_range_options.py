@@ -42,7 +42,16 @@ def test_filter_failure_preserves_raw_notes_and_existing_tab(tmp_path, monkeypat
     output.mkdir()
     (output / "tab.gp5").write_bytes(b"previous successful score")
     monkeypatch.setattr(
-        "sys.argv", ["tabber", "--events", str(source), "--output", str(output), "--guitar-range"]
+        "sys.argv",
+        [
+            "tabber",
+            "--events",
+            str(source),
+            "--output",
+            str(output),
+            "--guitar-range",
+            "--strict-overlaps",
+        ],
     )
     with pytest.raises(SystemExit) as error:
         main()
@@ -53,19 +62,19 @@ def test_filter_failure_preserves_raw_notes_and_existing_tab(tmp_path, monkeypat
     assert report["retained_note_count"] == (0 if pitches == (38, 39) else 7)
 
 
-def test_wider_span_preserves_a_chord_that_fails_the_default_limit(tmp_path, monkeypatch):
+def test_wide_span_is_allowed_with_default_and_zero_preference(tmp_path, monkeypatch):
     source = tmp_path / "chord.json"
-    notes = [Note(0, 1, pitch) for pitch in (41, 47, 52, 57, 64, 71)]
+    notes = [Note(0, 1, pitch) for pitch in (41, 47, 52, 57, 64, 88)]
     save_events(notes, source)
     output = tmp_path / "score"
     arguments = ["tabber", "--events", str(source), "--output", str(output)]
     monkeypatch.setattr("sys.argv", arguments)
-    with pytest.raises(SystemExit):
-        main()
-    monkeypatch.setattr("sys.argv", arguments + ["--max-span", "7"])
+    main()
+    monkeypatch.setattr("sys.argv", arguments + ["--max-span", "0"])
     main()
     assert load_events(output / "detected-notes.json") == notes
     assert len(score_events(read_gp5(output / "tab.gp5"))) == len(notes)
     metadata = json.loads((output / "detected-notes.json").read_text())["metadata"]
-    assert metadata["max_span"] == 7
+    assert metadata["preferred_fret_span"] == 0
+    assert "overlap_recovery" not in metadata
     assert metadata["guitar_range_filter_requested"] is False

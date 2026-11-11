@@ -40,13 +40,14 @@ failure). Choosing a saved notes file restores its BPM, guitar tuning, and rhyth
 detail when available. **Use saved detections** also selects the unfiltered notes
 and turns off separation. You can change these settings before creating a new tab.
 The command line restores them when you omit `--bpm`, `--tuning`, and `--grid`.
-Rebuilding keeps every saved note unless you select the optional instrument-range
-filter. Sensitivity does not filter saved input.
+Sensitivity does not filter saved input. Range exclusions and overlap recovery
+are recorded alongside the original detections.
 It assigns fingerings again and does not carry over edits made in TuxGuitar.
 
-If export fails, [recovery controls](FRETTING_RECOVERY.md) can explicitly exclude
-out-of-range detections with an audit, or allow a wider simultaneous fret span.
-They are separate choices and remain off by default in the app.
+If overlapping detections cannot fit on distinct strings, the app can shorten
+a sustain or omit a less certain note while keeping an audit and the original
+detections. The [range filter](FRETTING_RECOVERY.md) can separately exclude
+out-of-range detections when requested.
 
 The desktop app needs Tkinter in the Python installation. The terminal setup
 below also works without Tkinter.
@@ -103,7 +104,7 @@ become rests, and sustained notes split into tied durations across measures.
 GP5 tempo is rounded to the nearest integer BPM (1-999). Original timings remain
 unchanged in JSON and are approximated at MIDI tick resolution. If notes land
 on the same string and score cell, polyphonic export tries another fingering
-using the chosen tuning, fret span, and grid. An unresolved collision prompts
+using the chosen tuning and grid. An unresolved collision prompts
 you to choose a finer grid. For faster notes choose `--grid 32` or `--grid 64`
 (divisions per whole note).
 **Try a finer grid if notes collide** (`--retry-finer-grid`) is optional.
