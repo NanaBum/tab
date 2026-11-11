@@ -9,20 +9,28 @@ import mido
 
 from .gp5 import build_song, read_gp5, timing_summary, verify_export, write_gp5
 from .models import STANDARD_TUNING, FrettedNote
-from .rhythm import quantize
+from .rhythm import DEFAULT_METER, parse_meter, quantize
 from .tuning import pitch_name, validate_tuning
 
 
 def write_outputs(
-    notes: list[FrettedNote], output: Path, bpm: float, grid: int = 16, *, tuning=STANDARD_TUNING
+    notes: list[FrettedNote],
+    output: Path,
+    bpm: float,
+    grid: int = 16,
+    *,
+    tuning=STANDARD_TUNING,
+    meter=DEFAULT_METER,
 ) -> dict:
     tuning = validate_tuning(tuning)
+    meter = parse_meter(meter)
     quantize(0, bpm)
-    song = build_song(notes, bpm, grid, tuning=tuning)
+    song = build_song(notes, bpm, grid, tuning=tuning, meter=meter)
     payload = {"bpm": bpm, "string_order": "high E to low E", "notes": [asdict(n) for n in notes]}
     if tuning != STANDARD_TUNING:
         payload["string_order"] = "string 1 to string 6"
     payload["score_grid"] = grid
+    payload["score_meter"] = meter
     payload["tuning_midi"] = list(tuning)
     payload["tuning_string_order"] = "string 1 (thin) to string 6 (thick)"
     cells = max((quantize(n.note.end, bpm, grid // 4) for n in notes), default=1) + 1
@@ -46,6 +54,8 @@ def write_outputs(
     )
     if tuning != STANDARD_TUNING:
         text.insert(1, "Open strings (1 to 6): " + " ".join(labels))
+    if meter != DEFAULT_METER:
+        text.insert(1, f"Time signature: {meter}")
     for first in range(0, cells, 32):
         text.extend(
             f"{label}|{''.join(row[first : first + 32])}|" for label, row in zip(labels, rows)
@@ -55,6 +65,11 @@ def write_outputs(
     track = mido.MidiTrack()
     midi.tracks.append(track)
     track.append(mido.MetaMessage("set_tempo", tempo=mido.bpm2tempo(bpm)))
+    if meter != DEFAULT_METER:
+        numerator, denominator = map(int, meter.split("/"))
+        track.append(
+            mido.MetaMessage("time_signature", numerator=numerator, denominator=denominator)
+        )
     # One channel per string keeps overlapping unisons independently releasable.
     # Channels 0-5 avoid the conventional percussion channel (9).
     for channel in range(6):
@@ -90,7 +105,7 @@ def write_outputs(
     write_gp5(song, gp5_bytes)
     gp5_bytes.seek(0)
     saved_song = read_gp5(gp5_bytes)
-    verify_export(saved_song, notes, bpm, grid, tuning=tuning)
+    verify_export(saved_song, notes, bpm, grid, tuning=tuning, meter=meter)
     timing = timing_summary(saved_song, notes)
     payload["score_timing"] = timing
     rendered = {

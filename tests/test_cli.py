@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import guitarpro
+import mido
 import pytest
 import soundfile as sf
 
@@ -22,6 +23,46 @@ def test_cli_rebuilds_gp5_from_events_without_audio_or_ml(tmp_path, monkeypatch)
     track = score.tracks[0]
     note = track.measures[0].voices[0].beats[0].notes[0]
     assert track.strings[note.string - 1].value + note.value == 65
+
+
+@pytest.mark.parametrize(
+    "saved,override,expected,ticks",
+    [
+        ("6/8", [], "6/8", 2880),
+        ("6/8", ["--meter", "7/8"], "7/8", 3360),
+        ("17/16", [], "17/16", 4080),
+        ("6/7", [], "4/4", 3840),
+    ],
+)
+def test_meter_round_trip_keeps_attacks_and_barline_ties(
+    tmp_path, monkeypatch, saved, override, expected, ticks
+):
+    source, output = tmp_path / "events.json", tmp_path / "score"
+    original = [Note(1, 2.5, 64)]
+    save_events(original, source, {"score_meter": saved})
+    monkeypatch.setattr(
+        "sys.argv", ["tabber", "--events", str(source), "--output", str(output), *override]
+    )
+
+    main()
+
+    song = read_gp5(output / "tab.gp5")
+    assert [header.start for header in song.measureHeaders] == [960, 960 + ticks]
+    assert [header.length for header in song.measureHeaders] == [ticks, ticks]
+    assert all(
+        f"{header.timeSignature.numerator}/{header.timeSignature.denominator.value}" == expected
+        for header in song.measureHeaders
+    )
+    assert [(start, end) for start, end, _, _ in score_events(song)] == [(2880, 5760)]
+    midi_meters = [
+        f"{msg.numerator}/{msg.denominator}"
+        for msg in mido.MidiFile(output / "notes.mid").tracks[0]
+        if msg.type == "time_signature"
+    ]
+    assert midi_meters == ([expected] if expected != "4/4" else [])
+    assert load_events(output / "detected-notes.json") == original
+    for path in (output / "detected-notes.json", *output.glob("diagnostics/detected-*.json")):
+        assert json.loads(path.read_text())["metadata"]["score_meter"] == expected
 
 
 @pytest.mark.parametrize(

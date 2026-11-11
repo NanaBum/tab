@@ -33,13 +33,13 @@ MIDI only (no tab)**. Use **Open MIDI** to audition the detected pitches and
 timings; no guitar positions or score grid are applied. The normal editable-tab
 mode remains the default. See [NOTES_ONLY.md](NOTES_ONLY.md).
 
-To change tempo or rhythm detail after listening once, choose **Rebuild saved
+To change tempo, time signature, or rhythm detail after listening once, choose **Rebuild saved
 notes** under Method, then choose `detected-notes.json` from the earlier results
 folder (or a timestamped detected file under `diagnostics/` after a fingering
-failure). Choosing a saved notes file restores its BPM, guitar tuning, and rhythm
+failure). Choosing a saved notes file restores its BPM, guitar tuning, time signature, and rhythm
 detail when available. **Use saved detections** also selects the unfiltered notes
 and turns off separation. You can change these settings before creating a new tab.
-The command line restores them when you omit `--bpm`, `--tuning`, and `--grid`.
+The command line restores them when you omit `--bpm`, `--tuning`, `--meter`, and `--grid`.
 Sensitivity does not filter saved input. Range exclusions and overlap recovery
 are recorded alongside the original detections.
 It assigns fingerings again and does not carry over edits made in TuxGuitar.
@@ -98,9 +98,12 @@ ML environment. It analyzes at most the first 60 seconds and may follow half-tim
 double-time, or other rhythmic groupings. It does not identify the downbeat or
 changing tempo. The app keeps manual BPM as the default.
 One text-tab cell is a sixteenth note by default. Dashes mean no new onset, not a measured
-rest; exact durations are available in MIDI and JSON. GP5 uses 4/4 measures and
+rest; exact durations are available in MIDI and JSON. GP5 defaults to 4/4 measures and
 snaps starts and ends to sixteenth notes, with at least one cell per note. Gaps
 become rests, and sustained notes split into tied durations across measures.
+Set a known **Time signature** in the app or use `--meter 6/8` on the command
+line. The setting applies to the entire tab, starting at the beginning of the
+input. Tempo is still expressed in quarter-note BPM.
 GP5 tempo is rounded to the nearest integer BPM (1-999). Original timings remain
 unchanged in JSON and are approximated at MIDI tick resolution. If notes land
 on the same string and score cell, polyphonic export tries another fingering
@@ -114,7 +117,7 @@ audited overlap recovery. The app reports and saves the grid it used.
 Exports record score-timing movement in `notes.json` and show a notice if any
 note starts moved by over 50 ms. A finer grid can preserve timing better but
 make notation busier. Saved detections can be rebuilt without another ML pass.
-Triplets, swing, other meters, and expressive techniques are not yet represented.
+Triplets, swing, meter changes, and expressive techniques are not yet represented.
 Choose standard, Drop D, E-flat standard or D standard in the app; the command
 line also accepts six explicit MIDI open-string pitches. Tuning is supplied by
 the user and is not recognized automatically. See [TUNING.md](TUNING.md).

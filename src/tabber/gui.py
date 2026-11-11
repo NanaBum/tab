@@ -14,7 +14,7 @@ from tkinter import filedialog, messagebox, ttk
 
 from .events import load_event_document, saved_detections
 from .jobs import run_conversion
-from .rhythm import SCORE_GRIDS, recorded_score_grid
+from .rhythm import DEFAULT_METER, SCORE_GRIDS, parse_meter, recorded_meter, recorded_score_grid
 from .tempo import TapTempo, parse_bpm, recorded_bpm
 from .tuning import PRESETS, format_tuning, parse_tuning, recorded_tuning
 
@@ -34,6 +34,7 @@ def conversion_command(
     separate,
     guitar_range=False,
     tuning="standard",
+    meter=DEFAULT_METER,
     notes_only=False,
     retry_finer_grid=False,
 ):
@@ -46,8 +47,10 @@ def conversion_command(
     command.extend(("--tuning", tuning))
     if notes_only:
         command.append("--notes-only")
-    elif retry_finer_grid:
-        command.append("--retry-finer-grid")
+    else:
+        command.extend(("--meter", parse_meter(meter)))
+        if retry_finer_grid:
+            command.append("--retry-finer-grid")
     if method == SAVED_NOTES:
         if tempo == "auto":
             raise ValueError("Saved notes need a supplied BPM; enter a number or tap the tempo.")
@@ -147,7 +150,7 @@ class TabberApp:
         )
         ttk.Label(
             frame,
-            text="Use known BPM, tap the beat, or type auto for a rough estimate. Score meter: 4/4.",
+            text="Use quarter-note BPM, tap, or type auto for a rough estimate.",
             wraplength=460,
         ).grid(row=5, column=1, columnspan=2, sticky="w", pady=(5, 12))
         self.tuning = tk.StringVar(value="standard")
@@ -164,6 +167,17 @@ class TabberApp:
             frame, textvariable=self.grid, values=SCORE_GRIDS, width=8, state="readonly"
         )
         self.rhythm_detail.grid(row=7, column=1, sticky="w")
+        self.meter = tk.StringVar(value=DEFAULT_METER)
+        meter_group = ttk.Frame(frame)
+        meter_group.grid(row=7, column=2, sticky="e", padx=(8, 0))
+        ttk.Label(meter_group, text="Time signature").pack(side="left", padx=(0, 6))
+        self.meter_control = ttk.Combobox(
+            meter_group,
+            textvariable=self.meter,
+            values=("4/4", "2/2", "2/4", "3/4", "5/4", "5/8", "6/8", "7/8", "9/8", "12/8"),
+            width=6,
+        )
+        self.meter_control.pack(side="left")
         ttk.Label(frame, text="16 is easier to read; 32 or 64 keeps faster notes.").grid(
             row=8, column=1, columnspan=2, sticky="w", pady=(5, 16)
         )
@@ -263,6 +277,7 @@ class TabberApp:
     def update_output_mode(self):
         notes_only = self.notes_only.get()
         self.rhythm_detail.configure(state="disabled" if notes_only else "readonly")
+        self.meter_control.configure(state="disabled" if notes_only else "normal")
         self.finer_grid_control.configure(state="disabled" if notes_only else "normal")
         self.convert.configure(
             text="Detect notes and create MIDI" if notes_only else "Create guitar tab"
@@ -331,11 +346,12 @@ class TabberApp:
                 separate=self.separate.get(),
                 guitar_range=self.guitar_range.get(),
                 tuning=self.tuning.get(),
+                meter=self.meter.get(),
                 notes_only=self.notes_only.get(),
                 retry_finer_grid=self.retry_finer_grid.get(),
             )
         except (ValueError, OSError) as error:
-            messagebox.showerror("Check saved notes", str(error))
+            messagebox.showerror("Check input settings", str(error))
             return
         self.running = True
         self.cancel_event.clear()
@@ -470,6 +486,7 @@ class TabberApp:
         bpm = recorded_bpm(metadata)
         tuning = recorded_tuning(metadata)
         grid = recorded_score_grid(metadata)
+        self.meter.set(recorded_meter(metadata) or DEFAULT_METER)
         if grid is not None:
             self.grid.set(str(grid))
         if tuning is not None:
