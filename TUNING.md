@@ -17,9 +17,10 @@ uv run tabber riff.wav --backend basic-pitch --tuning drop-d --bpm 120 --output 
 uv run tabber --events runs/earlier/detected-notes.json --tuning 64,59,55,50,45,36 --bpm 120 --output runs/custom-tuning
 ```
 
-Rebuilding saved notes requires an explicit tuning choice again; it defaults to
-standard rather than guessing from an earlier file. The original event file
-remains unchanged. Existing manual TuxGuitar edits are not carried over by replay.
+Rebuilding saved notes restores the tuning recorded in the event file. Select
+another preset in the app or pass `--tuning` to override it. With older files
+that have no saved tuning, review the desktop selection before exporting. The
+command line uses standard tuning for those files when `--tuning` is omitted.
 
 This changes the available string/fret positions, optional range-filter bounds,
 GP5 string declarations and text labels. It does **not** transpose, add or remove

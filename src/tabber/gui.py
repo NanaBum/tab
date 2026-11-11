@@ -15,6 +15,7 @@ from tkinter import filedialog, messagebox, ttk
 from .events import load_event_document, saved_detections
 from .jobs import run_conversion
 from .tempo import TapTempo, parse_bpm, recorded_bpm
+from .tuning import format_tuning, parse_tuning, recorded_tuning
 
 SAVED_NOTES = "Rebuild saved notes"
 GUITAR_MODEL = "Guitar model (experimental)"
@@ -40,8 +41,6 @@ def conversion_command(
     if interpreter.name.lower() == "pythonw.exe":
         interpreter = interpreter.with_name("python.exe")
     command = [str(interpreter), "-m", "tabber"]
-    from .tuning import parse_tuning
-
     parse_tuning(tuning)
     command.extend(("--tuning", tuning))
     if notes_only:
@@ -282,7 +281,7 @@ class TabberApp:
         if filename:
             self.audio.set(filename)
             if replay:
-                self.set_saved_tempo(Path(filename))
+                self.set_saved_settings(Path(filename))
 
     def tap_tempo(self):
         bpm = self.taps.tap(time.monotonic())
@@ -460,21 +459,24 @@ class TabberApp:
         self.backend.set(SAVED_NOTES)
         self.audio.set(str(self.rebuild_input))
         self.separate.set(False)
-        self.set_saved_tempo(self.rebuild_input)
+        self.set_saved_settings(self.rebuild_input)
 
-    def set_saved_tempo(self, path):
+    def set_saved_settings(self, path):
         try:
             _, metadata = load_event_document(path)
-            bpm = recorded_bpm(metadata)
         except (OSError, ValueError):
-            bpm = None
+            metadata = {}
+        bpm = recorded_bpm(metadata)
+        tuning = recorded_tuning(metadata)
+        if tuning is not None:
+            self.tuning.set(format_tuning(tuning))
         if bpm is None:
             self.status.set(
-                "Saved detections selected. Enter a BPM or tap the tempo before continuing."
+                "Saved detections selected. Enter a BPM or tap the tempo, and check the tuning."
             )
         else:
             self.tempo.set(str(bpm))
-            self.status.set(f"Saved detections selected at {bpm:g} BPM. You can change the tempo.")
+            self.status.set(f"Saved detections selected at {bpm:g} BPM. Review tempo and tuning.")
 
     def open_result(self, filename=None):
         if self.result is None:

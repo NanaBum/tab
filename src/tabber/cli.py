@@ -15,7 +15,7 @@ from .rhythm import lead_attacks, quantize
 from .separate import separate_guitar
 from .tempo import estimate_tempo, parse_bpm, recorded_bpm
 from .transcribe import baseline_frequency_floor, transcribe
-from .tuning import parse_tuning
+from .tuning import parse_tuning, recorded_tuning
 
 
 def main():
@@ -42,8 +42,7 @@ def main():
     parser.add_argument(
         "--tuning",
         type=parse_tuning,
-        default=STANDARD_TUNING,
-        help="standard (default), drop-d, eb-standard, d-standard, or six MIDI pitches, string 1 to 6",
+        help="A tuning preset or six MIDI pitches, string 1 to 6. Defaults to saved tuning or standard.",
     )
     parser.add_argument(
         "--bpm",
@@ -116,7 +115,7 @@ def main():
         parser.error("--string-model needs audio input and polyphonic fretting")
     if args.notes_only and args.string_model:
         parser.error("--string-model does not apply to --notes-only output")
-    if args.string_model and args.tuning != STANDARD_TUNING:
+    if args.string_model and (args.tuning or STANDARD_TUNING) != STANDARD_TUNING:
         parser.error(
             "The experimental string-tone model has only been evaluated in standard tuning"
         )
@@ -143,22 +142,21 @@ def main():
             for warning in health["warnings"]:
                 print("Audio note: " + warning, flush=True)
         saved_bpm = None
+        saved_tuning = None
         if args.events:
             detected, saved_metadata = load_event_document(path)
             saved_bpm = recorded_bpm(saved_metadata)
+            saved_tuning = recorded_tuning(saved_metadata)
+        tuning = args.tuning or saved_tuning or STANDARD_TUNING
         tempo = estimate_tempo(path) if args.bpm == "auto" else None
         bpm = tempo.bpm if tempo else args.bpm or saved_bpm or 120.0
         tempo_source = "estimated" if tempo else "supplied"
         if args.bpm is None:
             tempo_source = "saved" if saved_bpm is not None else "default"
         quantize(0, bpm)
-        if (
-            args.audio
-            and args.backend == "baseline"
-            and baseline_frequency_floor(min(args.tuning)) < 75
-        ):
+        if args.audio and args.backend == "baseline" and baseline_frequency_floor(min(tuning)) < 75:
             print(
-                f"Detector note: Using the selected tuning's lower search limit ({baseline_frequency_floor(min(args.tuning)):.1f} Hz) for the simple melody detector.",
+                f"Detector note: Using the selected tuning's lower search limit ({baseline_frequency_floor(min(tuning)):.1f} Hz) for the simple melody detector.",
                 flush=True,
             )
         if tempo:
@@ -177,9 +175,9 @@ def main():
                     guitar_onset=args.onset_threshold if args.onset_threshold is not None else 0.3,
                     guitar_checkpoint=args.guitar_checkpoint,
                 )
-            elif args.backend == "baseline" and baseline_frequency_floor(min(args.tuning)) < 75:
+            elif args.backend == "baseline" and baseline_frequency_floor(min(tuning)) < 75:
                 detected = transcribe(
-                    path, args.backend, args.min_confidence, baseline_min_pitch=min(args.tuning)
+                    path, args.backend, args.min_confidence, baseline_min_pitch=min(tuning)
                 )
             else:
                 detected = transcribe(path, args.backend, args.min_confidence)
@@ -211,10 +209,10 @@ def main():
             "output_mode": "notes-only" if args.notes_only else "editable-tab",
             "fingering_requested": not args.notes_only,
             "guitar_range_filter_requested": args.guitar_range,
-            "baseline_minimum_search_hz": baseline_frequency_floor(min(args.tuning))
+            "baseline_minimum_search_hz": baseline_frequency_floor(min(tuning))
             if args.audio and args.backend == "baseline"
             else None,
-            "tuning_midi": list(args.tuning),
+            "tuning_midi": list(tuning),
             "tuning_string_order": "string 1 (thin) to string 6 (thick)",
         }
         if args.backend == "guitar-gaps" and not args.events:
@@ -278,7 +276,7 @@ def main():
             )
         selected = detected
         if args.guitar_range:
-            minimum, maximum = min(args.tuning), min(127, max(args.tuning) + 24)
+            minimum, maximum = min(tuning), min(127, max(tuning) + 24)
             selected = [note for note in detected if minimum <= note.pitch <= maximum]
             excluded = [
                 {"source_index": index, "note": asdict(note)}
@@ -288,7 +286,7 @@ def main():
             report_path = args.output / "diagnostics" / f"range-filter-{stamp}.json"
             audit = {
                 "purpose": "Explicitly requested selected-tuning / 24-fret pitch filter",
-                "tuning_midi": list(args.tuning),
+                "tuning_midi": list(tuning),
                 "min_pitch": minimum,
                 "max_pitch": maximum,
                 "source_note_count": len(detected),
@@ -353,8 +351,8 @@ def main():
                 f"Timing note: Applied a {args.attack_lead_ms:g} ms attack lead for export. Original events are preserved.",
                 flush=True,
             )
-        notes = assign(export_events, tuning=args.tuning, **assignment_options)
-        timing = write_outputs(notes, args.output, bpm, args.grid, tuning=args.tuning)
+        notes = assign(export_events, tuning=tuning, **assignment_options)
+        timing = write_outputs(notes, args.output, bpm, args.grid, tuning=tuning)
         save_events(selected, args.output / "detected-notes.json", metadata)
     except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f"Could not transcribe: {exc}\n")

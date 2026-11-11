@@ -29,5 +29,23 @@ def parse_tuning(value):
         ) from error
 
 
+def recorded_tuning(metadata):
+    """Restore an explicit physical-string tuning from a saved note file."""
+    pitches = metadata.get("tuning_midi")
+    if not isinstance(pitches, list):
+        return None
+    try:
+        return validate_tuning(pitches)
+    except ValueError:
+        return None
+
+
+def format_tuning(pitches):
+    for name, preset in PRESETS.items():
+        if pitches == preset:
+            return name
+    return ",".join(map(str, pitches))
+
+
 def pitch_name(pitch):
     return f"{('C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B')[pitch % 12]}{pitch // 12 - 1}"

@@ -154,20 +154,29 @@ def test_use_saved_detections_selects_rebuild_and_disables_separation(tmp_path, 
     assert "--separate" not in command
 
 
-def test_browsing_saved_events_restores_tempo(tmp_path, monkeypatch):
+@pytest.mark.parametrize(
+    "pitches,tuning",
+    [
+        ([64, 59, 55, 50, 45, 38], "drop-d"),
+        ([64, 59, 55, 50, 45, 36], "64,59,55,50,45,36"),
+        ([64, 59], None),
+    ],
+)
+def test_browsing_saved_events_restores_tempo_and_tuning(tmp_path, monkeypatch, pitches, tuning):
     path = tmp_path / "detections.json"
-    save_events([Note(0, 1, 64)], path, {"bpm": 97.5})
+    save_events([Note(0, 1, 64)], path, {"bpm": 97.5, "tuning_midi": pitches})
     monkeypatch.setattr("tabber.gui.filedialog.askopenfilename", lambda **kwargs: str(path))
     state = {}
     app = object.__new__(TabberApp)
     app.backend = SimpleNamespace(get=lambda: SAVED_NOTES)
-    for key in ("audio", "tempo", "status"):
+    for key in ("audio", "tempo", "status", "tuning"):
         setattr(app, key, SimpleNamespace(set=lambda value, name=key: state.update({name: value})))
 
     app.choose_audio()
 
     assert state["audio"] == str(path)
     assert state["tempo"] == "97.5"
+    assert state.get("tuning") == tuning
 
 
 @pytest.mark.parametrize("notes_only", [True, False])
