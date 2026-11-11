@@ -134,13 +134,14 @@ def assign_polyphonic_frets(
             if max(row) - min(row) > 1e-12:
                 priors[id(note)] = tuple(p / total for p in row)
     ordered = sorted(notes, key=lambda n: (n.start, -n.pitch))
+    positions = [fret_positions(note.pitch, tuning, max_fret) for note in ordered]
+    for note, candidates in zip(ordered, positions, strict=True):
+        if not candidates:
+            raise UnplayablePitch(note, tuning, max_fret)
     cells = {id(note): score_interval(note, *score_grid) for note in ordered} if score_grid else {}
     # cost, complete history, active positions, last hand position, last string
     states = [(0.0, (), (), 0.0, 0)]
-    for index, note in enumerate(ordered):
-        candidates = fret_positions(note.pitch, tuning, max_fret)
-        if not candidates:
-            raise UnplayablePitch(note, tuning, max_fret)
+    for index, (note, candidates) in enumerate(zip(ordered, positions, strict=True)):
         expanded = {}
         for cost, history, active, hand, last_string in states:
             sounding = tuple(n for n in active if n.note.end > note.start + 1e-6)
