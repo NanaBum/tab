@@ -38,6 +38,36 @@ def _write_score_at_grid(notes, output, bpm, grid, tuning, refit):
         return write_outputs(fitted, output, bpm, grid, tuning=tuning), True
 
 
+def _record_overlap_recovery(original_events, retained, audit, *, score_grid=None):
+    shortened, omitted = [], []
+    for index, original in enumerate(original_events):
+        record = {"source_index": index, "original": asdict(original)}
+        if index not in retained:
+            omitted.append(record)
+        elif retained[index].end < original.end:
+            shortened.append({**record, "new_end": retained[index].end})
+    audit.write_text(
+        json.dumps(
+            {
+                "index_convention": "Zero-based index into the events before overlap recovery",
+                "shortened": shortened,
+                "omitted": omitted,
+                "score_grid": score_grid,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    scope = f" after a collision on the 1/{score_grid} grid" if score_grid else " during fingering"
+    print(
+        f"Fingering note: Shortened {len(shortened)} releases and omitted {len(omitted)} "
+        f"notes for tab export{scope}. Original detections are saved.",
+        flush=True,
+    )
+    return {"shortened": len(shortened), "omitted": len(omitted), "audit": str(audit.resolve())}
+
+
 def main():
     parser = argparse.ArgumentParser(description="Experimental audio-to-guitar-tab converter")
     parser.add_argument("audio", type=Path, nargs="?")
@@ -382,6 +412,9 @@ def main():
                 f"Timing note: Applied a {args.attack_lead_ms:g} ms attack lead for export. Original events are preserved.",
                 flush=True,
             )
+        original_events = export_events
+        original_options = assignment_options.copy()
+        audit = args.output / "diagnostics" / f"overlap-recovery-{stamp}.json"
         try:
             notes = assign(export_events, tuning=tuning, **assignment_options)
         except StringAssignmentConflict:
@@ -390,40 +423,13 @@ def main():
             notes, retained = recover_overlapping_notes(
                 export_events, tuning=tuning, **assignment_options
             )
-            shortened, omitted = [], []
-            for index, original in enumerate(export_events):
-                record = {"source_index": index, "original": asdict(original)}
-                if index not in retained:
-                    omitted.append(record)
-                elif retained[index].end < original.end:
-                    shortened.append({**record, "new_end": retained[index].end})
-            audit = args.output / "diagnostics" / f"overlap-recovery-{stamp}.json"
-            audit.write_text(
-                json.dumps(
-                    {
-                        "index_convention": "Zero-based index into the events before overlap recovery",
-                        "shortened": shortened,
-                        "omitted": omitted,
-                    },
-                    indent=2,
-                )
-                + "\n",
-                encoding="utf-8",
+            metadata["overlap_recovery"] = _record_overlap_recovery(
+                original_events, retained, audit
             )
-            metadata["overlap_recovery"] = {
-                "shortened": len(shortened),
-                "omitted": len(omitted),
-                "audit": str(audit.resolve()),
-            }
             if "string_priors" in assignment_options:
                 priors = assignment_options["string_priors"]
                 assignment_options["string_priors"] = [priors[index] for index in retained]
             export_events = list(retained.values())
-            print(
-                f"Fingering note: Shortened {len(shortened)} releases and omitted {len(omitted)} "
-                "notes for tab export. Original detections are saved.",
-                flush=True,
-            )
         refit = (
             partial(assign_polyphonic_frets, export_events, tuning=tuning, **assignment_options)
             if args.fretting == "polyphonic"
@@ -436,8 +442,22 @@ def main():
                     notes, args.output, bpm, candidate, tuning, refit
                 )
             except GridCollision:
-                if candidate == grids[-1]:
+                if candidate != grids[-1]:
+                    continue
+                if not args.retry_finer_grid or args.strict_overlaps or refit is None:
                     raise
+                notes, retained = recover_overlapping_notes(
+                    original_events,
+                    tuning=tuning,
+                    score_grid=(int(bpm + 0.5), candidate),
+                    **original_options,
+                )
+                metadata["overlap_recovery"] = _record_overlap_recovery(
+                    original_events, retained, audit, score_grid=candidate
+                )
+                timing = write_outputs(notes, args.output, bpm, candidate, tuning=tuning)
+                refitted = True
+                break
             else:
                 break
         if refitted:

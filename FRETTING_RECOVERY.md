@@ -42,6 +42,8 @@ The tab and its MIDI use the resulting notes. The original detections stay in
 the saved events, and `diagnostics/overlap-recovery-*.json` lists every change.
 Use `--strict-overlaps` for editable exports that keep detected note lengths
 and counts even when a string conflict prevents export.
+With **Try a finer grid if notes collide**, the app tries the available grids
+before adjusting a collision that remains at 1/64. The audit records that grid.
 
 ```powershell
 uv run tabber --events runs/failed/diagnostics/detected-TIMESTAMP.json --bpm 120 --grid 32 --output runs/overlap-review
