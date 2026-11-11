@@ -118,9 +118,10 @@ Exports record score-timing movement in `notes.json` and show a notice if any
 note starts moved by over 50 ms. A finer grid can preserve timing better but
 make notation busier. Saved detections can be rebuilt without another ML pass.
 Triplets, swing, meter changes, and expressive techniques are not yet represented.
-Choose standard, Drop D, E-flat standard or D standard in the app; the command
-line also accepts six explicit MIDI open-string pitches. Tuning is supplied by
-the user and is not recognized automatically. See [TUNING.md](TUNING.md).
+Choose a six- or seven-string tuning preset in the app, or enter six or seven
+comma-separated MIDI open-string pitches, from the thinnest string to the
+thickest. The same values work with `--tuning`. Supply the tuning used in the
+recording. See [TUNING.md](TUNING.md).
 
 ## Transcription limits
 

@@ -72,7 +72,7 @@ def build_song(
     for n in ordered:
         if (
             not isinstance(n.string, int)
-            or not 0 <= n.string < 6
+            or not 0 <= n.string < len(tuning)
             or not isinstance(n.fret, int)
             or not 0 <= n.fret <= 24
         ):
@@ -245,7 +245,7 @@ def timing_summary(song: gp.Song, notes: list[FrettedNote]) -> dict:
     starts, ends = [], []
     tick_seconds = 60 / (song.tempo * 960)
     events = score_events(song)
-    for string in range(6):
+    for string in range(len(song.tracks[0].strings)):
         original = sorted((n.note for n in notes if n.string == string), key=lambda n: n.start)
         saved = sorted((e for e in events if e[2] == string + 1), key=lambda e: e[0])
         if len(original) != len(saved):
