@@ -5,6 +5,7 @@ from .models import STANDARD_TUNING
 PRESETS = {
     "standard": STANDARD_TUNING,
     "drop-d": (64, 59, 55, 50, 45, 38),
+    "drop-c-sharp": (63, 58, 54, 49, 44, 37),
     "eb-standard": (63, 58, 54, 49, 44, 39),
     "d-standard": (62, 57, 53, 48, 43, 38),
 }
@@ -25,7 +26,7 @@ def parse_tuning(value):
         return validate_tuning(int(p.strip()) for p in key.split(","))
     except (TypeError, ValueError) as error:
         raise ValueError(
-            "Choose standard, drop-d, eb-standard, d-standard, or six comma-separated MIDI pitches (string 1 to 6)"
+            f"Choose {', '.join(PRESETS)}, or six comma-separated MIDI pitches (string 1 to 6)"
         ) from error
 
 
