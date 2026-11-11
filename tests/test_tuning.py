@@ -81,6 +81,34 @@ def test_custom_tuning_keeps_physical_string_order():
 
 
 @pytest.mark.parametrize(
+    "saved,override,expected",
+    [
+        ([61, 56, 52, 47, 42, 37], None, (61, 56, 52, 47, 42, 37)),
+        ([61, 56, 52, 47, 42, 37], "drop-d", PRESETS["drop-d"]),
+        (None, None, PRESETS["standard"]),
+        ([64, 59, 55, 50, 45, False], None, PRESETS["standard"]),
+    ],
+)
+def test_saved_tuning_controls_gp5_unless_overridden(
+    tmp_path, monkeypatch, saved, override, expected
+):
+    source, output = tmp_path / "events.json", tmp_path / "out"
+    notes = [Note(0, 0.5, min(expected))]
+    save_events(notes, source, {"tuning_midi": saved} if saved is not None else {})
+    original = source.read_bytes()
+    args = ["tabber", "--events", str(source), "--output", str(output)]
+    monkeypatch.setattr("sys.argv", args + (["--tuning", override] if override else []))
+
+    main()
+
+    assert source.read_bytes() == original
+    assert load_events(output / "detected-notes.json") == notes
+    score = read_gp5(output / "tab.gp5")
+    assert tuple(string.value for string in score.tracks[0].strings) == expected
+    assert [(string, fret) for _, _, string, fret in score_events(score)] == [(6, 0)]
+
+
+@pytest.mark.parametrize(
     "value", ["drop-c-typo", "64,59,55,50,45", "64,59,55,50,45,128", "64,59,55,50,45,38.5"]
 )
 def test_invalid_tuning_fails_before_conversion(value):
