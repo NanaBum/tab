@@ -8,6 +8,7 @@ PRESETS = {
     "drop-c-sharp": (63, 58, 54, 49, 44, 37),
     "eb-standard": (63, 58, 54, 49, 44, 39),
     "d-standard": (62, 57, 53, 48, 43, 38),
+    "c-sharp-standard": (61, 56, 52, 47, 42, 37),
     "seven-string-standard": (*STANDARD_TUNING, 35),
     "seven-string-drop-a": (*STANDARD_TUNING, 33),
 }

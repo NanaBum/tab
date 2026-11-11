@@ -90,6 +90,7 @@ def test_custom_tuning_keeps_physical_string_order():
     [
         ([61, 56, 52, 47, 42, 37], None, (61, 56, 52, 47, 42, 37)),
         ([61, 56, 52, 47, 42, 37], "drop-d", PRESETS["drop-d"]),
+        (None, "c-sharp-standard", (61, 56, 52, 47, 42, 37)),
         ([61, 56, 52, 47, 42, 37, 32], None, (61, 56, 52, 47, 42, 37, 32)),
         (None, None, PRESETS["standard"]),
         ([64, 59, 55, 50, 45, False], None, PRESETS["standard"]),

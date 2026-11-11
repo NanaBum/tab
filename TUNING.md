@@ -12,6 +12,7 @@ from the thinnest string to the thickest.
 | drop-c-sharp | 63, 58, 54, 49, 44, 37 |
 | eb-standard | 63, 58, 54, 49, 44, 39 |
 | d-standard | 62, 57, 53, 48, 43, 38 |
+| c-sharp-standard | 61, 56, 52, 47, 42, 37 |
 | seven-string-standard | 64, 59, 55, 50, 45, 40, 35 |
 | seven-string-drop-a | 64, 59, 55, 50, 45, 40, 33 |
 
