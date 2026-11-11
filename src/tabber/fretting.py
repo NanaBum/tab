@@ -8,6 +8,15 @@ from .models import STANDARD_TUNING, FrettedNote, Note
 from .rhythm import score_interval
 
 
+class UnplayablePitch(ValueError):
+    def __init__(self, note, tuning, max_fret):
+        super().__init__(
+            f"MIDI pitch {note.pitch} at {note.start:.3f}s cannot be played on a string "
+            f"in the selected tuning (playable range {min(tuning)}-{max(tuning) + max_fret}); "
+            "no notes were dropped"
+        )
+
+
 class StringAssignmentConflict(ValueError):
     def __init__(self, note, sounding, event_number, tuning, max_fret):
         pitches = sorted([note.pitch, *(prior.pitch for prior in sounding)])
@@ -44,10 +53,7 @@ def assign_frets(notes: list[Note], tuning=STANDARD_TUNING, max_fret=24) -> list
     ]
     for note, candidates in zip(notes, positions):
         if not candidates:
-            raise ValueError(
-                f"MIDI pitch {note.pitch} at {note.start:.3f}s is outside this guitar's playable range "
-                f"({min(tuning)}-{max(tuning) + max_fret}); no notes were dropped"
-            )
+            raise UnplayablePitch(note, tuning, max_fret)
     costs = [f * 0.05 for _, f in positions[0]]
     parents = []
     for previous, current in itertools.pairwise(positions):
@@ -133,10 +139,7 @@ def assign_polyphonic_frets(
             (s, note.pitch - p) for s, p in enumerate(tuning) if 0 <= note.pitch - p <= max_fret
         ]
         if not candidates:
-            raise ValueError(
-                f"MIDI pitch {note.pitch} at {note.start:.3f}s is outside this guitar's playable range "
-                f"({min(tuning)}-{max(tuning) + max_fret}); no notes were dropped"
-            )
+            raise UnplayablePitch(note, tuning, max_fret)
         expanded = {}
         for cost, history, active, hand, last_string in states:
             sounding = tuple(n for n in active if n.note.end > note.start + 1e-6)
