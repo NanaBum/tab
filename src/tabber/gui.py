@@ -36,6 +36,7 @@ def conversion_command(
     max_span=5,
     tuning="standard",
     notes_only=False,
+    retry_finer_grid=False,
 ):
     """Route saved events directly to export; filtering requires explicit opt-in."""
     interpreter = Path(interpreter)
@@ -46,6 +47,8 @@ def conversion_command(
     command.extend(("--tuning", tuning))
     if notes_only:
         command.append("--notes-only")
+    elif retry_finer_grid:
+        command.append("--retry-finer-grid")
     if method == SAVED_NOTES:
         if tempo == "auto":
             raise ValueError("Saved notes need a supplied BPM; enter a number or tap the tempo.")
@@ -184,6 +187,7 @@ class TabberApp:
         self.guitar_range = tk.BooleanVar(value=False)
         self.wider_span = tk.BooleanVar(value=False)
         self.notes_only = tk.BooleanVar(value=False)
+        self.retry_finer_grid = tk.BooleanVar(value=False)
         options = ttk.Frame(frame)
         options.grid(row=11, column=0, columnspan=3, sticky="w", pady=(0, 12))
         ttk.Checkbutton(
@@ -201,6 +205,10 @@ class TabberApp:
             options, text="Allow wider fret stretches (7 frets)", variable=self.wider_span
         )
         self.stretch_control.grid(row=2, column=0, sticky="w")
+        self.finer_grid_control = ttk.Checkbutton(
+            options, text="Try a finer grid if notes collide", variable=self.retry_finer_grid
+        )
+        self.finer_grid_control.grid(row=2, column=1, sticky="w", padx=(8, 0))
         separation_python = (
             self.root
             / ".venv-separation"
@@ -264,6 +272,7 @@ class TabberApp:
         notes_only = self.notes_only.get()
         self.rhythm_detail.configure(state="disabled" if notes_only else "readonly")
         self.stretch_control.configure(state="disabled" if notes_only else "normal")
+        self.finer_grid_control.configure(state="disabled" if notes_only else "normal")
         self.convert.configure(
             text="Detect notes and create MIDI" if notes_only else "Create guitar tab"
         )
@@ -333,6 +342,7 @@ class TabberApp:
                 max_span=7 if self.wider_span.get() else 5,
                 tuning=self.tuning.get(),
                 notes_only=self.notes_only.get(),
+                retry_finer_grid=self.retry_finer_grid.get(),
             )
         except (ValueError, OSError) as error:
             messagebox.showerror("Check saved notes", str(error))

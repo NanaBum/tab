@@ -79,6 +79,74 @@ def test_cli_rebuild_applies_saved_or_explicit_score_grid(
     assert score_events(read_gp5(output / "tab.gp5"))[0][0] == attack_tick
 
 
+def test_cli_retries_fingering_when_attacks_share_a_score_cell(tmp_path, monkeypatch):
+    source, output = tmp_path / "events.json", tmp_path / "score"
+    events = [Note(0, 0.04, 64), Note(0.05, 0.1, 65)]
+    save_events(events, source)
+    monkeypatch.setattr("sys.argv", ["tabber", "--events", str(source), "--output", str(output)])
+
+    main()
+
+    assert load_events(source) == load_events(output / "detected-notes.json") == events
+    metadata = json.loads((output / "detected-notes.json").read_text())["metadata"]
+    assert metadata["score_grid_fingering_retry"] is True
+    song = read_gp5(output / "tab.gp5")
+    attacks = score_events(song)
+    assert [first for first, _, _, _ in attacks] == [960, 960]
+    assert len({string for _, _, string, _ in attacks}) == 2
+    assert sorted(
+        song.tracks[0].strings[string - 1].value + fret for _, _, string, fret in attacks
+    ) == [64, 65]
+
+
+def test_cli_keeps_grid_collision_if_there_is_only_one_eligible_string(
+    tmp_path, monkeypatch, capsys
+):
+    source, output = tmp_path / "events.json", tmp_path / "score"
+    events = [Note(0, 0.04, 40), Note(0.05, 0.1, 41)]
+    save_events(events, source)
+    monkeypatch.setattr("sys.argv", ["tabber", "--events", str(source), "--output", str(output)])
+
+    with pytest.raises(SystemExit) as error:
+        main()
+
+    assert error.value.code == 1
+    assert "collide on the GP5" in capsys.readouterr().err
+    assert not (output / "tab.gp5").exists()
+    [saved] = (output / "diagnostics").glob("detected-*.json")
+    assert load_events(saved) == events
+
+
+@pytest.mark.parametrize("start,grid", [(0.05, 32), (0.023, 64)])
+def test_cli_can_retry_a_finer_grid_without_changing_detections(
+    tmp_path, monkeypatch, capsys, start, grid
+):
+    source, output = tmp_path / "events.json", tmp_path / "score"
+    events = [Note(0, 0.02, 40), Note(start, 0.1, 41)]
+    save_events(events, source)
+    original = source.read_bytes()
+    monkeypatch.setattr(
+        "sys.argv",
+        ["tabber", "--events", str(source), "--output", str(output), "--retry-finer-grid"],
+    )
+
+    main()
+
+    assert source.read_bytes() == original
+    [diagnostic] = (output / "diagnostics").glob("detected-*.json")
+    for saved in (diagnostic, output / "detected-notes.json"):
+        assert load_events(saved) == events
+        metadata = json.loads(saved.read_text())["metadata"]
+        assert metadata["score_grid"] == grid
+        assert metadata["finer_grid_retry"] == {"requested": 16, "used": grid}
+    song = read_gp5(output / "tab.gp5")
+    assert [(first, string, fret) for first, _, string, fret in score_events(song)] == [
+        (960, 6, 0),
+        (960 + 3840 // grid, 6, 1),
+    ]
+    assert f"Used a 1/{grid} grid after a collision at 1/16" in capsys.readouterr().out
+
+
 def test_attack_lead_affects_export_but_preserves_raw_events(tmp_path, monkeypatch):
     events, output = tmp_path / "input.json", tmp_path / "adjusted"
     original = [Note(0.081, 0.5, 65, 0.7)]

@@ -47,9 +47,11 @@ def test_saved_note_rebuild_only_filters_when_explicitly_requested(tmp_path):
         separate=False,
         guitar_range=True,
         max_span=7,
+        retry_finer_grid=True,
     )
     assert "--guitar-range" in command
     assert command[command.index("--max-span") + 1] == "7"
+    assert "--retry-finer-grid" in command
     assert "--min-confidence" not in command
 
 
@@ -84,8 +86,10 @@ def test_app_notes_only_replay_has_no_fret_stretch_request(tmp_path):
         separate=False,
         notes_only=True,
         max_span=7,
+        retry_finer_grid=True,
     )
     assert "--notes-only" in command and "--max-span" not in command
+    assert "--retry-finer-grid" not in command
 
 
 @pytest.mark.parametrize("success,tab_exists", [(True, False), (False, True)])
@@ -187,7 +191,7 @@ def test_output_mode_disables_and_restores_score_only_controls(notes_only):
     states = {}
     app = object.__new__(TabberApp)
     app.notes_only = SimpleNamespace(get=lambda: notes_only)
-    for name in ("rhythm_detail", "stretch_control", "convert"):
+    for name in ("rhythm_detail", "stretch_control", "finer_grid_control", "convert"):
         setattr(
             app,
             name,
@@ -196,6 +200,7 @@ def test_output_mode_disables_and_restores_score_only_controls(notes_only):
     app.update_output_mode()
     assert states["rhythm_detail"]["state"] == ("disabled" if notes_only else "readonly")
     assert states["stretch_control"]["state"] == ("disabled" if notes_only else "normal")
+    assert states["finer_grid_control"]["state"] == ("disabled" if notes_only else "normal")
     assert states["convert"]["text"] == (
         "Detect notes and create MIDI" if notes_only else "Create guitar tab"
     )

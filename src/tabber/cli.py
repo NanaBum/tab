@@ -4,11 +4,13 @@ import math
 import subprocess
 from dataclasses import asdict
 from datetime import datetime
+from functools import partial
 from pathlib import Path
 
 from .audio import inspect_audio, prepare_audio
 from .export import write_outputs
 from .fretting import assign_frets, assign_polyphonic_frets
+from .gp5 import GridCollision
 from .models import STANDARD_TUNING
 from .pitch_midi import check_notes_only_output, write_pitch_midi
 from .rhythm import SCORE_GRIDS, lead_attacks, quantize, recorded_score_grid
@@ -16,6 +18,19 @@ from .separate import separate_guitar
 from .tempo import estimate_tempo, parse_bpm, recorded_bpm
 from .transcribe import baseline_frequency_floor, transcribe
 from .tuning import parse_tuning, recorded_tuning
+
+
+def _write_score_at_grid(notes, output, bpm, grid, tuning, refit):
+    try:
+        return write_outputs(notes, output, bpm, grid, tuning=tuning), False
+    except GridCollision as collision:
+        if refit is None:
+            raise
+        try:
+            fitted = refit(score_grid=(int(bpm + 0.5), grid))
+        except ValueError:
+            raise collision from None
+        return write_outputs(fitted, output, bpm, grid, tuning=tuning), True
 
 
 def main():
@@ -54,6 +69,11 @@ def main():
         type=int,
         choices=SCORE_GRIDS,
         help="Score divisions per whole note. Defaults to the saved grid or 16.",
+    )
+    parser.add_argument(
+        "--retry-finer-grid",
+        action="store_true",
+        help="Try the next finer grid if score quantization still causes a collision",
     )
     parser.add_argument(
         "--backend", choices=("baseline", "basic-pitch", "guitar-gaps"), default="baseline"
@@ -106,6 +126,8 @@ def main():
         parser.error("--attack-lead-ms must be from 0 to 50")
     if args.attack_lead_ms and (not args.events or args.notes_only):
         parser.error("--attack-lead-ms applies only to editable tab rebuilds from --events")
+    if args.retry_finer_grid and args.notes_only:
+        parser.error("--retry-finer-grid requires editable tab output")
     if not 0 <= args.max_span <= 24:
         parser.error("--max-span must be from 0 to 24")
     if args.fretting == "melodic" and args.max_span != 5:
@@ -355,7 +377,34 @@ def main():
                 flush=True,
             )
         notes = assign(export_events, tuning=tuning, **assignment_options)
-        timing = write_outputs(notes, args.output, bpm, grid, tuning=tuning)
+        refit = (
+            partial(assign_polyphonic_frets, export_events, tuning=tuning, **assignment_options)
+            if args.fretting == "polyphonic"
+            else None
+        )
+        grids = SCORE_GRIDS[SCORE_GRIDS.index(grid) :] if args.retry_finer_grid else (grid,)
+        for candidate in grids:
+            try:
+                timing, refitted = _write_score_at_grid(
+                    notes, args.output, bpm, candidate, tuning, refit
+                )
+            except GridCollision:
+                if candidate == grids[-1]:
+                    raise
+            else:
+                break
+        if refitted:
+            metadata["score_grid_fingering_retry"] = True
+        if candidate != grid:
+            retry = {"requested": grid, "used": candidate}
+            metadata.update(score_grid=candidate, finer_grid_retry=retry)
+            _, original_metadata = load_event_document(diagnostic)
+            original_metadata.update(score_grid=candidate, finer_grid_retry=retry)
+            save_events(detected, diagnostic, original_metadata)
+            print(
+                f"Timing note: Used a 1/{candidate} grid after a collision at 1/{grid}.", flush=True
+            )
+            grid = candidate
         save_events(selected, args.output / "detected-notes.json", metadata)
     except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f"Could not transcribe: {exc}\n")
