@@ -7,6 +7,7 @@ import soundfile as sf
 
 from tabber.cli import main
 from tabber.events import load_events, save_events
+from tabber.gp5 import read_gp5, score_events
 from tabber.models import Note
 from tabber.rhythm import lead_attacks
 
@@ -48,6 +49,34 @@ def test_cli_rebuild_uses_valid_saved_tempo_without_an_override(
     assert info["bpm"] == expected
     assert info["tempo_source"] == source
     assert guitarpro.parse(str(output / "tab.gp5")).tempo == int(expected + 0.5)
+
+
+@pytest.mark.parametrize(
+    "saved,override,grid,attack_tick",
+    [
+        (32, [], 32, 1080),
+        (32, ["--grid", "64"], 64, 1140),
+        ("32", [], 16, 1200),
+        (None, [], 16, 1200),
+    ],
+)
+def test_cli_rebuild_applies_saved_or_explicit_score_grid(
+    tmp_path, monkeypatch, saved, override, grid, attack_tick
+):
+    events, output = tmp_path / "events.json", tmp_path / "score"
+    original = [Note(0.082, 0.5, 64)]
+    save_events(original, events, {} if saved is None else {"score_grid": saved})
+    monkeypatch.setattr(
+        "sys.argv", ["tabber", "--events", str(events), "--output", str(output), *override]
+    )
+
+    main()
+
+    assert load_events(output / "detected-notes.json") == original
+    assert (
+        json.loads((output / "detected-notes.json").read_text())["metadata"]["score_grid"] == grid
+    )
+    assert score_events(read_gp5(output / "tab.gp5"))[0][0] == attack_tick
 
 
 def test_attack_lead_affects_export_but_preserves_raw_events(tmp_path, monkeypatch):

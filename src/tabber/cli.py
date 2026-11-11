@@ -11,7 +11,7 @@ from .export import write_outputs
 from .fretting import assign_frets, assign_polyphonic_frets
 from .models import STANDARD_TUNING
 from .pitch_midi import check_notes_only_output, write_pitch_midi
-from .rhythm import lead_attacks, quantize
+from .rhythm import SCORE_GRIDS, lead_attacks, quantize, recorded_score_grid
 from .separate import separate_guitar
 from .tempo import estimate_tempo, parse_bpm, recorded_bpm
 from .transcribe import baseline_frequency_floor, transcribe
@@ -52,9 +52,8 @@ def main():
     parser.add_argument(
         "--grid",
         type=int,
-        choices=(16, 32, 64),
-        default=16,
-        help="Score divisions per whole note; finer grids preserve faster notes",
+        choices=SCORE_GRIDS,
+        help="Score divisions per whole note. Defaults to the saved grid or 16.",
     )
     parser.add_argument(
         "--backend", choices=("baseline", "basic-pitch", "guitar-gaps"), default="baseline"
@@ -143,11 +142,14 @@ def main():
                 print("Audio note: " + warning, flush=True)
         saved_bpm = None
         saved_tuning = None
+        saved_grid = None
         if args.events:
             detected, saved_metadata = load_event_document(path)
             saved_bpm = recorded_bpm(saved_metadata)
             saved_tuning = recorded_tuning(saved_metadata)
+            saved_grid = recorded_score_grid(saved_metadata)
         tuning = args.tuning or saved_tuning or STANDARD_TUNING
+        grid = args.grid or saved_grid or 16
         tempo = estimate_tempo(path) if args.bpm == "auto" else None
         bpm = tempo.bpm if tempo else args.bpm or saved_bpm or 120.0
         tempo_source = "estimated" if tempo else "supplied"
@@ -207,6 +209,7 @@ def main():
             if args.fretting == "polyphonic" and not args.notes_only
             else None,
             "output_mode": "notes-only" if args.notes_only else "editable-tab",
+            "score_grid": None if args.notes_only else grid,
             "fingering_requested": not args.notes_only,
             "guitar_range_filter_requested": args.guitar_range,
             "baseline_minimum_search_hz": baseline_frequency_floor(min(tuning))
@@ -352,13 +355,13 @@ def main():
                 flush=True,
             )
         notes = assign(export_events, tuning=tuning, **assignment_options)
-        timing = write_outputs(notes, args.output, bpm, args.grid, tuning=tuning)
+        timing = write_outputs(notes, args.output, bpm, grid, tuning=tuning)
         save_events(selected, args.output / "detected-notes.json", metadata)
     except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f"Could not transcribe: {exc}\n")
     print(f"Wrote {len(notes)} notes to {args.output.resolve()}")
     if timing["starts_moved_over_50ms"]:
-        suggestion = "Try a finer rhythm grid" if args.grid < 64 else "Review the tempo and rhythm"
+        suggestion = "Try a finer rhythm grid" if grid < 64 else "Review the tempo and rhythm"
         print(
             f"Timing note: {timing['starts_moved_over_50ms']} note "
             f"{'start' if timing['starts_moved_over_50ms'] == 1 else 'starts'} moved by over 50 ms "

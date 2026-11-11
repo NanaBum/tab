@@ -9,7 +9,7 @@ import guitarpro
 from guitarpro import models as gp
 
 from .models import STANDARD_TUNING, FrettedNote
-from .rhythm import quantize
+from .rhythm import SCORE_GRIDS, quantize
 from .tuning import validate_tuning
 
 
@@ -23,7 +23,7 @@ def build_song(
     """
     tuning = validate_tuning(tuning)
     quantize(0, bpm)
-    if grid not in (16, 32, 64):
+    if grid not in SCORE_GRIDS:
         raise ValueError("GP5 grid must be 16, 32, or 64 divisions per whole note")
     step = 3840 // grid
     durations = sorted(

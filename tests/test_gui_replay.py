@@ -131,10 +131,10 @@ def test_use_saved_detections_selects_rebuild_and_disables_separation(tmp_path, 
     app = object.__new__(TabberApp)
     app.running = False
     source = tmp_path / "diagnostics/detected-attempt.json"
-    save_events([Note(0, 1, 64)], source, {"bpm": bpm} if bpm is not None else {})
+    save_events([Note(0, 1, 64)], source, {"bpm": bpm, "score_grid": 32})
     app.rebuild_input = source
     state = {}
-    for key in ("backend", "audio", "separate", "status", "tempo"):
+    for key in ("backend", "audio", "separate", "status", "tempo", "grid"):
         setattr(app, key, SimpleNamespace(set=lambda value, name=key: state.update({name: value})))
     app.use_saved_detections()
     command = conversion_command(
@@ -143,7 +143,7 @@ def test_use_saved_detections_selects_rebuild_and_disables_separation(tmp_path, 
         tmp_path / "output",
         method=state["backend"],
         tempo=120,
-        grid=32,
+        grid=state["grid"],
         confidence=0.5,
         separate=state["separate"],
     )
@@ -151,6 +151,7 @@ def test_use_saved_detections_selects_rebuild_and_disables_separation(tmp_path, 
     assert state["backend"] == SAVED_NOTES
     assert state.get("tempo") == (str(bpm) if bpm is not None else None)
     assert command[command.index("--events") + 1] == str(source.resolve())
+    assert command[command.index("--grid") + 1] == "32"
     assert "--separate" not in command
 
 
@@ -165,18 +166,19 @@ def test_use_saved_detections_selects_rebuild_and_disables_separation(tmp_path, 
 )
 def test_browsing_saved_events_restores_tempo_and_tuning(tmp_path, monkeypatch, pitches, tuning):
     path = tmp_path / "detections.json"
-    save_events([Note(0, 1, 64)], path, {"bpm": 97.5, "tuning_midi": pitches})
+    save_events([Note(0, 1, 64)], path, {"bpm": 97.5, "tuning_midi": pitches, "score_grid": 64})
     monkeypatch.setattr("tabber.gui.filedialog.askopenfilename", lambda **kwargs: str(path))
     state = {}
     app = object.__new__(TabberApp)
     app.backend = SimpleNamespace(get=lambda: SAVED_NOTES)
-    for key in ("audio", "tempo", "status", "tuning"):
+    for key in ("audio", "tempo", "status", "tuning", "grid"):
         setattr(app, key, SimpleNamespace(set=lambda value, name=key: state.update({name: value})))
 
     app.choose_audio()
 
     assert state["audio"] == str(path)
     assert state["tempo"] == "97.5"
+    assert state["grid"] == "64"
     assert state.get("tuning") == tuning
 
 
