@@ -158,6 +158,7 @@ def test_use_saved_detections_selects_rebuild_and_disables_separation(tmp_path, 
     "pitches,tuning",
     [
         ([64, 59, 55, 50, 45, 38], "drop-d"),
+        ([63, 58, 54, 49, 44, 37], "drop-c-sharp"),
         ([64, 59, 55, 50, 45, 36], "64,59,55,50,45,36"),
         ([64, 59], None),
     ],

@@ -15,7 +15,7 @@ from tkinter import filedialog, messagebox, ttk
 from .events import load_event_document, saved_detections
 from .jobs import run_conversion
 from .tempo import TapTempo, parse_bpm, recorded_bpm
-from .tuning import format_tuning, parse_tuning, recorded_tuning
+from .tuning import PRESETS, format_tuning, parse_tuning, recorded_tuning
 
 SAVED_NOTES = "Rebuild saved notes"
 GUITAR_MODEL = "Guitar model (experimental)"
@@ -154,7 +154,7 @@ class TabberApp:
         ttk.Combobox(
             frame,
             textvariable=self.tuning,
-            values=("standard", "drop-d", "eb-standard", "d-standard"),
+            values=tuple(PRESETS),
             state="readonly",
         ).grid(row=6, column=1, sticky="ew", pady=(0, 12))
         self.grid = tk.StringVar(value="16")
