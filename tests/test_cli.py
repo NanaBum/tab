@@ -175,6 +175,31 @@ def test_overlap_recovery_preserves_original_detections(tmp_path, monkeypatch, s
         assert edits["omitted"] == []
 
 
+@pytest.mark.parametrize("strict", [False, True])
+def test_finer_grid_can_recover_a_collision_at_64(tmp_path, monkeypatch, strict):
+    source, output = tmp_path / "events.json", tmp_path / "score"
+    events = [Note(0, 0.003, 40, 0.9), Note(0.005, 0.1, 41, 0.1)]
+    save_events(events, source)
+    args = ["tabber", "--events", str(source), "--output", str(output), "--retry-finer-grid"]
+    monkeypatch.setattr("sys.argv", args + (["--strict-overlaps"] if strict else []))
+
+    if strict:
+        with pytest.raises(SystemExit):
+            main()
+        assert not (output / "tab.gp5").exists()
+        return
+
+    main()
+
+    assert load_events(output / "detected-notes.json") == events
+    metadata = json.loads((output / "detected-notes.json").read_text())["metadata"]
+    assert metadata["score_grid"] == 64
+    audit = json.loads(Path(metadata["overlap_recovery"]["audit"]).read_text())
+    assert audit["score_grid"] == 64
+    assert audit["omitted"][0]["source_index"] == 1
+    assert score_events(read_gp5(output / "tab.gp5")) == [(960, 1020, 6, 0)]
+
+
 def test_attack_lead_affects_export_but_preserves_raw_events(tmp_path, monkeypatch):
     events, output = tmp_path / "input.json", tmp_path / "adjusted"
     original = [Note(0.081, 0.5, 65, 0.7)]

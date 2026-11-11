@@ -177,17 +177,22 @@ def assign_polyphonic_frets(
                 if key not in expanded or new_cost < expanded[key][0]:
                     expanded[key] = state
         if not expanded:
-            sounding = [prior for prior in ordered[:index] if prior.end > note.start + 1e-6]
+            sounding = [
+                prior
+                for prior in ordered[:index]
+                if prior.end > note.start + 1e-6
+                or (cells and cells[id(prior)][1] > cells[id(note)][0])
+            ]
             raise StringAssignmentConflict(note, sounding, index + 1, tuning, max_fret)
         states = sorted(expanded.values(), key=lambda state: state[0])[:beam_width]
     return list(states[0][1]) if ordered else []
 
 
-def recover_overlapping_notes(notes, *, tuning, max_span, string_priors=None):
+def recover_overlapping_notes(notes, *, tuning, max_span, string_priors=None, score_grid=None):
     """Refit after shortening or omitting notes at the first failed attack."""
     retained = dict(enumerate(notes))
     while True:
-        options = {"tuning": tuning, "max_span": max_span}
+        options = {"tuning": tuning, "max_span": max_span, "score_grid": score_grid}
         if string_priors is not None:
             options["string_priors"] = [string_priors[index] for index in retained]
         try:
@@ -208,8 +213,18 @@ def recover_overlapping_notes(notes, *, tuning, max_span, string_priors=None):
             edits = []
             for index, note in group:
                 confidence = max(note.confidence, 0.05)
-                if note.start + 1e-6 < conflict.note.start:
-                    end = conflict.note.start
+                end = conflict.note.start
+                if score_grid:
+                    tempo, grid = score_grid
+                    start_cell = score_interval(note, tempo, grid)[0]
+                    attack_cell = score_interval(conflict.note, tempo, grid)[0]
+                    if start_cell < attack_cell:
+                        # At the midpoint the score rounds up to the following cell.
+                        boundary = (attack_cell + 0.5) * 240 / (tempo * grid) - 1e-8
+                        end = min(end, boundary)
+                    else:
+                        end = note.start
+                if note.start + 1e-6 < end < note.end:
                     fraction = (note.end - end) / (note.end - note.start)
                     edits.append((confidence * fraction, index, end))
                 else:
