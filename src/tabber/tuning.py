@@ -1,4 +1,4 @@
-"""Explicit six-string open pitches, string 1 (thin) through string 6 (thick)."""
+"""Explicit open pitches in physical string order, from thin to thick."""
 
 from .models import STANDARD_TUNING
 
@@ -8,13 +8,15 @@ PRESETS = {
     "drop-c-sharp": (63, 58, 54, 49, 44, 37),
     "eb-standard": (63, 58, 54, 49, 44, 39),
     "d-standard": (62, 57, 53, 48, 43, 38),
+    "seven-string-standard": (*STANDARD_TUNING, 35),
+    "seven-string-drop-a": (*STANDARD_TUNING, 33),
 }
 
 
 def validate_tuning(tuning):
     pitches = tuple(tuning)
-    if len(pitches) != 6 or any(type(p) is not int or not 0 <= p <= 127 for p in pitches):
-        raise ValueError("Tuning needs six integer MIDI pitches from 0 to 127, string 1 to 6")
+    if len(pitches) not in (6, 7) or any(type(p) is not int or not 0 <= p <= 127 for p in pitches):
+        raise ValueError("Tuning needs six or seven integer MIDI pitches from 0 to 127, thin to thick")
     return pitches
 
 
@@ -26,7 +28,7 @@ def parse_tuning(value):
         return validate_tuning(int(p.strip()) for p in key.split(","))
     except (TypeError, ValueError) as error:
         raise ValueError(
-            f"Choose {', '.join(PRESETS)}, or six comma-separated MIDI pitches (string 1 to 6)"
+            f"Choose {', '.join(PRESETS)}, or six or seven comma-separated MIDI pitches (thin to thick)"
         ) from error
 
 

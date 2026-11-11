@@ -159,7 +159,6 @@ class TabberApp:
             frame,
             textvariable=self.tuning,
             values=tuple(PRESETS),
-            state="readonly",
         ).grid(row=6, column=1, sticky="ew", pady=(0, 12))
         self.grid = tk.StringVar(value="16")
         ttk.Label(frame, text="Rhythm detail").grid(row=7, column=0, sticky="w")
