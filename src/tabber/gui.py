@@ -33,7 +33,6 @@ def conversion_command(
     confidence,
     separate,
     guitar_range=False,
-    max_span=5,
     tuning="standard",
     notes_only=False,
     retry_finer_grid=False,
@@ -73,8 +72,6 @@ def conversion_command(
             command.append("--separate")
     if guitar_range:
         command.append("--guitar-range")
-    if max_span != 5 and not notes_only:
-        command.extend(("--max-span", str(max_span)))
     command.extend(("--bpm", str(tempo), "--grid", str(grid), "--output", str(output)))
     return command
 
@@ -185,7 +182,6 @@ class TabberApp:
         ).grid(row=10, column=1, columnspan=2, sticky="w", pady=(5, 16))
         self.separate = tk.BooleanVar(value=False)
         self.guitar_range = tk.BooleanVar(value=False)
-        self.wider_span = tk.BooleanVar(value=False)
         self.notes_only = tk.BooleanVar(value=False)
         self.retry_finer_grid = tk.BooleanVar(value=False)
         options = ttk.Frame(frame)
@@ -201,14 +197,10 @@ class TabberApp:
             text="Exclude notes outside selected tuning / 24 frets (save originals)",
             variable=self.guitar_range,
         ).grid(row=1, column=0, sticky="w")
-        self.stretch_control = ttk.Checkbutton(
-            options, text="Allow wider fret stretches (7 frets)", variable=self.wider_span
-        )
-        self.stretch_control.grid(row=2, column=0, sticky="w")
         self.finer_grid_control = ttk.Checkbutton(
             options, text="Try a finer grid if notes collide", variable=self.retry_finer_grid
         )
-        self.finer_grid_control.grid(row=2, column=1, sticky="w", padx=(8, 0))
+        self.finer_grid_control.grid(row=2, column=0, sticky="w")
         separation_python = (
             self.root
             / ".venv-separation"
@@ -271,7 +263,6 @@ class TabberApp:
     def update_output_mode(self):
         notes_only = self.notes_only.get()
         self.rhythm_detail.configure(state="disabled" if notes_only else "readonly")
-        self.stretch_control.configure(state="disabled" if notes_only else "normal")
         self.finer_grid_control.configure(state="disabled" if notes_only else "normal")
         self.convert.configure(
             text="Detect notes and create MIDI" if notes_only else "Create guitar tab"
@@ -339,7 +330,6 @@ class TabberApp:
                 ],
                 separate=self.separate.get(),
                 guitar_range=self.guitar_range.get(),
-                max_span=7 if self.wider_span.get() else 5,
                 tuning=self.tuning.get(),
                 notes_only=self.notes_only.get(),
                 retry_finer_grid=self.retry_finer_grid.get(),

@@ -2,9 +2,26 @@
 
 import itertools
 import math
+from dataclasses import replace
 
 from .models import STANDARD_TUNING, FrettedNote, Note
 from .rhythm import score_interval
+
+
+class StringAssignmentConflict(ValueError):
+    def __init__(self, note, sounding, event_number, tuning, max_fret):
+        pitches = sorted([note.pitch, *(prior.pitch for prior in sounding)])
+        if _can_share_strings(pitches, tuning, max_fret):
+            reason = "The search could not assign the overlapping notes."
+        else:
+            joined = ", ".join(map(str, pitches))
+            reason = f"Overlapping MIDI pitches {joined} cannot use distinct strings in this tuning and fret range."
+        super().__init__(
+            f"No fingering at {note.start:.3f}s for event {event_number} "
+            f"(MIDI pitch {note.pitch}). {reason} Review attacks and releases; no notes were dropped."
+        )
+        self.note = note
+        self.sounding = sounding
 
 
 def assign_frets(notes: list[Note], tuning=STANDARD_TUNING, max_fret=24) -> list[FrettedNote]:
@@ -59,6 +76,16 @@ def assign_frets(notes: list[Note], tuning=STANDARD_TUNING, max_fret=24) -> list
     ]
 
 
+def _can_share_strings(pitches, tuning, max_fret):
+    # Assigning the lowest eligible string leaves all higher choices available.
+    available = iter(sorted(tuning))
+    for pitch in sorted(pitches):
+        open_pitch = next((value for value in available if value >= pitch - max_fret), None)
+        if open_pitch is None or open_pitch > pitch:
+            return False
+    return True
+
+
 def assign_polyphonic_frets(
     notes: list[Note],
     tuning=STANDARD_TUNING,
@@ -74,6 +101,7 @@ def assign_polyphonic_frets(
 
     Preserves every detected note. This is an approximate ergonomic heuristic,
     not recovery of the guitarist's actual fingers or a guarantee of playability.
+    The preferred span (the legacy max_span parameter) affects cost only.
     Optional (integer tempo, grid) constraints also check the saved score.
     """
     if not tuning or max_fret < 0 or max_span < 0 or beam_width < 1:
@@ -126,13 +154,12 @@ def assign_polyphonic_frets(
                 current = reserved + (fretted,)
                 frets = sorted(n.fret for n in sounding + (fretted,) if n.fret)
                 span = frets[-1] - frets[0] if frets else 0
-                if span > max_span:
-                    continue
-                if fret and any(n.fret and abs(fret - n.fret) > max_span for n in on_grid):
-                    continue
+                grid_span = max((abs(fret - n.fret) for n in on_grid if fret and n.fret), default=0)
+                excess = max(0, span - max_span, grid_span - max_span)
                 position = frets[len(frets) // 2] if frets else hand
                 movement = abs(position - hand) if hand and position else 0
                 new_cost = cost + movement + span * 0.3 + fret * 0.04
+                new_cost += excess * 1.5
                 new_cost += abs(string - last_string) * 0.15
                 if id(note) in priors:
                     new_cost -= prior_weight * math.log(max(1e-8, priors[id(note)][string]))
@@ -150,9 +177,47 @@ def assign_polyphonic_frets(
                 if key not in expanded or new_cost < expanded[key][0]:
                     expanded[key] = state
         if not expanded:
-            raise ValueError(
-                f"No fingering at {note.start:.3f}s for event {index + 1} (MIDI pitch {note.pitch}): sustained strings "
-                f"or the {max_span}-fret span limit conflict. Review detections; no notes were dropped."
-            )
+            sounding = [prior for prior in ordered[:index] if prior.end > note.start + 1e-6]
+            raise StringAssignmentConflict(note, sounding, index + 1, tuning, max_fret)
         states = sorted(expanded.values(), key=lambda state: state[0])[:beam_width]
     return list(states[0][1]) if ordered else []
+
+
+def recover_overlapping_notes(notes, *, tuning, max_span, string_priors=None):
+    """Refit after shortening or omitting notes at the first failed attack."""
+    retained = dict(enumerate(notes))
+    while True:
+        options = {"tuning": tuning, "max_span": max_span}
+        if string_priors is not None:
+            options["string_priors"] = [string_priors[index] for index in retained]
+        try:
+            assigned = assign_polyphonic_frets(list(retained.values()), **options)
+        except StringAssignmentConflict as conflict:
+            involved = {id(note) for note in (*conflict.sounding, conflict.note)}
+            group = [(index, note) for index, note in retained.items() if id(note) in involved]
+            if not _can_share_strings([note.pitch for _, note in group], tuning, 24):
+                group = [
+                    (index, note)
+                    for index, note in group
+                    if _can_share_strings(
+                        [other.pitch for other_index, other in group if index != other_index],
+                        tuning,
+                        24,
+                    )
+                ]
+            edits = []
+            for index, note in group:
+                confidence = max(note.confidence, 0.05)
+                if note.start + 1e-6 < conflict.note.start:
+                    end = conflict.note.start
+                    fraction = (note.end - end) / (note.end - note.start)
+                    edits.append((confidence * fraction, index, end))
+                else:
+                    edits.append((confidence + 0.05, index, None))
+            _, index, end = min(edits)
+            if end is None:
+                del retained[index]
+            else:
+                retained[index] = replace(retained[index], end=end)
+        else:
+            return assigned, retained

@@ -27,11 +27,13 @@ This changes the available string/fret positions, optional range-filter bounds,
 GP5 string declarations and text labels. It does **not** transpose, add or remove
 detected notes, retune audio, or change the ML model. Range filtering remains a
 separate explicit option, saving raw events and every exclusion with selected
-tuning metadata. The normal five-fret span also remains unchanged. Core export
-still supports six strings and frets 0–24, without capo or microtonal pitches.
+tuning metadata. Core export supports six strings and frets 0–24. For capoed
+recordings, supplying the effective open pitches gives fret numbers relative to
+the capo. GP5 output does not mark a capo position.
 
 Saved GP5 files are parsed back and checked against the requested tuning and
-every intended attack/tie. Original pitches remain in MIDI and JSON. JSON records
+every intended attack/tie. Original detections remain in the saved event JSON and
+can be auditioned with notes-only MIDI. JSON records
 `tuning_midi` and physical string order; alternate-tuning exports use
 `string_order: string 1 to string 6`, while standard retains its legacy label.
 The timed-note readers accept both forms. The short untimed standard-tuning

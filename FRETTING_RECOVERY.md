@@ -1,8 +1,6 @@
 # Recovering a failed draft without listening again
 
-Two optional controls address different causes of failure. Both are off in the
-desktop by default; the normal five-fret span and unfiltered detections remain
-unchanged. Rebuild saved detections to try a setting without rerunning ML.
+Rebuild saved detections to try different export settings without rerunning ML.
 
 ## Notes outside the instrument range
 
@@ -24,29 +22,30 @@ before fretting. These events are after the backend's normal decoding/sensitivit
 not raw neural-network activations. When range filtering is requested, it also
 saves `diagnostics/range-filter-*.json` with every excluded note and its zero-based
 index into the source event file, plus `diagnostics/selected-*.json` with retained
-notes. The final `detected-notes.json` contains the events actually used for the
-successful tab, with links to that audit. Original source files are unchanged.
+notes. The final `detected-notes.json` contains the selected detections before
+overlap recovery, with links to the audits. Original source files are unchanged.
 
 The app and command line report how many notes were excluded, including when
 export subsequently fails. If all notes are excluded, conversion fails explicitly
-and preserves the raw diagnostics. Filtering never removes extra in-range notes
-to force a playable chord. A seven-note simultaneous chord still fails rather
-than losing one of its notes. An existing tab is preserved on these failures.
+and preserves the raw diagnostics.
 
-## Overlap or fret-span conflicts
+## Overlapping notes
 
-**Allow wider fret stretches (7 frets)** adds `--max-span 7`. This changes only
-the allowed difference between simultaneous non-open frets. It retains every
-pitch, attack and release. Open strings are excluded from the span calculation.
-The CLI accepts span limits from 0 through 24 in polyphonic mode; default is 5.
-Wider permitted stretches still require musical and ergonomic review, and the
-bounded search can still fail. There is no automatic fallback to a larger span.
+Tabber prefers compact fingerings and permits wider spans. Open strings are
+excluded from the span calculation. The CLI accepts `--preferred-span` from
+0 through 24 (default 5), with `--max-span` as a compatibility alias.
+
+When the initial polyphonic assignment fails on an overlap, Tabber can shorten
+an earlier release to the conflicting attack or omit a conflicting detection.
+The decision weighs the fraction of a release lost and the detector's confidence.
+The tab and its MIDI use the resulting notes. The original detections stay in
+the saved events, and `diagnostics/overlap-recovery-*.json` lists every change.
+Use `--strict-overlaps` for editable exports that keep detected note lengths
+and counts even when a string conflict prevents export.
 
 ```powershell
-uv run tabber --events runs/failed/diagnostics/detected-TIMESTAMP.json --max-span 7 --bpm 120 --grid 32 --output runs/wider-review
+uv run tabber --events runs/failed/diagnostics/detected-TIMESTAMP.json --bpm 120 --grid 32 --output runs/overlap-review
 ```
 
-This can address a span conflict but cannot fix an out-of-range pitch. Neither
-control corrects bad detection timing, recovers techniques or identifies the
-guitarist's actual fingering. Saved-note rebuilding reassigns fingerings and does
-not preserve edits made in TuxGuitar.
+Use the chosen tuning to represent the guitar's open pitches. Saved-note
+rebuilding reassigns fingerings independently of edits made in TuxGuitar.

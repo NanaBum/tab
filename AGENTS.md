@@ -28,9 +28,10 @@ Keep heavy ML dependencies optional and document their separate environments.
 Use local computing for now. Do not start paid cloud jobs or increase spending
 limits. Hosted CI is manual-only until the user chooses to use it.
 The baseline detector is monophonic; the ML/fingering/GP5 path supports overlaps.
-Never silently drop notes to make a fingering or export succeed. Confidence
+Preserve original detections and audit every shortened or omitted note used to
+recover a string conflict during export. Fret span is a preference only. Confidence
 thresholding must be explicit and documented. Polyphonic fingering is heuristic.
 Opt-in instrument-range filtering must preserve unfiltered events and an indexed
-exclusion audit. Keep it off by default; never silently widen the five-fret span.
+exclusion audit. Keep the range filter off by default.
 Core tests must not import TensorFlow. Keep ML pins in requirements/ml.in and the
 Windows/Python 3.11 lock separate from uv.lock. These paths are tested locally.

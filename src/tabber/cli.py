@@ -9,7 +9,12 @@ from pathlib import Path
 
 from .audio import inspect_audio, prepare_audio
 from .export import write_outputs
-from .fretting import assign_frets, assign_polyphonic_frets
+from .fretting import (
+    StringAssignmentConflict,
+    assign_frets,
+    assign_polyphonic_frets,
+    recover_overlapping_notes,
+)
 from .gp5 import GridCollision
 from .models import STANDARD_TUNING
 from .pitch_midi import check_notes_only_output, write_pitch_midi
@@ -110,10 +115,16 @@ def main():
         help="Explicitly exclude pitches outside selected tuning / 24 frets; retain raw diagnostics",
     )
     parser.add_argument(
+        "--preferred-span",
         "--max-span",
         type=int,
         default=5,
-        help="Maximum simultaneous non-open fret span, 0-24 (default 5); larger stretches may be harder to play",
+        help="Preferred simultaneous fretted span, 0–24 (default 5). Wider spans are allowed.",
+    )
+    parser.add_argument(
+        "--strict-overlaps",
+        action="store_true",
+        help="Keep all detected overlaps even when they prevent editable tab export",
     )
     args = parser.parse_args()
     if (args.audio is None) == (args.events is None):
@@ -128,10 +139,10 @@ def main():
         parser.error("--attack-lead-ms applies only to editable tab rebuilds from --events")
     if args.retry_finer_grid and args.notes_only:
         parser.error("--retry-finer-grid requires editable tab output")
-    if not 0 <= args.max_span <= 24:
-        parser.error("--max-span must be from 0 to 24")
-    if args.fretting == "melodic" and args.max_span != 5:
-        parser.error("--max-span applies to polyphonic fretting")
+    if not 0 <= args.preferred_span <= 24:
+        parser.error("--preferred-span must be from 0 to 24")
+    if args.fretting == "melodic" and args.preferred_span != 5:
+        parser.error("--preferred-span applies to polyphonic fretting")
     if args.string_model and (args.events or args.fretting != "polyphonic"):
         parser.error("--string-model needs audio input and polyphonic fretting")
     if args.notes_only and args.string_model:
@@ -227,7 +238,7 @@ def main():
             else None,
             "timing": "seconds, original detected timing before score quantization",
             "experimental_string_model": str(args.string_model) if args.string_model else None,
-            "max_span": args.max_span
+            "preferred_fret_span": args.preferred_span
             if args.fretting == "polyphonic" and not args.notes_only
             else None,
             "output_mode": "notes-only" if args.notes_only else "editable-tab",
@@ -294,11 +305,6 @@ def main():
             raise ValueError(
                 "No notes detected. Check that the guitar is clearly audible in the recording."
             )
-        if args.fretting == "polyphonic" and args.max_span != 5 and not args.notes_only:
-            print(
-                f"Fingering note: Using a {args.max_span}-fret span limit; review the stretches before playing.",
-                flush=True,
-            )
         selected = detected
         if args.guitar_range:
             minimum, maximum = min(tuning), min(127, max(tuning) + 24)
@@ -348,7 +354,7 @@ def main():
             )
             return
         assign = assign_frets if args.fretting == "melodic" else assign_polyphonic_frets
-        assignment_options = {} if args.fretting == "melodic" else {"max_span": args.max_span}
+        assignment_options = {} if args.fretting == "melodic" else {"max_span": args.preferred_span}
         if args.string_model:
             from .string_model import string_priors
 
@@ -376,7 +382,48 @@ def main():
                 f"Timing note: Applied a {args.attack_lead_ms:g} ms attack lead for export. Original events are preserved.",
                 flush=True,
             )
-        notes = assign(export_events, tuning=tuning, **assignment_options)
+        try:
+            notes = assign(export_events, tuning=tuning, **assignment_options)
+        except StringAssignmentConflict:
+            if args.strict_overlaps:
+                raise
+            notes, retained = recover_overlapping_notes(
+                export_events, tuning=tuning, **assignment_options
+            )
+            shortened, omitted = [], []
+            for index, original in enumerate(export_events):
+                record = {"source_index": index, "original": asdict(original)}
+                if index not in retained:
+                    omitted.append(record)
+                elif retained[index].end < original.end:
+                    shortened.append({**record, "new_end": retained[index].end})
+            audit = args.output / "diagnostics" / f"overlap-recovery-{stamp}.json"
+            audit.write_text(
+                json.dumps(
+                    {
+                        "index_convention": "Zero-based index into the events before overlap recovery",
+                        "shortened": shortened,
+                        "omitted": omitted,
+                    },
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            metadata["overlap_recovery"] = {
+                "shortened": len(shortened),
+                "omitted": len(omitted),
+                "audit": str(audit.resolve()),
+            }
+            if "string_priors" in assignment_options:
+                priors = assignment_options["string_priors"]
+                assignment_options["string_priors"] = [priors[index] for index in retained]
+            export_events = list(retained.values())
+            print(
+                f"Fingering note: Shortened {len(shortened)} releases and omitted {len(omitted)} "
+                "notes for tab export. Original detections are saved.",
+                flush=True,
+            )
         refit = (
             partial(assign_polyphonic_frets, export_events, tuning=tuning, **assignment_options)
             if args.fretting == "polyphonic"
