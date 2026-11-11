@@ -23,6 +23,33 @@ def test_cli_rebuilds_gp5_from_events_without_audio_or_ml(tmp_path, monkeypatch)
     assert track.strings[note.string - 1].value + note.value == 65
 
 
+@pytest.mark.parametrize(
+    "metadata,override,expected,source",
+    [
+        ({"bpm": 87.5}, [], 87.5, "saved"),
+        ({"bpm": 87.5}, ["--bpm", "96"], 96, "supplied"),
+        ({}, [], 120, "default"),
+        ({"bpm": "auto"}, [], 120, "default"),
+        ({"tempo_source": "estimated", "tempo_estimate": {"bpm": 108.5}}, [], 108.5, "saved"),
+    ],
+)
+def test_cli_rebuild_uses_valid_saved_tempo_without_an_override(
+    tmp_path, monkeypatch, metadata, override, expected, source
+):
+    events, output = tmp_path / "events.json", tmp_path / "score"
+    save_events([Note(0, 0.5, 64)], events, metadata)
+    monkeypatch.setattr(
+        "sys.argv", ["tabber", "--events", str(events), "--output", str(output), *override]
+    )
+
+    main()
+
+    info = json.loads((output / "detected-notes.json").read_text())["metadata"]
+    assert info["bpm"] == expected
+    assert info["tempo_source"] == source
+    assert guitarpro.parse(str(output / "tab.gp5")).tempo == int(expected + 0.5)
+
+
 def test_attack_lead_affects_export_but_preserves_raw_events(tmp_path, monkeypatch):
     events, output = tmp_path / "input.json", tmp_path / "adjusted"
     original = [Note(0.081, 0.5, 65, 0.7)]

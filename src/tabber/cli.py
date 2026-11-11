@@ -13,7 +13,7 @@ from .models import STANDARD_TUNING
 from .pitch_midi import check_notes_only_output, write_pitch_midi
 from .rhythm import lead_attacks, quantize
 from .separate import separate_guitar
-from .tempo import estimate_tempo, parse_bpm
+from .tempo import estimate_tempo, parse_bpm, recorded_bpm
 from .transcribe import baseline_frequency_floor, transcribe
 from .tuning import parse_tuning
 
@@ -48,8 +48,7 @@ def main():
     parser.add_argument(
         "--bpm",
         type=parse_bpm,
-        default=120.0,
-        help="Quarter-note BPM, or auto for a local estimate (review half/double time)",
+        help="Quarter-note BPM or auto. Default is saved BPM when available, otherwise 120.",
     )
     parser.add_argument(
         "--grid",
@@ -143,8 +142,15 @@ def main():
             check_path.write_text(json.dumps(health, indent=2) + "\n", encoding="utf-8")
             for warning in health["warnings"]:
                 print("Audio note: " + warning, flush=True)
+        saved_bpm = None
+        if args.events:
+            detected, saved_metadata = load_event_document(path)
+            saved_bpm = recorded_bpm(saved_metadata)
         tempo = estimate_tempo(path) if args.bpm == "auto" else None
-        bpm = tempo.bpm if tempo else args.bpm
+        bpm = tempo.bpm if tempo else args.bpm or saved_bpm or 120.0
+        tempo_source = "estimated" if tempo else "supplied"
+        if args.bpm is None:
+            tempo_source = "saved" if saved_bpm is not None else "default"
         quantize(0, bpm)
         if (
             args.audio
@@ -162,29 +168,28 @@ def main():
             )
         if args.separate:
             path = separate_guitar(path, args.output / "stems")
-        if args.events:
-            detected = load_events(path)
-        elif args.backend == "guitar-gaps":
-            detected = transcribe(
-                path,
-                args.backend,
-                args.min_confidence,
-                guitar_onset=args.onset_threshold if args.onset_threshold is not None else 0.3,
-                guitar_checkpoint=args.guitar_checkpoint,
-            )
-        elif args.backend == "baseline" and baseline_frequency_floor(min(args.tuning)) < 75:
-            detected = transcribe(
-                path, args.backend, args.min_confidence, baseline_min_pitch=min(args.tuning)
-            )
-        else:
-            detected = transcribe(path, args.backend, args.min_confidence)
+        if args.audio:
+            if args.backend == "guitar-gaps":
+                detected = transcribe(
+                    path,
+                    args.backend,
+                    args.min_confidence,
+                    guitar_onset=args.onset_threshold if args.onset_threshold is not None else 0.3,
+                    guitar_checkpoint=args.guitar_checkpoint,
+                )
+            elif args.backend == "baseline" and baseline_frequency_floor(min(args.tuning)) < 75:
+                detected = transcribe(
+                    path, args.backend, args.min_confidence, baseline_min_pitch=min(args.tuning)
+                )
+            else:
+                detected = transcribe(path, args.backend, args.min_confidence)
         metadata = {
             "input": str(path),
             "audio_check": health,
             "original_input": str((args.audio or args.events).resolve()),
             "separated": args.separate,
             "bpm": bpm,
-            "tempo_source": "estimated" if tempo else "supplied",
+            "tempo_source": tempo_source,
             "tempo_estimate": asdict(tempo) if tempo else None,
             "backend": "events" if args.events else args.backend,
             "min_confidence": None
@@ -363,4 +368,4 @@ def main():
         )
 
 
-from .events import load_events, save_events
+from .events import load_event_document, save_events
