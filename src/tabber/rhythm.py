@@ -4,6 +4,14 @@ from dataclasses import replace
 
 from .models import Note
 
+SCORE_GRIDS = (16, 32, 64)
+
+
+def recorded_score_grid(metadata):
+    """Return the saved rhythm grid if the app supports it."""
+    grid = metadata.get("score_grid")
+    return grid if type(grid) is int and grid in SCORE_GRIDS else None
+
 
 def lead_attacks(notes: list[Note], seconds: float) -> tuple[list[Note], int]:
     """Advance attacks up to the requested lead without introducing overlaps."""

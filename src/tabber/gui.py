@@ -14,6 +14,7 @@ from tkinter import filedialog, messagebox, ttk
 
 from .events import load_event_document, saved_detections
 from .jobs import run_conversion
+from .rhythm import SCORE_GRIDS, recorded_score_grid
 from .tempo import TapTempo, parse_bpm, recorded_bpm
 from .tuning import PRESETS, format_tuning, parse_tuning, recorded_tuning
 
@@ -160,7 +161,7 @@ class TabberApp:
         self.grid = tk.StringVar(value="16")
         ttk.Label(frame, text="Rhythm detail").grid(row=7, column=0, sticky="w")
         self.rhythm_detail = ttk.Combobox(
-            frame, textvariable=self.grid, values=("16", "32", "64"), width=8, state="readonly"
+            frame, textvariable=self.grid, values=SCORE_GRIDS, width=8, state="readonly"
         )
         self.rhythm_detail.grid(row=7, column=1, sticky="w")
         ttk.Label(frame, text="16 is easier to read; 32 or 64 keeps faster notes.").grid(
@@ -468,6 +469,9 @@ class TabberApp:
             metadata = {}
         bpm = recorded_bpm(metadata)
         tuning = recorded_tuning(metadata)
+        grid = recorded_score_grid(metadata)
+        if grid is not None:
+            self.grid.set(str(grid))
         if tuning is not None:
             self.tuning.set(format_tuning(tuning))
         if bpm is None:
