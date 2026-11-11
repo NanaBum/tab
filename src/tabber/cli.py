@@ -11,6 +11,7 @@ from .audio import inspect_audio, prepare_audio
 from .export import write_outputs
 from .fretting import (
     StringAssignmentConflict,
+    UnplayablePitch,
     assign_frets,
     assign_polyphonic_frets,
     recover_overlapping_notes,
@@ -474,6 +475,14 @@ def main():
             grid = candidate
         save_events(selected, args.output / "detected-notes.json", metadata)
     except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError) as exc:
+        if isinstance(exc, UnplayablePitch):
+            message = "Check the guitar's tuning and rebuild from the saved detections."
+            if not args.guitar_range:
+                message += (
+                    " If the tuning is correct, enable Exclude notes outside selected tuning / "
+                    "24 frets (--guitar-range) to leave out pitches beyond that range."
+                )
+            print(f"Range note: {message}", flush=True)
         parser.exit(1, f"Could not transcribe: {exc}\n")
     print(f"Wrote {len(notes)} notes to {args.output.resolve()}")
     if timing["starts_moved_over_50ms"]:

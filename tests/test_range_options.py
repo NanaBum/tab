@@ -8,6 +8,30 @@ from tabber.gp5 import read_gp5, score_events
 from tabber.models import Note
 
 
+@pytest.mark.parametrize("fretting", ["melodic", "polyphonic"])
+def test_unplayable_pitch_explains_rebuild_and_preserves_detections(
+    tmp_path, monkeypatch, capsys, fretting
+):
+    source, output = tmp_path / "input.json", tmp_path / "score"
+    notes = [Note(0, 0.25, 39), Note(0.5, 0.75, 40)]
+    save_events(notes, source)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["tabber", "--events", str(source), "--output", str(output), "--fretting", fretting],
+    )
+
+    with pytest.raises(SystemExit) as error:
+        main()
+
+    assert error.value.code == 1
+    log = capsys.readouterr()
+    assert "MIDI pitch 39" in log.err
+    assert "Check the guitar's tuning and rebuild from the saved detections" in log.out
+    assert "--guitar-range" in log.out
+    assert load_events(next((output / "diagnostics").glob("detected-*.json"))) == notes
+    assert not (output / "tab.gp5").exists()
+
+
 def test_explicit_range_filter_keeps_boundaries_and_audits_every_exclusion(
     tmp_path, monkeypatch, capsys
 ):
