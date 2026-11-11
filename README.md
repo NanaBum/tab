@@ -67,7 +67,9 @@ as `.tg` if desired. `tab.txt` is a plain-text preview. `notes.mid` provides pla
 `notes.json` preserves detected timing, pitch, confidence, and fingering.
 MIDI uses one channel per guitar string so overlapping unisons have independent
 releases. Times round to 480 ticks per quarter note, with a minimum one-tick
-duration.
+duration. If two consecutive notes on a string round to the same tick,
+MIDI starts the later note at the first available tick. The adjustment is
+recorded in `notes.json`, and the Guitar Pro score uses its selected rhythm grid.
 `detected-notes.json` is a separate editable note-event file, before fingering and
 score quantization. To rebuild an edited detection without rerunning the audio:
 

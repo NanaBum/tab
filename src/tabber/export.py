@@ -76,14 +76,26 @@ def write_outputs(
         track.append(mido.Message("program_change", program=24, channel=channel))
     events = []
     ends_by_string = {}
+    shifted_starts = maximum_delay = 0
     for n in sorted(notes, key=lambda n: n.note.start):
         start = round(n.note.start * bpm / 60 * 480)
+        previous_end, previous_tick = ends_by_string.get(n.string, (0.0, 0))
+        if start < previous_tick:
+            if n.note.start + 1e-6 < previous_end:
+                raise ValueError("Notes on one string overlap before MIDI timing conversion")
+            shifted_starts += 1
+            maximum_delay = max(maximum_delay, previous_tick - start)
+            start = previous_tick
         end = max(start + 1, round(n.note.end * bpm / 60 * 480))
-        if start < ends_by_string.get(n.string, 0):
-            raise ValueError("Notes on one string collide at MIDI timing resolution")
-        ends_by_string[n.string] = end
+        ends_by_string[n.string] = (n.note.end, end)
         for tick, kind in ((start, "note_on"), (end, "note_off")):
             events.append((tick, kind, n.note.pitch, n.string))
+    if shifted_starts:
+        payload["midi_timing"] = {
+            "shifted_starts": shifted_starts,
+            "maximum_start_delay_ticks": maximum_delay,
+            "ticks_per_quarter_note": 480,
+        }
     previous = 0
     for tick, kind, pitch, channel in sorted(events, key=lambda e: (e[0], e[1] == "note_on")):
         track.append(
