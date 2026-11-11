@@ -117,6 +117,36 @@ def test_cli_keeps_grid_collision_if_there_is_only_one_eligible_string(
     assert load_events(saved) == events
 
 
+@pytest.mark.parametrize("start,grid", [(0.05, 32), (0.023, 64)])
+def test_cli_can_retry_a_finer_grid_without_changing_detections(
+    tmp_path, monkeypatch, capsys, start, grid
+):
+    source, output = tmp_path / "events.json", tmp_path / "score"
+    events = [Note(0, 0.02, 40), Note(start, 0.1, 41)]
+    save_events(events, source)
+    original = source.read_bytes()
+    monkeypatch.setattr(
+        "sys.argv",
+        ["tabber", "--events", str(source), "--output", str(output), "--retry-finer-grid"],
+    )
+
+    main()
+
+    assert source.read_bytes() == original
+    [diagnostic] = (output / "diagnostics").glob("detected-*.json")
+    for saved in (diagnostic, output / "detected-notes.json"):
+        assert load_events(saved) == events
+        metadata = json.loads(saved.read_text())["metadata"]
+        assert metadata["score_grid"] == grid
+        assert metadata["finer_grid_retry"] == {"requested": 16, "used": grid}
+    song = read_gp5(output / "tab.gp5")
+    assert [(first, string, fret) for first, _, string, fret in score_events(song)] == [
+        (960, 6, 0),
+        (960 + 3840 // grid, 6, 1),
+    ]
+    assert f"Used a 1/{grid} grid after a collision at 1/16" in capsys.readouterr().out
+
+
 def test_attack_lead_affects_export_but_preserves_raw_events(tmp_path, monkeypatch):
     events, output = tmp_path / "input.json", tmp_path / "adjusted"
     original = [Note(0.081, 0.5, 65, 0.7)]
