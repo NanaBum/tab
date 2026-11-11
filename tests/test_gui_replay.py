@@ -22,8 +22,8 @@ from tabber.models import Note
 
 
 @pytest.mark.parametrize("method", [GUITAR_MODEL, GUITAR_RELEASE_MODEL])
-@pytest.mark.parametrize("retry", [False, True])
-def test_guitar_method_uses_its_own_sensitivity_scale(tmp_path, method, retry):
+@pytest.mark.parametrize("retry,half", [(False, False), (True, False), (False, True)])
+def test_guitar_method_uses_its_own_sensitivity_scale(tmp_path, method, retry, half):
     command = conversion_command(
         sys.executable,
         tmp_path / "riff.ogg",
@@ -34,6 +34,7 @@ def test_guitar_method_uses_its_own_sensitivity_scale(tmp_path, method, retry):
         confidence=0.5,
         separate=False,
         guitar_retry_empty=retry,
+        guitar_half_input=half,
     )
     assert command[command.index("--backend") + 1] == "guitar-gaps"
     assert command[command.index("--onset-threshold") + 1] == "0.3"
@@ -42,19 +43,20 @@ def test_guitar_method_uses_its_own_sensitivity_scale(tmp_path, method, retry):
     assert "--max-span" not in command
     assert ("--guitar-release-v1" in command) == (method == GUITAR_RELEASE_MODEL)
     assert ("--guitar-retry-empty" in command) == retry
+    assert ("--guitar-half-input" in command) == half
 
 
 @pytest.mark.parametrize(
     "method", [GUITAR_MODEL, GUITAR_RELEASE_MODEL, "Machine learning", SAVED_NOTES]
 )
-def test_retry_control_only_enabled_for_guitar_models(method):
+def test_input_level_control_only_enabled_for_guitar_models(method):
     app = object.__new__(TabberApp)
     states = {}
     app.backend = SimpleNamespace(get=lambda: method)
-    app.retry_control = SimpleNamespace(configure=lambda **kwargs: states.update(kwargs))
-    app.update_retry_control()
+    app.input_level_control = SimpleNamespace(configure=lambda **kwargs: states.update(kwargs))
+    app.update_input_level_control()
     assert states["state"] == (
-        "normal" if method in (GUITAR_MODEL, GUITAR_RELEASE_MODEL) else "disabled"
+        "readonly" if method in (GUITAR_MODEL, GUITAR_RELEASE_MODEL) else "disabled"
     )
 
 
