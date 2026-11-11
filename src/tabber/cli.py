@@ -14,6 +14,7 @@ from .fretting import (
     UnplayablePitch,
     assign_frets,
     assign_polyphonic_frets,
+    fret_positions,
     recover_overlapping_notes,
 )
 from .gp5 import GridCollision
@@ -358,15 +359,15 @@ def main():
         selected = detected
         if args.guitar_range:
             minimum, maximum = min(tuning), min(127, max(tuning) + 24)
-            selected = [note for note in detected if minimum <= note.pitch <= maximum]
-            excluded = [
-                {"source_index": index, "note": asdict(note)}
-                for index, note in enumerate(detected)
-                if not minimum <= note.pitch <= maximum
-            ]
+            selected, excluded = [], []
+            for index, note in enumerate(detected):
+                if fret_positions(note.pitch, tuning):
+                    selected.append(note)
+                else:
+                    excluded.append({"source_index": index, "note": asdict(note)})
             report_path = args.output / "diagnostics" / f"range-filter-{stamp}.json"
             audit = {
-                "purpose": "Explicitly requested selected-tuning / 24-fret pitch filter",
+                "purpose": "Explicitly requested filter for pitches without a string at frets 0-24",
                 "tuning_midi": list(tuning),
                 "min_pitch": minimum,
                 "max_pitch": maximum,
@@ -384,8 +385,8 @@ def main():
             metadata["guitar_range_filter"]["audit_file"] = str(report_path.resolve())
             save_events(selected, args.output / "diagnostics" / f"selected-{stamp}.json", metadata)
             print(
-                f"Range note: Excluded {len(excluded)} of {len(detected)} detections outside "
-                f"selected guitar range ({minimum}-{maximum}). Raw notes and exclusions are saved in diagnostics.",
+                f"Range note: Excluded {len(excluded)} of {len(detected)} detections with no string "
+                "in the selected tuning at frets 0-24. Raw notes and exclusions are saved in diagnostics.",
                 flush=True,
             )
             if detected and not selected:
@@ -501,7 +502,7 @@ def main():
             if not args.guitar_range:
                 message += (
                     " If the tuning is correct, enable Exclude notes outside selected tuning / "
-                    "24 frets (--guitar-range) to leave out pitches beyond that range."
+                    "24 frets (--guitar-range) to leave out pitches without a valid string and fret."
                 )
             print(f"Range note: {message}", flush=True)
         parser.exit(1, f"Could not transcribe: {exc}\n")

@@ -57,6 +57,52 @@ def test_explicit_range_filter_keeps_boundaries_and_audits_every_exclusion(
     assert len(score_events(read_gp5(output / "tab.gp5"))) == 2
 
 
+def test_explicit_filter_excludes_pitches_between_disjoint_string_ranges(tmp_path, monkeypatch):
+    source, output = tmp_path / "input.json", tmp_path / "score"
+    tuning = (64, 64, 60, 60, 60, 31)
+    notes = [Note(i / 2, i / 2 + 0.25, pitch) for i, pitch in enumerate((55, 56, 59, 60))]
+    save_events(notes, source)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "tabber",
+            "--events",
+            str(source),
+            "--output",
+            str(output),
+            "--tuning",
+            ",".join(map(str, tuning)),
+            "--guitar-range",
+        ],
+    )
+
+    main()
+
+    assert load_events(next((output / "diagnostics").glob("detected-*.json"))) == notes
+    assert load_events(output / "detected-notes.json") == [notes[0], notes[3]]
+    audit = json.loads(next((output / "diagnostics").glob("range-filter-*.json")).read_text())
+    assert [entry["source_index"] for entry in audit["excluded"]] == [1, 2]
+    song = read_gp5(output / "tab.gp5")
+    assert [tuning[string - 1] + fret for _, _, string, fret in score_events(song)] == [55, 60]
+
+
+def test_impossible_pitch_is_reported_before_searching_earlier_overlaps(tmp_path, monkeypatch, capsys):
+    source, output = tmp_path / "input.json", tmp_path / "score"
+    notes = [Note(0, 0.25, pitch) for pitch in (40, 45, 50, 55, 59, 64, 67)]
+    notes.append(Note(0.5, 0.75, 39))
+    save_events(notes, source)
+    monkeypatch.setattr(
+        "sys.argv", ["tabber", "--events", str(source), "--output", str(output), "--strict-overlaps"]
+    )
+
+    with pytest.raises(SystemExit) as error:
+        main()
+
+    assert error.value.code == 1
+    assert "MIDI pitch 39 at 0.500s" in capsys.readouterr().err
+    assert load_events(next((output / "diagnostics").glob("detected-*.json"))) == notes
+
+
 @pytest.mark.parametrize("pitches", [(38, 39), (40, 45, 50, 55, 59, 64, 67)])
 def test_filter_failure_preserves_raw_notes_and_existing_tab(tmp_path, monkeypatch, pitches):
     source = tmp_path / "input.json"
