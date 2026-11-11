@@ -9,6 +9,7 @@ from pathlib import Path
 from .audio import inspect_audio, prepare_audio
 from .export import write_outputs
 from .fretting import assign_frets, assign_polyphonic_frets
+from .gp5 import GridCollision
 from .models import STANDARD_TUNING
 from .pitch_midi import check_notes_only_output, write_pitch_midi
 from .rhythm import lead_attacks, quantize
@@ -348,7 +349,22 @@ def main():
                 flush=True,
             )
         notes = assign(export_events, tuning=args.tuning, **assignment_options)
-        timing = write_outputs(notes, args.output, bpm, args.grid, tuning=args.tuning)
+        try:
+            timing = write_outputs(notes, args.output, bpm, args.grid, tuning=args.tuning)
+        except GridCollision as collision:
+            if args.fretting == "melodic":
+                raise
+            try:
+                notes = assign_polyphonic_frets(
+                    export_events,
+                    tuning=args.tuning,
+                    score_grid=(int(bpm + 0.5), args.grid),
+                    **assignment_options,
+                )
+            except ValueError:
+                raise collision from None
+            timing = write_outputs(notes, args.output, bpm, args.grid, tuning=args.tuning)
+            metadata["score_grid_fingering_retry"] = True
         save_events(selected, args.output / "detected-notes.json", metadata)
     except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f"Could not transcribe: {exc}\n")

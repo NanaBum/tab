@@ -4,6 +4,7 @@ import itertools
 import math
 
 from .models import STANDARD_TUNING, FrettedNote, Note
+from .rhythm import score_interval
 
 
 def assign_frets(notes: list[Note], tuning=STANDARD_TUNING, max_fret=24) -> list[FrettedNote]:
@@ -66,11 +67,14 @@ def assign_polyphonic_frets(
     beam_width=128,
     string_priors=None,
     prior_weight=2.0,
+    *,
+    score_grid: tuple[int, int] | None = None,
 ) -> list[FrettedNote]:
     """Beam-search positions while reserving strings for sustained notes.
 
     Preserves every detected note. This is an approximate ergonomic heuristic,
     not recovery of the guitarist's actual fingers or a guarantee of playability.
+    Optional (integer tempo, grid) constraints also check the saved score.
     """
     if not tuning or max_fret < 0 or max_span < 0 or beam_width < 1:
         raise ValueError("Provide tuning and positive search limits")
@@ -93,6 +97,7 @@ def assign_polyphonic_frets(
             if max(row) - min(row) > 1e-12:
                 priors[id(note)] = tuple(p / total for p in row)
     ordered = sorted(notes, key=lambda n: (n.start, -n.pitch))
+    cells = {id(note): score_interval(note, *score_grid) for note in ordered} if score_grid else {}
     # cost, complete history, active positions, last hand position, last string
     states = [(0.0, (), (), 0.0, 0)]
     for index, note in enumerate(ordered):
@@ -106,16 +111,24 @@ def assign_polyphonic_frets(
             )
         expanded = {}
         for cost, history, active, hand, last_string in states:
-            active = tuple(n for n in active if n.note.end > note.start + 1e-6)
-            used = {n.string for n in active}
+            sounding = tuple(n for n in active if n.note.end > note.start + 1e-6)
+            reserved = sounding
+            on_grid = ()
+            if cells:
+                start_cell = cells[id(note)][0]
+                on_grid = tuple(n for n in active if cells[id(n.note)][1] > start_cell)
+                reserved = tuple(dict.fromkeys(sounding + on_grid))
+            used = {n.string for n in reserved}
             for string, fret in candidates:
                 if string in used:
                     continue
                 fretted = FrettedNote(note, string, fret)
-                current = active + (fretted,)
-                frets = sorted(n.fret for n in current if n.fret)
+                current = reserved + (fretted,)
+                frets = sorted(n.fret for n in sounding + (fretted,) if n.fret)
                 span = frets[-1] - frets[0] if frets else 0
                 if span > max_span:
+                    continue
+                if fret and any(n.fret and abs(fret - n.fret) > max_span for n in on_grid):
                     continue
                 position = frets[len(frets) // 2] if frets else hand
                 movement = abs(position - hand) if hand and position else 0
@@ -124,7 +137,12 @@ def assign_polyphonic_frets(
                 if id(note) in priors:
                     new_cost -= prior_weight * math.log(max(1e-8, priors[id(note)][string]))
                 key = (
-                    tuple(sorted((n.string, n.fret, n.note.end) for n in current)),
+                    tuple(
+                        sorted(
+                            (n.string, n.fret, n.note.end, cells[id(n.note)][1] if cells else 0)
+                            for n in current
+                        )
+                    ),
                     position,
                     string,
                 )
