@@ -19,16 +19,24 @@ from .fretting import (
 from .gp5 import GridCollision
 from .models import STANDARD_TUNING
 from .pitch_midi import check_notes_only_output, write_pitch_midi
-from .rhythm import SCORE_GRIDS, lead_attacks, quantize, recorded_score_grid
+from .rhythm import (
+    DEFAULT_METER,
+    SCORE_GRIDS,
+    lead_attacks,
+    parse_meter,
+    quantize,
+    recorded_meter,
+    recorded_score_grid,
+)
 from .separate import separate_guitar
 from .tempo import estimate_tempo, parse_bpm, recorded_bpm
 from .transcribe import baseline_frequency_floor, transcribe
 from .tuning import parse_tuning, recorded_tuning
 
 
-def _write_score_at_grid(notes, output, bpm, grid, tuning, refit):
+def _write_score_at_grid(notes, output, bpm, grid, tuning, meter, refit):
     try:
-        return write_outputs(notes, output, bpm, grid, tuning=tuning), False
+        return write_outputs(notes, output, bpm, grid, tuning=tuning, meter=meter), False
     except GridCollision as collision:
         if refit is None:
             raise
@@ -36,7 +44,7 @@ def _write_score_at_grid(notes, output, bpm, grid, tuning, refit):
             fitted = refit(score_grid=(int(bpm + 0.5), grid))
         except ValueError:
             raise collision from None
-        return write_outputs(fitted, output, bpm, grid, tuning=tuning), True
+        return write_outputs(fitted, output, bpm, grid, tuning=tuning, meter=meter), True
 
 
 def _record_overlap_recovery(original_events, retained, audit, *, score_grid=None):
@@ -112,6 +120,11 @@ def main():
         help="Try the next finer grid if score quantization still causes a collision",
     )
     parser.add_argument(
+        "--meter",
+        type=parse_meter,
+        help="Constant time signature, for example 6/8. Defaults to the saved meter or 4/4.",
+    )
+    parser.add_argument(
         "--backend", choices=("baseline", "basic-pitch", "guitar-gaps"), default="baseline"
     )
     parser.add_argument(
@@ -170,6 +183,8 @@ def main():
         parser.error("--attack-lead-ms applies only to editable tab rebuilds from --events")
     if args.retry_finer_grid and args.notes_only:
         parser.error("--retry-finer-grid requires editable tab output")
+    if args.meter and args.notes_only:
+        parser.error("--meter requires editable tab output")
     if not 0 <= args.preferred_span <= 24:
         parser.error("--preferred-span must be from 0 to 24")
     if args.fretting == "melodic" and args.preferred_span != 5:
@@ -207,13 +222,16 @@ def main():
         saved_bpm = None
         saved_tuning = None
         saved_grid = None
+        saved_meter = None
         if args.events:
             detected, saved_metadata = load_event_document(path)
             saved_bpm = recorded_bpm(saved_metadata)
             saved_tuning = recorded_tuning(saved_metadata)
             saved_grid = recorded_score_grid(saved_metadata)
+            saved_meter = recorded_meter(saved_metadata)
         tuning = args.tuning or saved_tuning or STANDARD_TUNING
         grid = args.grid or saved_grid or 16
+        meter = args.meter or saved_meter or DEFAULT_METER
         tempo = estimate_tempo(path) if args.bpm == "auto" else None
         bpm = tempo.bpm if tempo else args.bpm or saved_bpm or 120.0
         tempo_source = "estimated" if tempo else "supplied"
@@ -274,6 +292,7 @@ def main():
             else None,
             "output_mode": "notes-only" if args.notes_only else "editable-tab",
             "score_grid": None if args.notes_only else grid,
+            "score_meter": None if args.notes_only else meter,
             "fingering_requested": not args.notes_only,
             "guitar_range_filter_requested": args.guitar_range,
             "baseline_minimum_search_hz": baseline_frequency_floor(min(tuning))
@@ -440,7 +459,7 @@ def main():
         for candidate in grids:
             try:
                 timing, refitted = _write_score_at_grid(
-                    notes, args.output, bpm, candidate, tuning, refit
+                    notes, args.output, bpm, candidate, tuning, meter, refit
                 )
             except GridCollision:
                 if candidate != grids[-1]:
@@ -456,7 +475,9 @@ def main():
                 metadata["overlap_recovery"] = _record_overlap_recovery(
                     original_events, retained, audit, score_grid=candidate
                 )
-                timing = write_outputs(notes, args.output, bpm, candidate, tuning=tuning)
+                timing = write_outputs(
+                    notes, args.output, bpm, candidate, tuning=tuning, meter=meter
+                )
                 refitted = True
                 break
             else:

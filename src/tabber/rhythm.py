@@ -5,6 +5,29 @@ from dataclasses import replace
 from .models import Note
 
 SCORE_GRIDS = (16, 32, 64)
+DEFAULT_METER = "4/4"
+
+
+def parse_meter(value: str) -> str:
+    """Accept a constant meter whose beat unit fits all score grids."""
+    if isinstance(value, str):
+        beats, _, unit = value.strip().partition("/")
+        if (
+            beats.isascii()
+            and beats.isdecimal()
+            and len(beats) <= 2
+            and unit in {"2", "4", "8", "16"}
+            and 1 <= int(beats) <= 32
+        ):
+            return f"{int(beats)}/{unit}"
+    raise ValueError("Enter a time signature with 1 to 32 beats over 2, 4, 8, or 16, such as 6/8")
+
+
+def recorded_meter(metadata):
+    try:
+        return parse_meter(metadata.get("score_meter"))
+    except ValueError:
+        return None
 
 
 def recorded_score_grid(metadata):

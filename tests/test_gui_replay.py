@@ -132,10 +132,10 @@ def test_use_saved_detections_selects_rebuild_and_disables_separation(tmp_path, 
     app = object.__new__(TabberApp)
     app.running = False
     source = tmp_path / "diagnostics/detected-attempt.json"
-    save_events([Note(0, 1, 64)], source, {"bpm": bpm, "score_grid": 32})
+    save_events([Note(0, 1, 64)], source, {"bpm": bpm, "score_grid": 32, "score_meter": "6/8"})
     app.rebuild_input = source
     state = {}
-    for key in ("backend", "audio", "separate", "status", "tempo", "grid"):
+    for key in ("backend", "audio", "separate", "status", "tempo", "grid", "meter"):
         setattr(app, key, SimpleNamespace(set=lambda value, name=key: state.update({name: value})))
     app.use_saved_detections()
     command = conversion_command(
@@ -145,6 +145,7 @@ def test_use_saved_detections_selects_rebuild_and_disables_separation(tmp_path, 
         method=state["backend"],
         tempo=120,
         grid=state["grid"],
+        meter=state["meter"],
         confidence=0.5,
         separate=state["separate"],
     )
@@ -153,6 +154,7 @@ def test_use_saved_detections_selects_rebuild_and_disables_separation(tmp_path, 
     assert state.get("tempo") == (str(bpm) if bpm is not None else None)
     assert command[command.index("--events") + 1] == str(source.resolve())
     assert command[command.index("--grid") + 1] == "32"
+    assert command[command.index("--meter") + 1] == "6/8"
     assert "--separate" not in command
 
 
@@ -172,7 +174,7 @@ def test_browsing_saved_events_restores_tempo_and_tuning(tmp_path, monkeypatch, 
     state = {}
     app = object.__new__(TabberApp)
     app.backend = SimpleNamespace(get=lambda: SAVED_NOTES)
-    for key in ("audio", "tempo", "status", "tuning", "grid"):
+    for key in ("audio", "tempo", "status", "tuning", "grid", "meter"):
         setattr(app, key, SimpleNamespace(set=lambda value, name=key: state.update({name: value})))
 
     app.choose_audio()
@@ -180,6 +182,7 @@ def test_browsing_saved_events_restores_tempo_and_tuning(tmp_path, monkeypatch, 
     assert state["audio"] == str(path)
     assert state["tempo"] == "97.5"
     assert state["grid"] == "64"
+    assert state["meter"] == "4/4"
     assert state.get("tuning") == tuning
 
 
@@ -188,7 +191,7 @@ def test_output_mode_disables_and_restores_score_only_controls(notes_only):
     states = {}
     app = object.__new__(TabberApp)
     app.notes_only = SimpleNamespace(get=lambda: notes_only)
-    for name in ("rhythm_detail", "finer_grid_control", "convert"):
+    for name in ("rhythm_detail", "finer_grid_control", "meter_control", "convert"):
         setattr(
             app,
             name,
@@ -197,6 +200,7 @@ def test_output_mode_disables_and_restores_score_only_controls(notes_only):
     app.update_output_mode()
     assert states["rhythm_detail"]["state"] == ("disabled" if notes_only else "readonly")
     assert states["finer_grid_control"]["state"] == ("disabled" if notes_only else "normal")
+    assert states["meter_control"]["state"] == ("disabled" if notes_only else "normal")
     assert states["convert"]["text"] == (
         "Detect notes and create MIDI" if notes_only else "Create guitar tab"
     )
