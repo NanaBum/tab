@@ -95,6 +95,26 @@ def _can_share_strings(pitches, tuning, max_fret):
     return True
 
 
+class _SearchCheckpoints:
+    """Keep beam states at intervals while retrying one recovery search."""
+
+    def __init__(self):
+        self.ordered = []
+        self.states = {}
+
+    def restart(self, ordered, initial):
+        prefix = 0
+        for previous, current in zip(self.ordered, ordered):
+            if previous is not current:
+                break
+            prefix += 1
+        index = max((index for index in self.states if index <= prefix), default=0)
+        states = self.states.get(index, initial)
+        self.states = {i: beam for i, beam in self.states.items() if i <= index}
+        self.ordered = ordered
+        return index, states
+
+
 def assign_polyphonic_frets(
     notes: list[Note],
     tuning=STANDARD_TUNING,
@@ -105,6 +125,7 @@ def assign_polyphonic_frets(
     prior_weight=2.0,
     *,
     score_grid: tuple[int, int] | None = None,
+    _checkpoints: _SearchCheckpoints | None = None,
 ) -> list[FrettedNote]:
     """Beam-search positions while reserving strings for sustained notes.
 
@@ -141,7 +162,11 @@ def assign_polyphonic_frets(
     cells = {id(note): score_interval(note, *score_grid) for note in ordered} if score_grid else {}
     # Each history links the latest assignment to its previous history.
     states = [(0.0, None, (), 0.0, 0)]
-    for index, (note, candidates) in enumerate(zip(ordered, positions, strict=True)):
+    start = 0
+    if _checkpoints is not None:
+        start, states = _checkpoints.restart(ordered, states)
+    for index in range(start, len(ordered)):
+        note, candidates = ordered[index], positions[index]
         expanded = {}
         for cost, history, active, hand, last_string in states:
             sounding = tuple(n for n in active if n.note.end > note.start + 1e-6)
@@ -189,6 +214,8 @@ def assign_polyphonic_frets(
             ]
             raise StringAssignmentConflict(note, sounding, index + 1, tuning, max_fret)
         states = sorted(expanded.values(), key=lambda state: state[0])[:beam_width]
+        if _checkpoints is not None and (index + 1) % 32 == 0:
+            _checkpoints.states[index + 1] = states
     assignments = []
     history = states[0][1]
     while history is not None:
@@ -201,8 +228,14 @@ def assign_polyphonic_frets(
 def recover_overlapping_notes(notes, *, tuning, max_span, string_priors=None, score_grid=None):
     """Refit after shortening or omitting notes at the first failed attack."""
     retained = dict(enumerate(notes))
+    checkpoints = _SearchCheckpoints()
     while True:
-        options = {"tuning": tuning, "max_span": max_span, "score_grid": score_grid}
+        options = {
+            "tuning": tuning,
+            "max_span": max_span,
+            "score_grid": score_grid,
+            "_checkpoints": checkpoints,
+        }
         if string_priors is not None:
             options["string_priors"] = [string_priors[index] for index in retained]
         try:
