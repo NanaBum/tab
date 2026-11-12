@@ -132,6 +132,11 @@ may merge repeated notes. The optional models can detect overlapping pitches.
 Review the resulting tab by ear, especially for distorted guitar or full-band
 recordings. Tabber suggests playable string and fret positions based on the
 detected notes and the selected tuning.
+An open string remains playable when it fits the phrase. It gets the same
+position cost as the lowest fretted alternative for that pitch.
+For nearby attacks that ring together, polyphonic fingering favors compact
+string groups, especially during repeated chords. The preference uses the
+detected pitches and their existing timings.
 
 ## Optional ML environments
 

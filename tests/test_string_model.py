@@ -8,10 +8,10 @@ from tabber.string_model import StringModel, isolated_features
 
 def test_string_priors_change_fingering_without_changing_notes():
     notes = [Note(0, 1, 64)]
-    assert assign_polyphonic_frets(notes)[0].string == 0
-    prior = [[0.01, 0.95, 0.01, 0.01, 0.01, 0.01]]
+    assert assign_polyphonic_frets(notes)[0].string == 1
+    prior = [[0.95, 0.01, 0.01, 0.01, 0.01, 0.01]]
     assigned = assign_polyphonic_frets(notes, string_priors=prior)
-    assert (assigned[0].string, assigned[0].fret) == (1, 5)
+    assert (assigned[0].string, assigned[0].fret) == (0, 0)
     assert assigned[0].note is notes[0]
 
 

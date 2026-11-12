@@ -25,6 +25,25 @@ def test_cli_rebuilds_gp5_from_events_without_audio_or_ml(tmp_path, monkeypatch)
     assert track.strings[note.string - 1].value + note.value == 65
 
 
+@pytest.mark.parametrize("fretting", ["melodic", "polyphonic"])
+@pytest.mark.parametrize("pitch,position", [(64, (2, 5)), (40, (6, 0))])
+def test_default_fingering_removes_open_string_discount(
+    tmp_path, monkeypatch, fretting, pitch, position
+):
+    source, output = tmp_path / "events.json", tmp_path / "score"
+    original = [Note(0, 0.5, pitch)]
+    save_events(original, source)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["tabber", "--events", str(source), "--output", str(output), "--fretting", fretting],
+    )
+    main()
+    assert [(string, fret) for _, _, string, fret in score_events(read_gp5(output / "tab.gp5"))] == [
+        position
+    ]
+    assert load_events(output / "detected-notes.json") == original
+
+
 @pytest.mark.parametrize(
     "saved,override,expected,ticks",
     [

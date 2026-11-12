@@ -25,6 +25,28 @@ def test_sustained_notes_reserve_their_strings():
     assert [STANDARD_TUNING[n.string] + n.fret for n in assigned] == [40, 64, 65]
 
 
+def test_repeated_strummed_shape_uses_adjacent_strings_without_editing_notes():
+    notes = [
+        Note(start + index * 0.012, start + 0.3, pitch)
+        for start in (0.0, 0.6, 1.2)
+        for index, pitch in enumerate((46, 50, 58))
+    ]
+    assigned = assign_polyphonic_frets(notes)
+    assert [n.note for n in assigned] == notes
+    assert [STANDARD_TUNING[n.string] + n.fret for n in assigned] == [n.pitch for n in notes]
+    for chord in (assigned[3:6], assigned[6:9]):
+        assert sorted(n.string for n in chord) == [3, 4, 5]
+
+
+def test_chord_preference_strength_falls_during_single_note_playing():
+    chords = [Note(start, start + 0.2, pitch) for start in (0.0, 0.4) for pitch in (55, 59)]
+    melody = [Note(start, start + 0.08, 60) for start in (0.7, 0.8, 0.9)]
+    final = Note(1.1, 1.3, 62)
+    context = fretting._chord_context([*chords, *melody, final])
+    assert context[2][1] > context[0][1]
+    assert context[-1][1] == context[0][1]
+
+
 def test_unplayable_seven_voice_chord_fails_without_dropping_notes():
     notes = [Note(0, 1, pitch) for pitch in (40, 45, 50, 55, 59, 64, 67)]
     with pytest.raises(ValueError, match="no notes were dropped"):

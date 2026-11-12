@@ -2,10 +2,15 @@
 
 import itertools
 import math
+from collections import deque
 from dataclasses import replace
 
 from .models import STANDARD_TUNING, FrettedNote, Note
 from .rhythm import score_interval
+
+CHORD_ATTACK_SECONDS = 0.045
+CHORD_SUSTAIN_SECONDS = 0.06
+CHORD_CONTEXT_SECONDS = 1.5
 
 
 class UnplayablePitch(ValueError):
@@ -43,6 +48,16 @@ def fret_positions(pitch, tuning, max_fret=24):
     ]
 
 
+def _position_costs(pitch, tuning, max_fret):
+    positions = fret_positions(pitch, tuning, max_fret)
+    # Open notes leave the fretting hand free, but fret zero itself earns no discount.
+    open_cost = min((fret for _, fret in positions if fret), default=0)
+    return [
+        (string, fret, fret or open_cost)
+        for string, fret in sorted(positions, key=lambda position: position[1] == 0)
+    ]
+
+
 def assign_frets(notes: list[Note], tuning=STANDARD_TUNING, max_fret=24) -> list[FrettedNote]:
     if max_fret < 0 or not tuning:
         raise ValueError("Provide a tuning and nonnegative maximum fret")
@@ -53,21 +68,21 @@ def assign_frets(notes: list[Note], tuning=STANDARD_TUNING, max_fret=24) -> list
         )
     if not notes:
         return []
-    positions = [fret_positions(note.pitch, tuning, max_fret) for note in notes]
+    positions = [_position_costs(n.pitch, tuning, max_fret) for n in notes]
     for note, candidates in zip(notes, positions):
         if not candidates:
             raise UnplayablePitch(note, tuning, max_fret)
-    costs = [f * 0.05 for _, f in positions[0]]
+    costs = [position_cost * 0.05 for _, _, position_cost in positions[0]]
     parents = []
     for previous, current in itertools.pairwise(positions):
         new_costs, back = [], []
-        for string, fret in current:
+        for string, fret, position_cost in current:
             transitions = [
                 cost
                 + abs(string - ps) * 0.5
                 + (abs(fret - pf) if fret and pf else 0.75)
-                + fret * 0.05
-                for cost, (ps, pf) in zip(costs, previous)
+                + position_cost * 0.05
+                for cost, (ps, pf, _) in zip(costs, previous)
             ]
             best = min(range(len(transitions)), key=transitions.__getitem__)
             new_costs.append(transitions[best])
@@ -80,7 +95,7 @@ def assign_frets(notes: list[Note], tuning=STANDARD_TUNING, max_fret=24) -> list
         index = back[index]
         indices.append(index)
     return [
-        FrettedNote(n, *candidates[i])
+        FrettedNote(n, *candidates[i][:2])
         for n, candidates, i in zip(notes, positions, reversed(indices))
     ]
 
@@ -93,6 +108,35 @@ def _can_share_strings(pitches, tuning, max_fret):
         if open_pitch is None or open_pitch > pitch:
             return False
     return True
+
+
+def _chord_context(ordered):
+    """Use earlier attacks only so overlap recovery can reuse a search prefix."""
+    group = []
+    group_start = last_chord = -math.inf
+    recent_groups = deque(maxlen=3)
+    context = []
+    for note in ordered:
+        if note.start - group_start > CHORD_ATTACK_SECONDS:
+            if group:
+                last_attack = group[-1].start
+                ringing = {
+                    prior.pitch for prior in group if prior.end - last_attack >= CHORD_SUSTAIN_SECONDS
+                }
+                chord = len(ringing) >= 2
+                recent_groups.append(chord)
+                if chord:
+                    last_chord = group_start
+            group = []
+            group_start = note.start
+        group.append(note)
+        chord_phrase = (
+            group_start - last_chord <= CHORD_CONTEXT_SECONDS
+            and 2 * sum(recent_groups) >= len(recent_groups)
+        )
+        weight = 0.45 if chord_phrase else 0.20
+        context.append((group_start, weight))
+    return context
 
 
 class _SearchCheckpoints:
@@ -133,6 +177,7 @@ def assign_polyphonic_frets(
     not recovery of the guitarist's actual fingers or a guarantee of playability.
     The preferred span (the legacy max_span parameter) affects cost only.
     Optional (integer tempo, grid) constraints also check the saved score.
+    Close, sustained attacks get a small preference for adjacent string shapes.
     """
     if not tuning or max_fret < 0 or max_span < 0 or beam_width < 1:
         raise ValueError("Provide tuning and positive search limits")
@@ -155,18 +200,20 @@ def assign_polyphonic_frets(
             if max(row) - min(row) > 1e-12:
                 priors[id(note)] = tuple(p / total for p in row)
     ordered = sorted(notes, key=lambda n: (n.start, -n.pitch))
-    positions = [fret_positions(note.pitch, tuning, max_fret) for note in ordered]
+    positions = [_position_costs(n.pitch, tuning, max_fret) for n in ordered]
+    chord_context = _chord_context(ordered)
     for note, candidates in zip(ordered, positions, strict=True):
         if not candidates:
             raise UnplayablePitch(note, tuning, max_fret)
     cells = {id(note): score_interval(note, *score_grid) for note in ordered} if score_grid else {}
     # Each history links the latest assignment to its previous history.
-    states = [(0.0, None, (), 0.0, 0)]
+    states = [(0.0, None, (), 0.0, None)]
     start = 0
     if _checkpoints is not None:
         start, states = _checkpoints.restart(ordered, states)
     for index in range(start, len(ordered)):
         note, candidates = ordered[index], positions[index]
+        group_start, chord_weight = chord_context[index]
         expanded = {}
         for cost, history, active, hand, last_string in states:
             sounding = tuple(n for n in active if n.note.end > note.start + 1e-6)
@@ -177,7 +224,20 @@ def assign_polyphonic_frets(
                 on_grid = tuple(n for n in active if cells[id(n.note)][1] > start_cell)
                 reserved = tuple(dict.fromkeys(sounding + on_grid))
             used = {n.string for n in reserved}
-            for string, fret in candidates:
+            chord_strings = (
+                [
+                    n.string
+                    for n in sounding
+                    if n.note.start >= group_start
+                    and n.note.pitch != note.pitch
+                    and n.note.end - note.start >= CHORD_SUSTAIN_SECONDS
+                ]
+                if note.end - note.start >= CHORD_SUSTAIN_SECONDS
+                else []
+            )
+            if chord_strings:
+                chord_low, chord_high = min(chord_strings), max(chord_strings)
+            for string, fret, position_cost in candidates:
                 if string in used:
                     continue
                 fretted = FrettedNote(note, string, fret)
@@ -188,9 +248,13 @@ def assign_polyphonic_frets(
                 excess = max(0, span - max_span, grid_span - max_span)
                 position = frets[len(frets) // 2] if frets else hand
                 movement = abs(position - hand) if hand and position else 0
-                new_cost = cost + movement + span * 0.3 + fret * 0.04
+                new_cost = cost + movement + span * 0.3 + position_cost * 0.04
                 new_cost += excess * 1.5
-                new_cost += abs(string - last_string) * 0.15
+                if last_string is not None:
+                    new_cost += abs(string - last_string) * 0.15
+                if chord_strings:
+                    new_gaps = max(chord_low - string - 1, string - chord_high - 1, 0)
+                    new_cost += chord_weight * new_gaps
                 if id(note) in priors:
                     new_cost -= prior_weight * math.log(max(1e-8, priors[id(note)][string]))
                 key = (
