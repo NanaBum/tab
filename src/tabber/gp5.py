@@ -138,12 +138,20 @@ def build_song(
 
     # A single rhythmic voice can contain chord attacks mixed with tied notes.
     # Split at every attack/release, retaining held strings through those splits.
-    boundaries = sorted(
-        {0, measure_count * measure_cells} | {t for a, b, _ in events for t in (a, b)}
-    )
+    attacks = {}
+    releases = {}
+    for onset, stop, fretted in events:
+        attacks.setdefault(onset, []).append(fretted)
+        releases.setdefault(stop, []).append(fretted.string)
+    boundaries = sorted({0, measure_count * measure_cells, *attacks, *releases})
+    sounding = {}
     for start, end in itertools.pairwise(boundaries):
-        sounding = [(onset, fretted) for onset, stop, fretted in events if onset <= start < stop]
-        append_segment(start, end, sounding)
+        # A release and the next attack on that string can share this cell.
+        for string in releases.get(start, ()):
+            del sounding[string]
+        for fretted in attacks.get(start, ()):
+            sounding[fretted.string] = (start, fretted)
+        append_segment(start, end, sounding.values())
     return song
 
 
