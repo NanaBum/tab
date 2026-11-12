@@ -380,7 +380,11 @@ class TabberApp:
     def worker(self, command, output):
         try:
             process = run_conversion(
-                command, cwd=self.root, log_path=output / "run.log", cancel_event=self.cancel_event
+                command,
+                cwd=self.root,
+                log_path=output / "run.log",
+                cancel_event=self.cancel_event,
+                on_progress=lambda message: self.messages.put((None, output, message)),
             )
             log = (output / "run.log").read_text(encoding="utf-8", errors="replace")
             if process.cancelled:
@@ -447,6 +451,11 @@ class TabberApp:
         except queue.Empty:
             pass
         else:
+            if success is None:
+                if self.running and not self.cancel_event.is_set():
+                    self.status.set(message)
+                self.window.after(150, self.poll)
+                return
             self.running = False
             self.result = output
             self.progress.stop()

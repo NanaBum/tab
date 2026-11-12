@@ -227,6 +227,25 @@ def test_worker_shows_filter_notice_even_when_export_fails(tmp_path, monkeypatch
     assert "sustained strings conflict" in message
 
 
+@pytest.mark.parametrize("cancelled", [False, True])
+def test_live_progress_keeps_conversion_running_and_respects_cancellation(tmp_path, cancelled):
+    app = object.__new__(TabberApp)
+    app.running = True
+    app.messages = queue.Queue()
+    app.messages.put((None, tmp_path, "Resolving overlapping notes."))
+    app.cancel_event = threading.Event()
+    if cancelled:
+        app.cancel_event.set()
+    messages = []
+    app.status = SimpleNamespace(set=messages.append)
+    app.window = SimpleNamespace(after=lambda *args: None)
+
+    app.poll()
+
+    assert app.running
+    assert messages == ([] if cancelled else ["Resolving overlapping notes."])
+
+
 def test_cancelled_worker_keeps_partial_tab_but_never_reports_success(tmp_path, monkeypatch):
     output = tmp_path / "out"
     output.mkdir()

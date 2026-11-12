@@ -436,11 +436,13 @@ def main():
         original_events = export_events
         original_options = assignment_options.copy()
         audit = args.output / "diagnostics" / f"overlap-recovery-{stamp}.json"
+        print("Progress: Assigning notes to guitar strings.", flush=True)
         try:
             notes = assign(export_events, tuning=tuning, **assignment_options)
         except StringAssignmentConflict:
             if args.strict_overlaps:
                 raise
+            print("Progress: Resolving overlapping notes.", flush=True)
             notes, retained = recover_overlapping_notes(
                 export_events, tuning=tuning, **assignment_options
             )
@@ -457,6 +459,7 @@ def main():
             else None
         )
         grids = SCORE_GRIDS[SCORE_GRIDS.index(grid) :] if args.retry_finer_grid else (grid,)
+        print("Progress: Building the Guitar Pro score.", flush=True)
         for candidate in grids:
             try:
                 timing, refitted = _write_score_at_grid(
@@ -467,6 +470,7 @@ def main():
                     continue
                 if not args.retry_finer_grid or args.strict_overlaps or refit is None:
                     raise
+                print("Progress: Resolving overlapping notes on the score grid.", flush=True)
                 notes, retained = recover_overlapping_notes(
                     original_events,
                     tuning=tuning,
