@@ -94,6 +94,19 @@ def test_finer_grid_preserves_fast_attacks(tmp_path):
     assert attacks == [(960, 0), (1080, 1)]
 
 
+def test_text_preview_uses_the_same_fractional_tempo_grid_as_gp5(tmp_path):
+    notes = [
+        FrettedNote(Note(0.0624, 0.07, 64), 0, 0),
+        FrettedNote(Note(0.125, 0.21, 65), 0, 1),
+    ]
+    write_outputs(notes, tmp_path, 120.49)
+    song = read_gp5(tmp_path / "tab.gp5")
+    text = (tmp_path / "tab.txt").read_text()
+    assert song.tempo == 120
+    assert text.startswith("Tempo: 120 BPM")
+    assert "\ne|-0---1--" in text
+
+
 def test_export_render_failure_preserves_existing_outputs(tmp_path, monkeypatch):
     target = tmp_path / "existing"
     target.mkdir()

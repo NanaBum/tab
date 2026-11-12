@@ -9,7 +9,7 @@ import mido
 
 from .gp5 import build_song, read_gp5, timing_summary, verify_export, write_gp5
 from .models import STANDARD_TUNING, FrettedNote
-from .rhythm import DEFAULT_METER, parse_meter, quantize
+from .rhythm import DEFAULT_METER, parse_meter, score_interval
 from .tuning import pitch_name, validate_tuning
 
 
@@ -24,7 +24,6 @@ def write_outputs(
 ) -> dict:
     tuning = validate_tuning(tuning)
     meter = parse_meter(meter)
-    quantize(0, bpm)
     song = build_song(notes, bpm, grid, tuning=tuning, meter=meter)
     payload = {"bpm": bpm, "string_order": "high E to low E", "notes": [asdict(n) for n in notes]}
     if tuning != STANDARD_TUNING:
@@ -33,17 +32,17 @@ def write_outputs(
     payload["score_meter"] = meter
     payload["tuning_midi"] = list(tuning)
     payload["tuning_string_order"] = f"string 1 (thin) to string {len(tuning)} (thick)"
-    cells = max((quantize(n.note.end, bpm, grid // 4) for n in notes), default=1) + 1
+    intervals = [score_interval(n.note, song.tempo, grid) for n in notes]
+    cells = max((end for _, end in intervals), default=1) + 1
     rows = [["----"] * cells for _ in tuning]
     occupied = set()
-    for n in notes:
-        column = quantize(n.note.start, bpm, grid // 4)
+    for n, (column, _) in zip(notes, intervals, strict=True):
         if (n.string, column) in occupied:
             raise ValueError(f"Two notes collide on the 1/{grid} tab grid; choose a finer --grid")
         occupied.add((n.string, column))
         rows[n.string][column] = f"{n.fret:-^4}"
     text = [
-        f"Tempo: {bpm:g} BPM | one cell = 1/{grid} note; dashes show no new onset",
+        f"Tempo: {song.tempo:g} BPM | one cell = 1/{grid} note; dashes show no new onset",
         "Pre-quantization timing is in notes.json; MIDI rounds it to 480 ticks per quarter note.",
         "",
     ]
