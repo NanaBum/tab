@@ -31,28 +31,32 @@ def separate_guitar(path: Path, output: Path) -> Path:
         normalized = Path(directory) / (path.stem + ".wav")
         sf.write(normalized, audio, rate, subtype="FLOAT")
         del audio
-        subprocess.run(
-            [
-                str(python),
-                "-m",
-                "demucs",
-                "-n",
-                "htdemucs_6s",
-                "--two-stems",
-                "guitar",
-                "--device",
-                "cpu",
-                "--shifts",
-                "0",
-                "--segment",
-                "7",
-                "-o",
-                str(output),
-                str(normalized),
-            ],
-            check=True,
-            env=environment,
-        )
+        command = [
+            str(python),
+            "-m",
+            "demucs",
+            "-n",
+            "htdemucs_6s",
+            "--two-stems",
+            "guitar",
+            "--device",
+            "cpu",
+            "--shifts",
+            "0",
+            "--segment",
+            "7",
+            "-o",
+            str(output),
+            str(normalized),
+        ]
+        try:
+            subprocess.run(command, check=True, env=environment)
+        except subprocess.CalledProcessError as error:
+            raise RuntimeError(
+                f"Guitar separation failed (Demucs exit code {error.returncode}). "
+                "Check the conversion log and the optional Demucs setup in the README. "
+                "You can also turn off separation and retry with the original recording."
+            ) from error
     stem = output / "htdemucs_6s" / path.stem / "guitar.wav"
     if not stem.exists():
         raise ValueError("Demucs did not produce the expected guitar stem")

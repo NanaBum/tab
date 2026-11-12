@@ -250,6 +250,7 @@ def main():
                 flush=True,
             )
         if args.separate:
+            print("Progress: Separating guitar from the mix.", flush=True)
             path = separate_guitar(path, args.output / "stems")
         if args.audio:
             if args.backend == "guitar-gaps":
