@@ -106,8 +106,9 @@ become rests, and sustained notes split into tied durations across measures.
 Set a known **Time signature** in the app or use `--meter 6/8` on the command
 line. The setting applies to the entire tab, starting at the beginning of the
 input. Tempo is still expressed in quarter-note BPM.
-GP5 tempo is rounded to the nearest integer BPM (1-999). Original timings remain
-unchanged in JSON and are approximated at MIDI tick resolution. If notes land
+The GP5 and text preview share a score grid at the nearest integer BPM (1–999).
+JSON preserves the original timings, and MIDI uses the requested tempo and
+rounds times to its tick resolution. If notes land
 on the same string and score cell, polyphonic export tries another fingering
 using the chosen tuning and grid. An unresolved collision prompts
 you to choose a finer grid. For faster notes choose `--grid 32` or `--grid 64`
