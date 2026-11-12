@@ -29,6 +29,23 @@ def test_saved_detections_prefers_the_retry_and_skips_partial_outputs(tmp_path):
     assert saved_detections(tmp_path) is None
 
 
+def test_interrupted_event_write_preserves_previous_detections(tmp_path, monkeypatch):
+    path = tmp_path / "detected-notes.json"
+    original = [Note(0, 1, 64)]
+    save_events(original, path)
+
+    def fail_replace(self, target):
+        assert self.parent != target.parent
+        assert load_events(target) == original
+        raise PermissionError("File is in use")
+
+    monkeypatch.setattr(type(path), "replace", fail_replace)
+    with pytest.raises(PermissionError, match="File is in use"):
+        save_events([Note(0, 1, 65)], path)
+    assert load_events(path) == original
+    assert list(tmp_path.iterdir()) == [path]
+
+
 @pytest.mark.parametrize(
     "payload",
     [

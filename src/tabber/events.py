@@ -1,6 +1,7 @@
 """Editable detected-note interchange, separate from fingering and score rhythm."""
 
 import json
+import tempfile
 from dataclasses import asdict
 from pathlib import Path
 
@@ -15,7 +16,10 @@ def save_events(notes: list[Note], path: Path, metadata: dict | None = None) -> 
         "notes": [asdict(n) for n in notes],
     }
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    with tempfile.TemporaryDirectory(prefix=".events-", dir=path.parent) as directory:
+        staged = Path(directory) / path.name
+        staged.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        staged.replace(path)
 
 
 def load_events(path: Path) -> list[Note]:
