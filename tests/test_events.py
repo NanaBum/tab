@@ -35,7 +35,8 @@ def test_interrupted_event_write_preserves_previous_detections(tmp_path, monkeyp
     save_events(original, path)
 
     def fail_replace(self, target):
-        assert self.parent != target.parent
+        assert self.parent == target.parent
+        assert self != target
         assert load_events(target) == original
         raise PermissionError("File is in use")
 

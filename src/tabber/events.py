@@ -16,10 +16,17 @@ def save_events(notes: list[Note], path: Path, metadata: dict | None = None) -> 
         "notes": [asdict(n) for n in notes],
     }
     path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix=".events-", dir=path.parent) as directory:
-        staged = Path(directory) / path.name
-        staged.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    staged = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=path.parent, delete=False
+        ) as stream:
+            staged = Path(stream.name)
+            stream.write(json.dumps(payload, indent=2) + "\n")
         staged.replace(path)
+    finally:
+        if staged is not None:
+            staged.unlink(missing_ok=True)
 
 
 def load_events(path: Path) -> list[Note]:
