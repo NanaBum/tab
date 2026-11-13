@@ -208,6 +208,11 @@ def main():
         if args.notes_only:
             check_notes_only_output(args.output, source=args.audio or args.events)
         path = (args.audio or args.events).resolve()
+        if not args.notes_only and path in {
+            (args.output / name).resolve()
+            for name in ("detected-notes.json", "notes.json", "notes.mid", "tab.gp5", "tab.txt")
+        }:
+            raise ValueError("Choose a different output folder to preserve the input file")
         if not path.is_file():
             raise ValueError(f"Input file does not exist: {path}")
         health = None
