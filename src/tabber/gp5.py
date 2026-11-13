@@ -84,9 +84,7 @@ def build_song(
         if previous and n.note.start < previous[0] - 1e-6:
             raise ValueError("Overlapping notes cannot occupy the same guitar string")
         if previous and start < previous[1]:
-            raise GridCollision(
-                f"Notes collide on the GP5 1/{grid} grid; choose --grid 32 or --grid 64"
-            )
+            raise GridCollision(f"Notes collide on the GP5 1/{grid} grid")
         events.append((start, end, n))
         ends_by_string[n.string] = (n.note.end, end)
 

@@ -171,7 +171,9 @@ def test_cli_keeps_grid_collision_if_there_is_only_one_eligible_string(
         main()
 
     assert error.value.code == 1
-    assert "collide on the GP5" in capsys.readouterr().err
+    messages = capsys.readouterr()
+    assert "collide on the GP5" in messages.err
+    assert "Try a finer grid if notes collide (--retry-finer-grid)" in messages.out
     assert not (output / "tab.gp5").exists()
     [saved] = (output / "diagnostics").glob("detected-*.json")
     assert load_events(saved) == events

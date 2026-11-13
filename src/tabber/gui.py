@@ -409,7 +409,13 @@ class TabberApp:
                     line
                     for line in log.splitlines()
                     if line.startswith(
-                        ("Audio note:", "Range note:", "Fingering note:", "Detector note:")
+                        (
+                            "Audio note:",
+                            "Range note:",
+                            "Fingering note:",
+                            "Detector note:",
+                            "Timing note:",
+                        )
                     )
                 ]
                 if notices:

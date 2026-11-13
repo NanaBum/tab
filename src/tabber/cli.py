@@ -513,6 +513,18 @@ def main():
             grid = candidate
         save_events(selected, args.output / "detected-notes.json", metadata)
     except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError) as exc:
+        if isinstance(exc, GridCollision):
+            if not args.retry_finer_grid and grid < SCORE_GRIDS[-1]:
+                print(
+                    "Timing note: Rebuild from the saved detections and enable "
+                    "Try a finer grid if notes collide (--retry-finer-grid).",
+                    flush=True,
+                )
+            else:
+                print(
+                    "Timing note: Review the tempo or edit the saved detections before rebuilding.",
+                    flush=True,
+                )
         if isinstance(exc, UnplayablePitch):
             message = "Check the guitar's tuning and rebuild from the saved detections."
             if not args.guitar_range:
