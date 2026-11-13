@@ -258,6 +258,12 @@ def main():
             print("Progress: Separating guitar from the mix.", flush=True)
             path = separate_guitar(path, args.output / "stems")
         if args.audio:
+            detector_status = {
+                "baseline": "Detecting single-note melody (one pitch at a time).",
+                "basic-pitch": "Detecting notes with Basic Pitch.",
+                "guitar-gaps": "Detecting notes with the experimental guitar model.",
+            }
+            print(f"Progress: {detector_status[args.backend]}", flush=True)
             if args.backend == "guitar-gaps":
                 detected = transcribe(
                     path,
