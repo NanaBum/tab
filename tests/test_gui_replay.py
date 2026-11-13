@@ -96,6 +96,7 @@ def test_notes_only_or_cancelled_result_never_enables_a_missing_or_partial_tab(
     states = {}
     app = object.__new__(TabberApp)
     app.messages = queue.Queue()
+    app.cancel_event = threading.Event()
     app.messages.put((success, tmp_path, "result"))
     (tmp_path / "notes.mid").write_bytes(b"test output")
     if tab_exists:
@@ -124,6 +125,7 @@ def test_notes_only_or_cancelled_result_never_enables_a_missing_or_partial_tab(
     assert states["open_tab"]["state"] == "disabled"
     assert states["open_midi"]["state"] == ("normal" if success else "disabled")
     assert states["rebuild_saved"]["state"] == ("disabled" if success else "normal")
+    assert ("Save notes and MIDI only" in states["message"]) is (not success)
     assert states["convert"]["state"] == "normal"
 
 

@@ -471,6 +471,11 @@ class TabberApp:
             self.open_midi.configure(
                 state="normal" if success and (output / "notes.mid").is_file() else "disabled"
             )
+            if not success and self.rebuild_input and not self.cancel_event.is_set():
+                message += (
+                    " Choose Use saved detections to retry the tab or select "
+                    "Save notes and MIDI only to hear the detected notes."
+                )
             self.status.set(message)
         self.window.after(150, self.poll)
 
