@@ -9,33 +9,40 @@ import mido
 
 from .gp5 import build_song, read_gp5, timing_summary, verify_export, write_gp5
 from .models import STANDARD_TUNING, FrettedNote
-from .rhythm import quantize
+from .rhythm import DEFAULT_METER, parse_meter, score_interval
 from .tuning import pitch_name, validate_tuning
 
 
 def write_outputs(
-    notes: list[FrettedNote], output: Path, bpm: float, grid: int = 16, *, tuning=STANDARD_TUNING
+    notes: list[FrettedNote],
+    output: Path,
+    bpm: float,
+    grid: int = 16,
+    *,
+    tuning=STANDARD_TUNING,
+    meter=DEFAULT_METER,
 ) -> dict:
     tuning = validate_tuning(tuning)
-    quantize(0, bpm)
-    song = build_song(notes, bpm, grid, tuning=tuning)
+    meter = parse_meter(meter)
+    song = build_song(notes, bpm, grid, tuning=tuning, meter=meter)
     payload = {"bpm": bpm, "string_order": "high E to low E", "notes": [asdict(n) for n in notes]}
     if tuning != STANDARD_TUNING:
-        payload["string_order"] = "string 1 to string 6"
+        payload["string_order"] = f"string 1 to string {len(tuning)}"
     payload["score_grid"] = grid
+    payload["score_meter"] = meter
     payload["tuning_midi"] = list(tuning)
-    payload["tuning_string_order"] = "string 1 (thin) to string 6 (thick)"
-    cells = max((quantize(n.note.end, bpm, grid // 4) for n in notes), default=1) + 1
-    rows = [["----"] * cells for _ in range(6)]
+    payload["tuning_string_order"] = f"string 1 (thin) to string {len(tuning)} (thick)"
+    intervals = [score_interval(n.note, song.tempo, grid) for n in notes]
+    cells = max((end for _, end in intervals), default=1) + 1
+    rows = [["----"] * cells for _ in tuning]
     occupied = set()
-    for n in notes:
-        column = quantize(n.note.start, bpm, grid // 4)
+    for n, (column, _) in zip(notes, intervals, strict=True):
         if (n.string, column) in occupied:
             raise ValueError(f"Two notes collide on the 1/{grid} tab grid; choose a finer --grid")
         occupied.add((n.string, column))
         rows[n.string][column] = f"{n.fret:-^4}"
     text = [
-        f"Tempo: {bpm:g} BPM | one cell = 1/{grid} note; dashes show no new onset",
+        f"Tempo: {song.tempo:g} BPM | one cell = 1/{grid} note; dashes show no new onset",
         "Pre-quantization timing is in notes.json; MIDI rounds it to 480 ticks per quarter note.",
         "",
     ]
@@ -45,7 +52,9 @@ def write_outputs(
         else tuple(pitch_name(p) for p in tuning)
     )
     if tuning != STANDARD_TUNING:
-        text.insert(1, "Open strings (1 to 6): " + " ".join(labels))
+        text.insert(1, f"Open strings (1 to {len(tuning)}): " + " ".join(labels))
+    if meter != DEFAULT_METER:
+        text.insert(1, f"Time signature: {meter}")
     for first in range(0, cells, 32):
         text.extend(
             f"{label}|{''.join(row[first : first + 32])}|" for label, row in zip(labels, rows)
@@ -55,20 +64,37 @@ def write_outputs(
     track = mido.MidiTrack()
     midi.tracks.append(track)
     track.append(mido.MetaMessage("set_tempo", tempo=mido.bpm2tempo(bpm)))
+    if meter != DEFAULT_METER:
+        numerator, denominator = map(int, meter.split("/"))
+        track.append(
+            mido.MetaMessage("time_signature", numerator=numerator, denominator=denominator)
+        )
     # One channel per string keeps overlapping unisons independently releasable.
-    # Channels 0-5 avoid the conventional percussion channel (9).
-    for channel in range(6):
+    # Channels 0-6 avoid the conventional percussion channel (9).
+    for channel in range(len(tuning)):
         track.append(mido.Message("program_change", program=24, channel=channel))
     events = []
     ends_by_string = {}
+    shifted_starts = maximum_delay = 0
     for n in sorted(notes, key=lambda n: n.note.start):
         start = round(n.note.start * bpm / 60 * 480)
+        previous_end, previous_tick = ends_by_string.get(n.string, (0.0, 0))
+        if start < previous_tick:
+            if n.note.start + 1e-6 < previous_end:
+                raise ValueError("Notes on one string overlap before MIDI timing conversion")
+            shifted_starts += 1
+            maximum_delay = max(maximum_delay, previous_tick - start)
+            start = previous_tick
         end = max(start + 1, round(n.note.end * bpm / 60 * 480))
-        if start < ends_by_string.get(n.string, 0):
-            raise ValueError("Notes on one string collide at MIDI timing resolution")
-        ends_by_string[n.string] = end
+        ends_by_string[n.string] = (n.note.end, end)
         for tick, kind in ((start, "note_on"), (end, "note_off")):
             events.append((tick, kind, n.note.pitch, n.string))
+    if shifted_starts:
+        payload["midi_timing"] = {
+            "shifted_starts": shifted_starts,
+            "maximum_start_delay_ticks": maximum_delay,
+            "ticks_per_quarter_note": 480,
+        }
     previous = 0
     for tick, kind, pitch, channel in sorted(events, key=lambda e: (e[0], e[1] == "note_on")):
         track.append(
@@ -90,7 +116,7 @@ def write_outputs(
     write_gp5(song, gp5_bytes)
     gp5_bytes.seek(0)
     saved_song = read_gp5(gp5_bytes)
-    verify_export(saved_song, notes, bpm, grid, tuning=tuning)
+    verify_export(saved_song, notes, bpm, grid, tuning=tuning, meter=meter)
     timing = timing_summary(saved_song, notes)
     payload["score_timing"] = timing
     rendered = {

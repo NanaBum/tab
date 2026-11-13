@@ -27,6 +27,39 @@ def test_completed_job_keeps_stdout_stderr_and_exit_status(tmp_path):
     assert "output" in log.read_text() and "detail" in log.read_text()
 
 
+def test_live_progress_reaches_the_caller_before_conversion_finishes(tmp_path):
+    marker = tmp_path / "progress-received"
+    messages = []
+
+    def show_progress(message):
+        messages.append(message)
+        marker.touch()
+
+    script = """
+import time
+from pathlib import Path
+print("debug line", flush=True)
+print("Progress: Resolving overlapping notes.", flush=True)
+for _ in range(100):
+    if Path("progress-received").exists():
+        break
+    time.sleep(0.05)
+else:
+    raise RuntimeError("Progress was not received while the child was running")
+"""
+    log = tmp_path / "run.log"
+    result = run_conversion(
+        [sys.executable, "-c", script],
+        cwd=tmp_path,
+        log_path=log,
+        cancel_event=threading.Event(),
+        on_progress=show_progress,
+    )
+    assert result.returncode == 0
+    assert messages == ["Resolving overlapping notes."]
+    assert "debug line" in log.read_text()
+
+
 def test_cancel_before_launch_never_starts_process(tmp_path):
     event = threading.Event()
     event.set()

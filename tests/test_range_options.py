@@ -8,6 +8,30 @@ from tabber.gp5 import read_gp5, score_events
 from tabber.models import Note
 
 
+@pytest.mark.parametrize("fretting", ["melodic", "polyphonic"])
+def test_unplayable_pitch_explains_rebuild_and_preserves_detections(
+    tmp_path, monkeypatch, capsys, fretting
+):
+    source, output = tmp_path / "input.json", tmp_path / "score"
+    notes = [Note(0, 0.25, 39), Note(0.5, 0.75, 40)]
+    save_events(notes, source)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["tabber", "--events", str(source), "--output", str(output), "--fretting", fretting],
+    )
+
+    with pytest.raises(SystemExit) as error:
+        main()
+
+    assert error.value.code == 1
+    log = capsys.readouterr()
+    assert "MIDI pitch 39" in log.err
+    assert "Check the guitar's tuning and rebuild from the saved detections" in log.out
+    assert "--guitar-range" in log.out
+    assert load_events(next((output / "diagnostics").glob("detected-*.json"))) == notes
+    assert not (output / "tab.gp5").exists()
+
+
 def test_explicit_range_filter_keeps_boundaries_and_audits_every_exclusion(
     tmp_path, monkeypatch, capsys
 ):
@@ -33,6 +57,52 @@ def test_explicit_range_filter_keeps_boundaries_and_audits_every_exclusion(
     assert len(score_events(read_gp5(output / "tab.gp5"))) == 2
 
 
+def test_explicit_filter_excludes_pitches_between_disjoint_string_ranges(tmp_path, monkeypatch):
+    source, output = tmp_path / "input.json", tmp_path / "score"
+    tuning = (64, 64, 60, 60, 60, 31)
+    notes = [Note(i / 2, i / 2 + 0.25, pitch) for i, pitch in enumerate((55, 56, 59, 60))]
+    save_events(notes, source)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "tabber",
+            "--events",
+            str(source),
+            "--output",
+            str(output),
+            "--tuning",
+            ",".join(map(str, tuning)),
+            "--guitar-range",
+        ],
+    )
+
+    main()
+
+    assert load_events(next((output / "diagnostics").glob("detected-*.json"))) == notes
+    assert load_events(output / "detected-notes.json") == [notes[0], notes[3]]
+    audit = json.loads(next((output / "diagnostics").glob("range-filter-*.json")).read_text())
+    assert [entry["source_index"] for entry in audit["excluded"]] == [1, 2]
+    song = read_gp5(output / "tab.gp5")
+    assert [tuning[string - 1] + fret for _, _, string, fret in score_events(song)] == [55, 60]
+
+
+def test_impossible_pitch_is_reported_before_searching_earlier_overlaps(tmp_path, monkeypatch, capsys):
+    source, output = tmp_path / "input.json", tmp_path / "score"
+    notes = [Note(0, 0.25, pitch) for pitch in (40, 45, 50, 55, 59, 64, 67)]
+    notes.append(Note(0.5, 0.75, 39))
+    save_events(notes, source)
+    monkeypatch.setattr(
+        "sys.argv", ["tabber", "--events", str(source), "--output", str(output), "--strict-overlaps"]
+    )
+
+    with pytest.raises(SystemExit) as error:
+        main()
+
+    assert error.value.code == 1
+    assert "MIDI pitch 39 at 0.500s" in capsys.readouterr().err
+    assert load_events(next((output / "diagnostics").glob("detected-*.json"))) == notes
+
+
 @pytest.mark.parametrize("pitches", [(38, 39), (40, 45, 50, 55, 59, 64, 67)])
 def test_filter_failure_preserves_raw_notes_and_existing_tab(tmp_path, monkeypatch, pitches):
     source = tmp_path / "input.json"
@@ -42,7 +112,16 @@ def test_filter_failure_preserves_raw_notes_and_existing_tab(tmp_path, monkeypat
     output.mkdir()
     (output / "tab.gp5").write_bytes(b"previous successful score")
     monkeypatch.setattr(
-        "sys.argv", ["tabber", "--events", str(source), "--output", str(output), "--guitar-range"]
+        "sys.argv",
+        [
+            "tabber",
+            "--events",
+            str(source),
+            "--output",
+            str(output),
+            "--guitar-range",
+            "--strict-overlaps",
+        ],
     )
     with pytest.raises(SystemExit) as error:
         main()
@@ -53,19 +132,19 @@ def test_filter_failure_preserves_raw_notes_and_existing_tab(tmp_path, monkeypat
     assert report["retained_note_count"] == (0 if pitches == (38, 39) else 7)
 
 
-def test_wider_span_preserves_a_chord_that_fails_the_default_limit(tmp_path, monkeypatch):
+def test_wide_span_is_allowed_with_default_and_zero_preference(tmp_path, monkeypatch):
     source = tmp_path / "chord.json"
-    notes = [Note(0, 1, pitch) for pitch in (41, 47, 52, 57, 64, 71)]
+    notes = [Note(0, 1, pitch) for pitch in (41, 47, 52, 57, 64, 88)]
     save_events(notes, source)
     output = tmp_path / "score"
     arguments = ["tabber", "--events", str(source), "--output", str(output)]
     monkeypatch.setattr("sys.argv", arguments)
-    with pytest.raises(SystemExit):
-        main()
-    monkeypatch.setattr("sys.argv", arguments + ["--max-span", "7"])
+    main()
+    monkeypatch.setattr("sys.argv", arguments + ["--max-span", "0"])
     main()
     assert load_events(output / "detected-notes.json") == notes
     assert len(score_events(read_gp5(output / "tab.gp5"))) == len(notes)
     metadata = json.loads((output / "detected-notes.json").read_text())["metadata"]
-    assert metadata["max_span"] == 7
+    assert metadata["preferred_fret_span"] == 0
+    assert "overlap_recovery" not in metadata
     assert metadata["guitar_range_filter_requested"] is False

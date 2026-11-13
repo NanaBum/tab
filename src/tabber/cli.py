@@ -4,18 +4,78 @@ import math
 import subprocess
 from dataclasses import asdict
 from datetime import datetime
+from functools import partial
 from pathlib import Path
 
 from .audio import inspect_audio, prepare_audio
 from .export import write_outputs
-from .fretting import assign_frets, assign_polyphonic_frets
+from .fretting import (
+    StringAssignmentConflict,
+    UnplayablePitch,
+    assign_frets,
+    assign_polyphonic_frets,
+    fret_positions,
+    recover_overlapping_notes,
+)
+from .gp5 import GridCollision
 from .models import STANDARD_TUNING
 from .pitch_midi import check_notes_only_output, write_pitch_midi
-from .rhythm import lead_attacks, quantize
+from .rhythm import (
+    DEFAULT_METER,
+    SCORE_GRIDS,
+    lead_attacks,
+    parse_meter,
+    quantize,
+    recorded_meter,
+    recorded_score_grid,
+)
 from .separate import separate_guitar
-from .tempo import estimate_tempo, parse_bpm
+from .tempo import estimate_tempo, parse_bpm, recorded_bpm
 from .transcribe import baseline_frequency_floor, transcribe
-from .tuning import parse_tuning
+from .tuning import parse_tuning, recorded_tuning
+
+
+def _write_score_at_grid(notes, output, bpm, grid, tuning, meter, refit):
+    try:
+        return write_outputs(notes, output, bpm, grid, tuning=tuning, meter=meter), False
+    except GridCollision as collision:
+        if refit is None:
+            raise
+        try:
+            fitted = refit(score_grid=(int(bpm + 0.5), grid))
+        except ValueError:
+            raise collision from None
+        return write_outputs(fitted, output, bpm, grid, tuning=tuning, meter=meter), True
+
+
+def _record_overlap_recovery(original_events, retained, audit, *, score_grid=None):
+    shortened, omitted = [], []
+    for index, original in enumerate(original_events):
+        record = {"source_index": index, "original": asdict(original)}
+        if index not in retained:
+            omitted.append(record)
+        elif retained[index].end < original.end:
+            shortened.append({**record, "new_end": retained[index].end})
+    audit.write_text(
+        json.dumps(
+            {
+                "index_convention": "Zero-based index into the events before overlap recovery",
+                "shortened": shortened,
+                "omitted": omitted,
+                "score_grid": score_grid,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    scope = f" after a collision on the 1/{score_grid} grid" if score_grid else " during fingering"
+    print(
+        f"Fingering note: Shortened {len(shortened)} releases and omitted {len(omitted)} "
+        f"notes for tab export{scope}. Original detections are saved.",
+        flush=True,
+    )
+    return {"shortened": len(shortened), "omitted": len(omitted), "audit": str(audit.resolve())}
 
 
 def main():
@@ -42,21 +102,28 @@ def main():
     parser.add_argument(
         "--tuning",
         type=parse_tuning,
-        default=STANDARD_TUNING,
-        help="standard (default), drop-d, eb-standard, d-standard, or six MIDI pitches, string 1 to 6",
+        help="A tuning preset or six or seven MIDI pitches, thin to thick. Defaults to saved tuning or standard.",
     )
     parser.add_argument(
         "--bpm",
         type=parse_bpm,
-        default=120.0,
-        help="Quarter-note BPM, or auto for a local estimate (review half/double time)",
+        help="Quarter-note BPM or auto. Default is saved BPM when available, otherwise 120.",
     )
     parser.add_argument(
         "--grid",
         type=int,
-        choices=(16, 32, 64),
-        default=16,
-        help="Score divisions per whole note; finer grids preserve faster notes",
+        choices=SCORE_GRIDS,
+        help="Score divisions per whole note. Defaults to the saved grid or 16.",
+    )
+    parser.add_argument(
+        "--retry-finer-grid",
+        action="store_true",
+        help="Try the next finer grid if score quantization still causes a collision",
+    )
+    parser.add_argument(
+        "--meter",
+        type=parse_meter,
+        help="Constant time signature, for example 6/8. Defaults to the saved meter or 4/4.",
     )
     parser.add_argument(
         "--backend", choices=("baseline", "basic-pitch", "guitar-gaps"), default="baseline"
@@ -93,10 +160,16 @@ def main():
         help="Explicitly exclude pitches outside selected tuning / 24 frets; retain raw diagnostics",
     )
     parser.add_argument(
+        "--preferred-span",
         "--max-span",
         type=int,
         default=5,
-        help="Maximum simultaneous non-open fret span, 0-24 (default 5); larger stretches may be harder to play",
+        help="Preferred simultaneous fretted span, 0–24 (default 5). Wider spans are allowed.",
+    )
+    parser.add_argument(
+        "--strict-overlaps",
+        action="store_true",
+        help="Keep all detected overlaps even when they prevent editable tab export",
     )
     args = parser.parse_args()
     if (args.audio is None) == (args.events is None):
@@ -109,15 +182,19 @@ def main():
         parser.error("--attack-lead-ms must be from 0 to 50")
     if args.attack_lead_ms and (not args.events or args.notes_only):
         parser.error("--attack-lead-ms applies only to editable tab rebuilds from --events")
-    if not 0 <= args.max_span <= 24:
-        parser.error("--max-span must be from 0 to 24")
-    if args.fretting == "melodic" and args.max_span != 5:
-        parser.error("--max-span applies to polyphonic fretting")
+    if args.retry_finer_grid and args.notes_only:
+        parser.error("--retry-finer-grid requires editable tab output")
+    if args.meter and args.notes_only:
+        parser.error("--meter requires editable tab output")
+    if not 0 <= args.preferred_span <= 24:
+        parser.error("--preferred-span must be from 0 to 24")
+    if args.fretting == "melodic" and args.preferred_span != 5:
+        parser.error("--preferred-span applies to polyphonic fretting")
     if args.string_model and (args.events or args.fretting != "polyphonic"):
         parser.error("--string-model needs audio input and polyphonic fretting")
     if args.notes_only and args.string_model:
         parser.error("--string-model does not apply to --notes-only output")
-    if args.string_model and args.tuning != STANDARD_TUNING:
+    if args.string_model and (args.tuning or STANDARD_TUNING) != STANDARD_TUNING:
         parser.error(
             "The experimental string-tone model has only been evaluated in standard tuning"
         )
@@ -131,6 +208,11 @@ def main():
         if args.notes_only:
             check_notes_only_output(args.output, source=args.audio or args.events)
         path = (args.audio or args.events).resolve()
+        if not args.notes_only and path in {
+            (args.output / name).resolve()
+            for name in ("detected-notes.json", "notes.json", "notes.mid", "tab.gp5", "tab.txt")
+        }:
+            raise ValueError("Choose a different output folder to preserve the input file")
         if not path.is_file():
             raise ValueError(f"Input file does not exist: {path}")
         health = None
@@ -143,16 +225,28 @@ def main():
             check_path.write_text(json.dumps(health, indent=2) + "\n", encoding="utf-8")
             for warning in health["warnings"]:
                 print("Audio note: " + warning, flush=True)
+        saved_bpm = None
+        saved_tuning = None
+        saved_grid = None
+        saved_meter = None
+        if args.events:
+            detected, saved_metadata = load_event_document(path)
+            saved_bpm = recorded_bpm(saved_metadata)
+            saved_tuning = recorded_tuning(saved_metadata)
+            saved_grid = recorded_score_grid(saved_metadata)
+            saved_meter = recorded_meter(saved_metadata)
+        tuning = args.tuning or saved_tuning or STANDARD_TUNING
+        grid = args.grid or saved_grid or 16
+        meter = args.meter or saved_meter or DEFAULT_METER
         tempo = estimate_tempo(path) if args.bpm == "auto" else None
-        bpm = tempo.bpm if tempo else args.bpm
+        bpm = tempo.bpm if tempo else args.bpm or saved_bpm or 120.0
+        tempo_source = "estimated" if tempo else "supplied"
+        if args.bpm is None:
+            tempo_source = "saved" if saved_bpm is not None else "default"
         quantize(0, bpm)
-        if (
-            args.audio
-            and args.backend == "baseline"
-            and baseline_frequency_floor(min(args.tuning)) < 75
-        ):
+        if args.audio and args.backend == "baseline" and baseline_frequency_floor(min(tuning)) < 75:
             print(
-                f"Detector note: Using the selected tuning's lower search limit ({baseline_frequency_floor(min(args.tuning)):.1f} Hz) for the simple melody detector.",
+                f"Detector note: Using the selected tuning's lower search limit ({baseline_frequency_floor(min(tuning)):.1f} Hz) for the simple melody detector.",
                 flush=True,
             )
         if tempo:
@@ -161,29 +255,36 @@ def main():
                 flush=True,
             )
         if args.separate:
+            print("Progress: Separating guitar from the mix.", flush=True)
             path = separate_guitar(path, args.output / "stems")
-        if args.events:
-            detected = load_events(path)
-        elif args.backend == "guitar-gaps":
-            detected = transcribe(
-                path,
-                args.backend,
-                args.min_confidence,
-                guitar_onset=args.onset_threshold if args.onset_threshold is not None else 0.3,
-                guitar_checkpoint=args.guitar_checkpoint,
-            )
-        elif args.backend == "baseline" and baseline_frequency_floor(min(args.tuning)) < 75:
-            detected = transcribe(
-                path, args.backend, args.min_confidence, baseline_min_pitch=min(args.tuning)
-            )
-        else:
-            detected = transcribe(path, args.backend, args.min_confidence)
+        if args.audio:
+            detector_status = {
+                "baseline": "Detecting single-note melody (one pitch at a time).",
+                "basic-pitch": "Detecting notes with Basic Pitch.",
+                "guitar-gaps": "Detecting notes with the experimental guitar model.",
+            }
+            print(f"Progress: {detector_status[args.backend]}", flush=True)
+            if args.backend == "guitar-gaps":
+                detected = transcribe(
+                    path,
+                    args.backend,
+                    args.min_confidence,
+                    guitar_onset=args.onset_threshold if args.onset_threshold is not None else 0.3,
+                    guitar_checkpoint=args.guitar_checkpoint,
+                )
+            elif args.backend == "baseline" and baseline_frequency_floor(min(tuning)) < 75:
+                detected = transcribe(
+                    path, args.backend, args.min_confidence, baseline_min_pitch=min(tuning)
+                )
+            else:
+                detected = transcribe(path, args.backend, args.min_confidence)
         metadata = {
             "input": str(path),
             "audio_check": health,
             "original_input": str((args.audio or args.events).resolve()),
             "separated": args.separate,
-            "tempo_source": "estimated" if tempo else "supplied",
+            "bpm": bpm,
+            "tempo_source": tempo_source,
             "tempo_estimate": asdict(tempo) if tempo else None,
             "backend": "events" if args.events else args.backend,
             "min_confidence": None
@@ -199,17 +300,19 @@ def main():
             else None,
             "timing": "seconds, original detected timing before score quantization",
             "experimental_string_model": str(args.string_model) if args.string_model else None,
-            "max_span": args.max_span
+            "preferred_fret_span": args.preferred_span
             if args.fretting == "polyphonic" and not args.notes_only
             else None,
             "output_mode": "notes-only" if args.notes_only else "editable-tab",
+            "score_grid": None if args.notes_only else grid,
+            "score_meter": None if args.notes_only else meter,
             "fingering_requested": not args.notes_only,
             "guitar_range_filter_requested": args.guitar_range,
-            "baseline_minimum_search_hz": baseline_frequency_floor(min(args.tuning))
+            "baseline_minimum_search_hz": baseline_frequency_floor(min(tuning))
             if args.audio and args.backend == "baseline"
             else None,
-            "tuning_midi": list(args.tuning),
-            "tuning_string_order": "string 1 (thin) to string 6 (thick)",
+            "tuning_midi": list(tuning),
+            "tuning_string_order": f"string 1 (thin) to string {len(tuning)} (thick)",
         }
         if args.backend == "guitar-gaps" and not args.events:
             from .guitar_gaps import (
@@ -265,24 +368,19 @@ def main():
             raise ValueError(
                 "No notes detected. Check that the guitar is clearly audible in the recording."
             )
-        if args.fretting == "polyphonic" and args.max_span != 5 and not args.notes_only:
-            print(
-                f"Fingering note: Using a {args.max_span}-fret span limit; review the stretches before playing.",
-                flush=True,
-            )
         selected = detected
         if args.guitar_range:
-            minimum, maximum = min(args.tuning), min(127, max(args.tuning) + 24)
-            selected = [note for note in detected if minimum <= note.pitch <= maximum]
-            excluded = [
-                {"source_index": index, "note": asdict(note)}
-                for index, note in enumerate(detected)
-                if not minimum <= note.pitch <= maximum
-            ]
+            minimum, maximum = min(tuning), min(127, max(tuning) + 24)
+            selected, excluded = [], []
+            for index, note in enumerate(detected):
+                if fret_positions(note.pitch, tuning):
+                    selected.append(note)
+                else:
+                    excluded.append({"source_index": index, "note": asdict(note)})
             report_path = args.output / "diagnostics" / f"range-filter-{stamp}.json"
             audit = {
-                "purpose": "Explicitly requested selected-tuning / 24-fret pitch filter",
-                "tuning_midi": list(args.tuning),
+                "purpose": "Explicitly requested filter for pitches without a string at frets 0-24",
+                "tuning_midi": list(tuning),
                 "min_pitch": minimum,
                 "max_pitch": maximum,
                 "source_note_count": len(detected),
@@ -299,8 +397,8 @@ def main():
             metadata["guitar_range_filter"]["audit_file"] = str(report_path.resolve())
             save_events(selected, args.output / "diagnostics" / f"selected-{stamp}.json", metadata)
             print(
-                f"Range note: Excluded {len(excluded)} of {len(detected)} detections outside "
-                f"selected guitar range ({minimum}-{maximum}). Raw notes and exclusions are saved in diagnostics.",
+                f"Range note: Excluded {len(excluded)} of {len(detected)} detections with no string "
+                "in the selected tuning at frets 0-24. Raw notes and exclusions are saved in diagnostics.",
                 flush=True,
             )
             if detected and not selected:
@@ -319,7 +417,7 @@ def main():
             )
             return
         assign = assign_frets if args.fretting == "melodic" else assign_polyphonic_frets
-        assignment_options = {} if args.fretting == "melodic" else {"max_span": args.max_span}
+        assignment_options = {} if args.fretting == "melodic" else {"max_span": args.preferred_span}
         if args.string_model:
             from .string_model import string_priors
 
@@ -347,14 +445,98 @@ def main():
                 f"Timing note: Applied a {args.attack_lead_ms:g} ms attack lead for export. Original events are preserved.",
                 flush=True,
             )
-        notes = assign(export_events, tuning=args.tuning, **assignment_options)
-        timing = write_outputs(notes, args.output, bpm, args.grid, tuning=args.tuning)
+        original_events = export_events
+        original_options = assignment_options.copy()
+        audit = args.output / "diagnostics" / f"overlap-recovery-{stamp}.json"
+        print("Progress: Assigning notes to guitar strings.", flush=True)
+        try:
+            notes = assign(export_events, tuning=tuning, **assignment_options)
+        except StringAssignmentConflict:
+            if args.strict_overlaps:
+                raise
+            print("Progress: Resolving overlapping notes.", flush=True)
+            notes, retained = recover_overlapping_notes(
+                export_events, tuning=tuning, **assignment_options
+            )
+            metadata["overlap_recovery"] = _record_overlap_recovery(
+                original_events, retained, audit
+            )
+            if "string_priors" in assignment_options:
+                priors = assignment_options["string_priors"]
+                assignment_options["string_priors"] = [priors[index] for index in retained]
+            export_events = list(retained.values())
+        refit = (
+            partial(assign_polyphonic_frets, export_events, tuning=tuning, **assignment_options)
+            if args.fretting == "polyphonic"
+            else None
+        )
+        grids = SCORE_GRIDS[SCORE_GRIDS.index(grid) :] if args.retry_finer_grid else (grid,)
+        print("Progress: Building the Guitar Pro score.", flush=True)
+        for candidate in grids:
+            try:
+                timing, refitted = _write_score_at_grid(
+                    notes, args.output, bpm, candidate, tuning, meter, refit
+                )
+            except GridCollision:
+                if candidate != grids[-1]:
+                    continue
+                if not args.retry_finer_grid or args.strict_overlaps or refit is None:
+                    raise
+                print("Progress: Resolving overlapping notes on the score grid.", flush=True)
+                notes, retained = recover_overlapping_notes(
+                    original_events,
+                    tuning=tuning,
+                    score_grid=(int(bpm + 0.5), candidate),
+                    **original_options,
+                )
+                metadata["overlap_recovery"] = _record_overlap_recovery(
+                    original_events, retained, audit, score_grid=candidate
+                )
+                timing = write_outputs(
+                    notes, args.output, bpm, candidate, tuning=tuning, meter=meter
+                )
+                refitted = True
+                break
+            else:
+                break
+        if refitted:
+            metadata["score_grid_fingering_retry"] = True
+        if candidate != grid:
+            retry = {"requested": grid, "used": candidate}
+            metadata.update(score_grid=candidate, finer_grid_retry=retry)
+            _, original_metadata = load_event_document(diagnostic)
+            original_metadata.update(score_grid=candidate, finer_grid_retry=retry)
+            save_events(detected, diagnostic, original_metadata)
+            print(
+                f"Timing note: Used a 1/{candidate} grid after a collision at 1/{grid}.", flush=True
+            )
+            grid = candidate
         save_events(selected, args.output / "detected-notes.json", metadata)
     except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError) as exc:
+        if isinstance(exc, GridCollision):
+            if not args.retry_finer_grid and grid < SCORE_GRIDS[-1]:
+                print(
+                    "Timing note: Rebuild from the saved detections and enable "
+                    "Try a finer grid if notes collide (--retry-finer-grid).",
+                    flush=True,
+                )
+            else:
+                print(
+                    "Timing note: Review the tempo or edit the saved detections before rebuilding.",
+                    flush=True,
+                )
+        if isinstance(exc, UnplayablePitch):
+            message = "Check the guitar's tuning and rebuild from the saved detections."
+            if not args.guitar_range:
+                message += (
+                    " If the tuning is correct, enable Exclude notes outside selected tuning / "
+                    "24 frets (--guitar-range) to leave out pitches without a valid string and fret."
+                )
+            print(f"Range note: {message}", flush=True)
         parser.exit(1, f"Could not transcribe: {exc}\n")
     print(f"Wrote {len(notes)} notes to {args.output.resolve()}")
     if timing["starts_moved_over_50ms"]:
-        suggestion = "Try a finer rhythm grid" if args.grid < 64 else "Review the tempo and rhythm"
+        suggestion = "Try a finer rhythm grid" if grid < 64 else "Review the tempo and rhythm"
         print(
             f"Timing note: {timing['starts_moved_over_50ms']} note "
             f"{'start' if timing['starts_moved_over_50ms'] == 1 else 'starts'} moved by over 50 ms "
@@ -362,4 +544,4 @@ def main():
         )
 
 
-from .events import load_events, save_events
+from .events import load_event_document, save_events

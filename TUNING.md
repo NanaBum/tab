@@ -1,37 +1,44 @@
 # Explicit guitar tuning
 
-The app offers `standard`, `drop-d`, `eb-standard` and `d-standard`. Standard is
-still selected on startup. Choose the tuning actually used in the recording;
-the program does not infer it. The command line also accepts six comma-separated
-MIDI open-string pitches, in physical string order 1 through 6 (thin to thick):
+The app offers six- and seven-string presets. Standard is selected on startup.
+Choose the tuning used in the recording. You can also enter six or seven
+comma-separated MIDI open-string pitches in the app or command line, ordered
+from the thinnest string to the thickest.
 
-| Preset | MIDI open pitches, strings 1–6 |
+| Preset | MIDI open pitches, thin to thick |
 | --- | --- |
 | standard | 64, 59, 55, 50, 45, 40 |
 | drop-d | 64, 59, 55, 50, 45, 38 |
+| drop-c-sharp | 63, 58, 54, 49, 44, 37 |
 | eb-standard | 63, 58, 54, 49, 44, 39 |
 | d-standard | 62, 57, 53, 48, 43, 38 |
+| c-sharp-standard | 61, 56, 52, 47, 42, 37 |
+| seven-string-standard | 64, 59, 55, 50, 45, 40, 35 |
+| seven-string-drop-a | 64, 59, 55, 50, 45, 40, 33 |
 
 ```powershell
 uv run tabber riff.wav --backend basic-pitch --tuning drop-d --bpm 120 --output runs/drop-d
 uv run tabber --events runs/earlier/detected-notes.json --tuning 64,59,55,50,45,36 --bpm 120 --output runs/custom-tuning
 ```
 
-Rebuilding saved notes requires an explicit tuning choice again; it defaults to
-standard rather than guessing from an earlier file. The original event file
-remains unchanged. Existing manual TuxGuitar edits are not carried over by replay.
+Rebuilding saved notes restores the tuning recorded in the event file. Select
+another preset in the app or pass `--tuning` to override it. With older files
+that have no saved tuning, review the desktop selection before exporting. The
+command line uses standard tuning for those files when `--tuning` is omitted.
 
 This changes the available string/fret positions, optional range-filter bounds,
 GP5 string declarations and text labels. It does **not** transpose, add or remove
 detected notes, retune audio, or change the ML model. Range filtering remains a
 separate explicit option, saving raw events and every exclusion with selected
-tuning metadata. The normal five-fret span also remains unchanged. Core export
-still supports six strings and frets 0–24, without capo or microtonal pitches.
+tuning metadata. GP5 export supports six or seven strings and frets 0–24. For capoed
+recordings, supplying the effective open pitches gives fret numbers relative to
+the capo. GP5 output does not mark a capo position.
 
 Saved GP5 files are parsed back and checked against the requested tuning and
-every intended attack/tie. Original pitches remain in MIDI and JSON. JSON records
-`tuning_midi` and physical string order; alternate-tuning exports use
-`string_order: string 1 to string 6`, while standard retains its legacy label.
+every intended attack/tie. Original detections remain in the saved event JSON and
+can be auditioned with notes-only MIDI. JSON records
+`tuning_midi` and physical string order. Alternate tunings use a numbered
+string order, and six-string standard retains its legacy label.
 The timed-note readers accept both forms. The short untimed standard-tuning
 position-list comparator remains standard-only; use timed events for other tunings.
 The experimental string-tone model is also refused for nonstandard tuning,
@@ -39,12 +46,11 @@ because its training/evaluation assumptions have not been checked there.
 
 ## What is verified
 
-All four presets preserve six simultaneous held open strings, including ties
+The preset checks preserve all simultaneous held open strings, including ties
 across a bar, through fretting, GP5 save/readback, MIDI and reference reimport.
 An actual saved-note CLI rebuild placed MIDI 38 on string 6 fret 0 and retained
 all seven known synthetic events. The optional range audit keeps low D (38) and
-reports every excluded event. The desktop selector and complete layout were
-visually checked with standard tuning selected and all four choices present.
+reports every excluded event.
 
 These are routing and file checks, not proof of real alternate-tuned guitar
 accuracy. A seven-tone synthetic audio trial exposed a detection limitation:

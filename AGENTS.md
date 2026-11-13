@@ -8,8 +8,9 @@ Demo: `uv run python scripts/make_demo.py`, then
 `uv run tabber runs/demo.wav --output runs/demo --bpm 120`.
 
 Pipeline: separate.py -> transcribe.py -> fretting.py -> rhythm.py -> export.py.
-gp5.py builds editable 4/4 scores on a sixteenth-note grid; test saved files by
-parsing them again and verifying attacks, ties, rests, tuning, and bar lengths.
+gp5.py builds editable scores with a constant meter, defaulting to 4/4 on a
+sixteenth-note grid. Reopen saved files and verify attacks, ties, rests, tuning,
+time signature, and bar lengths.
 Core records live in models.py. All times are seconds; pitches are MIDI integers.
 String 0 is physical string 1 (normally high E); standard tuning defaults to
 (64, 59, 55, 50, 45, 40). Explicit tuning must flow through fretting, range audits,
@@ -28,9 +29,10 @@ Keep heavy ML dependencies optional and document their separate environments.
 Use local computing for now. Do not start paid cloud jobs or increase spending
 limits. Hosted CI is manual-only until the user chooses to use it.
 The baseline detector is monophonic; the ML/fingering/GP5 path supports overlaps.
-Never silently drop notes to make a fingering or export succeed. Confidence
+Preserve original detections and audit every shortened or omitted note used to
+recover a string conflict during export. Fret span is a preference only. Confidence
 thresholding must be explicit and documented. Polyphonic fingering is heuristic.
 Opt-in instrument-range filtering must preserve unfiltered events and an indexed
-exclusion audit. Keep it off by default; never silently widen the five-fret span.
+exclusion audit. Keep the range filter off by default.
 Core tests must not import TensorFlow. Keep ML pins in requirements/ml.in and the
 Windows/Python 3.11 lock separate from uv.lock. These paths are tested locally.

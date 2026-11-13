@@ -1,7 +1,10 @@
+import json
+
 import mido
 import pytest
 
 from tabber.export import write_outputs
+from tabber.gp5 import read_gp5, score_events
 from tabber.models import FrettedNote, Note
 
 
@@ -59,8 +62,6 @@ def test_unison_strings_have_independent_midi_releases(tmp_path):
 
 
 def test_subtick_note_has_positive_midi_duration_and_keeps_original_json(tmp_path):
-    import json
-
     note = FrettedNote(Note(0.0001, 0.0002, 64), 0, 0)
     write_outputs([note], tmp_path, 120)
     messages = mido.MidiFile(tmp_path / "notes.mid").tracks[0]
@@ -73,6 +74,25 @@ def test_subtick_note_has_positive_midi_duration_and_keeps_original_json(tmp_pat
     assert events == [(0, "note_on"), (1, "note_off")]
     original = json.loads((tmp_path / "notes.json").read_text())["notes"][0]["note"]
     assert original["start"] == 0.0001 and original["end"] == 0.0002
+
+
+def test_subtick_boundary_keeps_both_midi_notes_and_guitar_pro_attacks(tmp_path):
+    notes = [
+        FrettedNote(Note(0.01560, 0.01564, 64), 0, 0),
+        FrettedNote(Note(0.01564, 0.1, 65), 0, 1),
+    ]
+    write_outputs(notes, tmp_path, 120, grid=64)
+
+    assert midi_events(tmp_path / "notes.mid")[0] == [(15, 16, 0, 64), (16, 96, 0, 65)]
+    song = read_gp5(tmp_path / "tab.gp5")
+    assert [(start, fret) for start, _, _, fret in score_events(song)] == [(960, 0), (1020, 1)]
+    data = json.loads((tmp_path / "notes.json").read_text())
+    assert [event["note"]["start"] for event in data["notes"]] == [0.01560, 0.01564]
+    assert data["midi_timing"] == {
+        "shifted_starts": 1,
+        "maximum_start_delay_ticks": 1,
+        "ticks_per_quarter_note": 480,
+    }
 
 
 def test_adjacent_repeated_notes_release_before_reattack_on_the_same_string(tmp_path):

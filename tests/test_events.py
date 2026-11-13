@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from tabber.events import load_events, save_events
+from tabber.events import load_events, save_events, saved_detections
 from tabber.models import Note
 
 
@@ -15,6 +15,36 @@ def test_event_file_preserves_original_times_and_can_be_edited(tmp_path):
     payload["notes"][0]["pitch"] = 65
     path.write_text(json.dumps(payload), encoding="utf-8")
     assert load_events(path)[0].pitch == 65
+
+
+def test_saved_detections_prefers_the_retry_and_skips_partial_outputs(tmp_path):
+    folder = tmp_path / "diagnostics"
+    retry = folder / "retry-20260101-120000-000000.json"
+    save_events([], folder / "detected-20260101-120000-000000.json")
+    save_events([Note(0, 1, 64)], retry)
+    save_events([Note(0, 1, 65)], folder / "selected-20260101-120001-000000.json")
+    (folder / "detected-20260101-120002-000000.json").write_text("{", encoding="utf-8")
+    assert saved_detections(tmp_path) == retry
+    retry.unlink()
+    assert saved_detections(tmp_path) is None
+
+
+def test_interrupted_event_write_preserves_previous_detections(tmp_path, monkeypatch):
+    path = tmp_path / "detected-notes.json"
+    original = [Note(0, 1, 64)]
+    save_events(original, path)
+
+    def fail_replace(self, target):
+        assert self.parent == target.parent
+        assert self != target
+        assert load_events(target) == original
+        raise PermissionError("File is in use")
+
+    monkeypatch.setattr(type(path), "replace", fail_replace)
+    with pytest.raises(PermissionError, match="File is in use"):
+        save_events([Note(0, 1, 65)], path)
+    assert load_events(path) == original
+    assert list(tmp_path.iterdir()) == [path]
 
 
 @pytest.mark.parametrize(

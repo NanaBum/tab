@@ -1,6 +1,7 @@
 """Editable detected-note interchange, separate from fingering and score rhythm."""
 
 import json
+import tempfile
 from dataclasses import asdict
 from pathlib import Path
 
@@ -15,10 +16,25 @@ def save_events(notes: list[Note], path: Path, metadata: dict | None = None) -> 
         "notes": [asdict(n) for n in notes],
     }
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    staged = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=path.parent, delete=False
+        ) as stream:
+            staged = Path(stream.name)
+            stream.write(json.dumps(payload, indent=2) + "\n")
+        staged.replace(path)
+    finally:
+        if staged is not None:
+            staged.unlink(missing_ok=True)
 
 
 def load_events(path: Path) -> list[Note]:
+    notes, _ = load_event_document(path)
+    return notes
+
+
+def load_event_document(path: Path) -> tuple[list[Note], dict]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8-sig"))
         if payload.get("format") != "tabber-note-events" or payload.get("schema_version") != 1:
@@ -32,6 +48,22 @@ def load_events(path: Path) -> list[Note]:
                 result.append(Note(**values))
             except (KeyError, TypeError, ValueError) as error:
                 raise ValueError(f"Invalid note {index}: {error}") from error
-        return sorted(result, key=lambda n: n.start)
+        metadata = payload.get("metadata")
+        return sorted(result, key=lambda n: n.start), metadata if isinstance(metadata, dict) else {}
     except (KeyError, TypeError, AttributeError, json.JSONDecodeError) as error:
         raise ValueError(f"Invalid note-event file: {error}") from error
+
+
+def saved_detections(output: Path) -> Path | None:
+    """Find the latest usable, unfiltered detections from this conversion."""
+    diagnostics = output / "diagnostics"
+    candidates = [*diagnostics.glob("detected-*.json"), *diagnostics.glob("retry-*.json")]
+    # A retry shares its first pass's timestamp and takes precedence.
+    candidates.sort(key=lambda path: (path.stem.split("-", 1)[1], path.stem), reverse=True)
+    for path in candidates:
+        try:
+            if load_events(path):
+                return path
+        except (ValueError, OSError):
+            continue
+    return None

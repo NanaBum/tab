@@ -43,8 +43,8 @@ tuning / 24 frets** remains a separate, explicit choice; leave it off when you
 want to inspect every detection, including pitches that cannot fit the guitar.
 Selected tuning still informs the simple detector's lower frequency band.
 
-Fingering constraints cannot block this path: seven simultaneous events or a
-five-fret search failure can still be auditioned. Overlapping unisons receive
+The notes-only path plays detections with their original overlaps, including
+chords with more than six simultaneous notes. Overlapping unisons receive
 independent nonpercussion MIDI channels so their releases remain separate.
 More than 15 simultaneous same-pitch events cannot be represented this way and
 fail explicitly rather than being merged or dropped. Other pitches can share

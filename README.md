@@ -33,17 +33,21 @@ MIDI only (no tab)**. Use **Open MIDI** to audition the detected pitches and
 timings; no guitar positions or score grid are applied. The normal editable-tab
 mode remains the default. See [NOTES_ONLY.md](NOTES_ONLY.md).
 
-To change tempo or rhythm detail after listening once, choose **Rebuild saved
+To change tempo, time signature, or rhythm detail after listening once, choose **Rebuild saved
 notes** under Method, then choose `detected-notes.json` from the earlier results
 folder (or a timestamped detected file under `diagnostics/` after a fingering
-failure). Enter a numeric BPM or tap it, leave separation off, and create a new
-tab. Rebuilding keeps every saved note unless you explicitly select the optional
-instrument-range filter; sensitivity does not filter saved input.
+failure). Choosing a saved notes file restores its BPM, guitar tuning, time signature, and rhythm
+detail when available. **Use saved detections** also selects the unfiltered notes
+and turns off separation. You can change these settings before creating a new tab.
+The command line restores them when you omit `--bpm`, `--tuning`, `--meter`, and `--grid`.
+Sensitivity does not filter saved input. Range exclusions and overlap recovery
+are recorded alongside the original detections.
 It assigns fingerings again and does not carry over edits made in TuxGuitar.
 
-If export fails, [recovery controls](FRETTING_RECOVERY.md) can explicitly exclude
-out-of-range detections with an audit, or allow a wider simultaneous fret span.
-They are separate choices and remain off by default in the app.
+If overlapping detections cannot fit on distinct strings, the app can shorten
+a sustain or omit a less certain note while keeping an audit and the original
+detections. The [range filter](FRETTING_RECOVERY.md) can separately exclude
+out-of-range detections when requested.
 
 The desktop app needs Tkinter in the Python installation. The terminal setup
 below also works without Tkinter.
@@ -63,7 +67,9 @@ as `.tg` if desired. `tab.txt` is a plain-text preview. `notes.mid` provides pla
 `notes.json` preserves detected timing, pitch, confidence, and fingering.
 MIDI uses one channel per guitar string so overlapping unisons have independent
 releases. Times round to 480 ticks per quarter note, with a minimum one-tick
-duration.
+duration. If two consecutive notes on a string round to the same tick,
+MIDI starts the later note at the first available tick. The adjustment is
+recorded in `notes.json`, and the Guitar Pro score uses its selected rhythm grid.
 `detected-notes.json` is a separate editable note-event file, before fingering and
 score quantization. To rebuild an edited detection without rerunning the audio:
 
@@ -94,19 +100,31 @@ ML environment. It analyzes at most the first 60 seconds and may follow half-tim
 double-time, or other rhythmic groupings. It does not identify the downbeat or
 changing tempo. The app keeps manual BPM as the default.
 One text-tab cell is a sixteenth note by default. Dashes mean no new onset, not a measured
-rest; exact durations are available in MIDI and JSON. GP5 uses 4/4 measures and
+rest; exact durations are available in MIDI and JSON. GP5 defaults to 4/4 measures and
 snaps starts and ends to sixteenth notes, with at least one cell per note. Gaps
 become rests, and sustained notes split into tied durations across measures.
-GP5 tempo is rounded to the nearest integer BPM (1-999). Original timings remain
-unchanged in JSON and are approximated at MIDI tick resolution. Grid collisions are rejected instead of discarding
-notes. For faster notes choose `--grid 32` or `--grid 64` (divisions per whole note).
+Set a known **Time signature** in the app or use `--meter 6/8` on the command
+line. The setting applies to the entire tab, starting at the beginning of the
+input. Tempo is still expressed in quarter-note BPM.
+The GP5 and text preview share a score grid at the nearest integer BPM (1–999).
+JSON preserves the original timings, and MIDI uses the requested tempo and
+rounds times to its tick resolution. If notes land
+on the same string and score cell, polyphonic export tries another fingering
+using the chosen tuning and grid. An unresolved collision prompts
+you to choose a finer grid. For faster notes choose `--grid 32` or `--grid 64`
+(divisions per whole note).
+**Try a finer grid if notes collide** (`--retry-finer-grid`) is optional.
+It tries the selected grid first and uses the next finer grid only when a
+score collision prevents export. If a collision remains at 1/64, it can use
+audited overlap recovery. The app reports and saves the grid it used.
 Exports record score-timing movement in `notes.json` and show a notice if any
 note starts moved by over 50 ms. A finer grid can preserve timing better but
 make notation busier. Saved detections can be rebuilt without another ML pass.
-Triplets, swing, other meters, and expressive techniques are not yet represented.
-Choose standard, Drop D, E-flat standard or D standard in the app; the command
-line also accepts six explicit MIDI open-string pitches. Tuning is supplied by
-the user and is not recognized automatically. See [TUNING.md](TUNING.md).
+Triplets, swing, meter changes, and expressive techniques are not yet represented.
+Choose a six- or seven-string tuning preset in the app, or enter six or seven
+comma-separated MIDI open-string pitches, from the thinnest string to the
+thickest. The same values work with `--tuning`. Supply the tuning used in the
+recording. See [TUNING.md](TUNING.md).
 
 ## Transcription limits
 
@@ -115,6 +133,11 @@ may merge repeated notes. The optional models can detect overlapping pitches.
 Review the resulting tab by ear, especially for distorted guitar or full-band
 recordings. Tabber suggests playable string and fret positions based on the
 detected notes and the selected tuning.
+An open string remains playable when it fits the phrase. It gets the same
+position cost as the lowest fretted alternative for that pitch.
+For nearby attacks that ring together, polyphonic fingering favors compact
+string groups, especially during repeated chords. The preference uses the
+detected pitches and their existing timings.
 
 ## Optional ML environments
 

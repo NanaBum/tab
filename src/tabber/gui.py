@@ -12,8 +12,11 @@ from datetime import datetime
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
+from .events import load_event_document, saved_detections
 from .jobs import run_conversion
-from .tempo import TapTempo
+from .rhythm import DEFAULT_METER, SCORE_GRIDS, parse_meter, recorded_meter, recorded_score_grid
+from .tempo import TapTempo, parse_bpm, recorded_bpm
+from .tuning import PRESETS, format_tuning, parse_tuning, recorded_tuning
 
 SAVED_NOTES = "Rebuild saved notes"
 GUITAR_MODEL = "Guitar model (experimental)"
@@ -30,21 +33,24 @@ def conversion_command(
     confidence,
     separate,
     guitar_range=False,
-    max_span=5,
     tuning="standard",
+    meter=DEFAULT_METER,
     notes_only=False,
+    retry_finer_grid=False,
 ):
     """Route saved events directly to export; filtering requires explicit opt-in."""
     interpreter = Path(interpreter)
     if interpreter.name.lower() == "pythonw.exe":
         interpreter = interpreter.with_name("python.exe")
     command = [str(interpreter), "-m", "tabber"]
-    from .tuning import parse_tuning
-
     parse_tuning(tuning)
     command.extend(("--tuning", tuning))
     if notes_only:
         command.append("--notes-only")
+    else:
+        command.extend(("--meter", parse_meter(meter)))
+        if retry_finer_grid:
+            command.append("--retry-finer-grid")
     if method == SAVED_NOTES:
         if tempo == "auto":
             raise ValueError("Saved notes need a supplied BPM; enter a number or tap the tempo.")
@@ -69,8 +75,6 @@ def conversion_command(
             command.append("--separate")
     if guitar_range:
         command.append("--guitar-range")
-    if max_span != 5 and not notes_only:
-        command.extend(("--max-span", str(max_span)))
     command.extend(("--bpm", str(tempo), "--grid", str(grid), "--output", str(output)))
     return command
 
@@ -96,6 +100,7 @@ class TabberApp:
         self.running = False
         self.cancel_event = threading.Event()
         self.result = None
+        self.rebuild_input = None
         self.ml = ml_python(self.root)
         from .guitar_gaps import default_checkpoint
 
@@ -145,7 +150,7 @@ class TabberApp:
         )
         ttk.Label(
             frame,
-            text="Use known BPM, tap the beat, or type auto for a rough estimate. Score meter: 4/4.",
+            text="Use quarter-note BPM, tap, or type auto for a rough estimate.",
             wraplength=460,
         ).grid(row=5, column=1, columnspan=2, sticky="w", pady=(5, 12))
         self.tuning = tk.StringVar(value="standard")
@@ -153,15 +158,25 @@ class TabberApp:
         ttk.Combobox(
             frame,
             textvariable=self.tuning,
-            values=("standard", "drop-d", "eb-standard", "d-standard"),
-            state="readonly",
+            values=tuple(PRESETS),
         ).grid(row=6, column=1, sticky="ew", pady=(0, 12))
         self.grid = tk.StringVar(value="16")
         ttk.Label(frame, text="Rhythm detail").grid(row=7, column=0, sticky="w")
         self.rhythm_detail = ttk.Combobox(
-            frame, textvariable=self.grid, values=("16", "32", "64"), width=8, state="readonly"
+            frame, textvariable=self.grid, values=SCORE_GRIDS, width=8, state="readonly"
         )
         self.rhythm_detail.grid(row=7, column=1, sticky="w")
+        self.meter = tk.StringVar(value=DEFAULT_METER)
+        meter_group = ttk.Frame(frame)
+        meter_group.grid(row=7, column=2, sticky="e", padx=(8, 0))
+        ttk.Label(meter_group, text="Time signature").pack(side="left", padx=(0, 6))
+        self.meter_control = ttk.Combobox(
+            meter_group,
+            textvariable=self.meter,
+            values=("4/4", "2/2", "2/4", "3/4", "5/4", "5/8", "6/8", "7/8", "9/8", "12/8"),
+            width=6,
+        )
+        self.meter_control.pack(side="left")
         ttk.Label(frame, text="16 is easier to read; 32 or 64 keeps faster notes.").grid(
             row=8, column=1, columnspan=2, sticky="w", pady=(5, 16)
         )
@@ -180,8 +195,8 @@ class TabberApp:
         ).grid(row=10, column=1, columnspan=2, sticky="w", pady=(5, 16))
         self.separate = tk.BooleanVar(value=False)
         self.guitar_range = tk.BooleanVar(value=False)
-        self.wider_span = tk.BooleanVar(value=False)
         self.notes_only = tk.BooleanVar(value=False)
+        self.retry_finer_grid = tk.BooleanVar(value=False)
         options = ttk.Frame(frame)
         options.grid(row=11, column=0, columnspan=3, sticky="w", pady=(0, 12))
         ttk.Checkbutton(
@@ -195,10 +210,10 @@ class TabberApp:
             text="Exclude notes outside selected tuning / 24 frets (save originals)",
             variable=self.guitar_range,
         ).grid(row=1, column=0, sticky="w")
-        self.stretch_control = ttk.Checkbutton(
-            options, text="Allow wider fret stretches (7 frets)", variable=self.wider_span
+        self.finer_grid_control = ttk.Checkbutton(
+            options, text="Try a finer grid if notes collide", variable=self.retry_finer_grid
         )
-        self.stretch_control.grid(row=2, column=0, sticky="w")
+        self.finer_grid_control.grid(row=2, column=0, sticky="w")
         separation_python = (
             self.root
             / ".venv-separation"
@@ -249,12 +264,20 @@ class TabberApp:
             command=lambda: self.open_result(),
         )
         self.open_folder.pack(side="left", padx=8)
+        self.rebuild_saved = ttk.Button(
+            buttons,
+            text="Use saved detections",
+            state="disabled",
+            command=self.use_saved_detections,
+        )
+        self.rebuild_saved.pack(side="left")
         self.window.after(150, self.poll)
 
     def update_output_mode(self):
         notes_only = self.notes_only.get()
         self.rhythm_detail.configure(state="disabled" if notes_only else "readonly")
-        self.stretch_control.configure(state="disabled" if notes_only else "normal")
+        self.meter_control.configure(state="disabled" if notes_only else "normal")
+        self.finer_grid_control.configure(state="disabled" if notes_only else "normal")
         self.convert.configure(
             text="Detect notes and create MIDI" if notes_only else "Create guitar tab"
         )
@@ -272,6 +295,8 @@ class TabberApp:
         )
         if filename:
             self.audio.set(filename)
+            if replay:
+                self.set_saved_settings(Path(filename))
 
     def tap_tempo(self):
         bpm = self.taps.tap(time.monotonic())
@@ -284,8 +309,6 @@ class TabberApp:
     def start(self):
         path = Path(self.audio.get().strip()).expanduser()
         try:
-            from .tempo import parse_bpm
-
             tempo = parse_bpm(self.tempo.get())
             if (
                 tempo == "auto"
@@ -321,22 +344,25 @@ class TabberApp:
                 ],
                 separate=self.separate.get(),
                 guitar_range=self.guitar_range.get(),
-                max_span=7 if self.wider_span.get() else 5,
                 tuning=self.tuning.get(),
+                meter=self.meter.get(),
                 notes_only=self.notes_only.get(),
+                retry_finer_grid=self.retry_finer_grid.get(),
             )
         except (ValueError, OSError) as error:
-            messagebox.showerror("Check saved notes", str(error))
+            messagebox.showerror("Check input settings", str(error))
             return
         self.running = True
         self.cancel_event.clear()
         self.result = None
+        self.rebuild_input = None
         self.convert.configure(state="disabled")
         self.stop_conversion.configure(state="normal")
         self.browse.configure(state="disabled")
         self.open_tab.configure(state="disabled")
         self.open_midi.configure(state="disabled")
         self.open_folder.configure(state="disabled")
+        self.rebuild_saved.configure(state="disabled")
         self.progress.start(12)
         self.status.set(
             "Rebuilding the tab from saved notes…"
@@ -354,7 +380,11 @@ class TabberApp:
     def worker(self, command, output):
         try:
             process = run_conversion(
-                command, cwd=self.root, log_path=output / "run.log", cancel_event=self.cancel_event
+                command,
+                cwd=self.root,
+                log_path=output / "run.log",
+                cancel_event=self.cancel_event,
+                on_progress=lambda message: self.messages.put((None, output, message)),
             )
             log = (output / "run.log").read_text(encoding="utf-8", errors="replace")
             if process.cancelled:
@@ -379,7 +409,13 @@ class TabberApp:
                     line
                     for line in log.splitlines()
                     if line.startswith(
-                        ("Audio note:", "Range note:", "Fingering note:", "Detector note:")
+                        (
+                            "Audio note:",
+                            "Range note:",
+                            "Fingering note:",
+                            "Detector note:",
+                            "Timing note:",
+                        )
                     )
                 ]
                 if notices:
@@ -421,6 +457,11 @@ class TabberApp:
         except queue.Empty:
             pass
         else:
+            if success is None:
+                if self.running and not self.cancel_event.is_set():
+                    self.status.set(message)
+                self.window.after(150, self.poll)
+                return
             self.running = False
             self.result = output
             self.progress.stop()
@@ -428,14 +469,54 @@ class TabberApp:
             self.stop_conversion.configure(state="disabled")
             self.browse.configure(state="normal")
             self.open_folder.configure(state="normal" if output.exists() else "disabled")
+            self.rebuild_input = saved_detections(output)
+            self.rebuild_saved.configure(state="normal" if self.rebuild_input else "disabled")
             self.open_tab.configure(
                 state="normal" if success and (output / "tab.gp5").is_file() else "disabled"
             )
             self.open_midi.configure(
                 state="normal" if success and (output / "notes.mid").is_file() else "disabled"
             )
+            if not success and self.rebuild_input and not self.cancel_event.is_set():
+                message += (
+                    " Choose Use saved detections to retry the tab or select "
+                    "Save notes and MIDI only to hear the detected notes."
+                )
             self.status.set(message)
         self.window.after(150, self.poll)
+
+    def use_saved_detections(self):
+        if self.running or self.rebuild_input is None:
+            return
+        if not self.rebuild_input.is_file():
+            self.rebuild_saved.configure(state="disabled")
+            self.status.set("The saved detections file is unavailable.")
+            return
+        self.backend.set(SAVED_NOTES)
+        self.audio.set(str(self.rebuild_input))
+        self.separate.set(False)
+        self.set_saved_settings(self.rebuild_input)
+
+    def set_saved_settings(self, path):
+        try:
+            _, metadata = load_event_document(path)
+        except (OSError, ValueError):
+            metadata = {}
+        bpm = recorded_bpm(metadata)
+        tuning = recorded_tuning(metadata)
+        grid = recorded_score_grid(metadata)
+        self.meter.set(recorded_meter(metadata) or DEFAULT_METER)
+        if grid is not None:
+            self.grid.set(str(grid))
+        if tuning is not None:
+            self.tuning.set(format_tuning(tuning))
+        if bpm is None:
+            self.status.set(
+                "Saved detections selected. Enter a BPM or tap the tempo, and check the tuning."
+            )
+        else:
+            self.tempo.set(str(bpm))
+            self.status.set(f"Saved detections selected at {bpm:g} BPM. Review tempo and tuning.")
 
     def open_result(self, filename=None):
         if self.result is None:
