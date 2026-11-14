@@ -33,6 +33,7 @@ def separate_guitar(path: Path, output: Path) -> Path:
         del audio
         command = [
             str(python),
+            "-I",
             "-m",
             "demucs",
             "-n",

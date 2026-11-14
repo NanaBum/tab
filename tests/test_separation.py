@@ -15,6 +15,7 @@ def test_mono_input_is_materialized_as_stereo_without_changing_original(tmp_path
     output = tmp_path / "stems"
 
     def run(command, **kwargs):
+        assert command[1:4] == ["-I", "-m", "demucs"]
         normalized = Path(command[-1])
         audio, rate = sf.read(normalized, always_2d=True)
         assert audio.shape == (1000, 2)
