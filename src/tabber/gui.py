@@ -129,13 +129,13 @@ class TabberApp:
         ttk.Entry(frame, textvariable=self.audio).grid(row=2, column=1, sticky="ew")
         self.browse = ttk.Button(frame, text="Choose file…", command=self.choose_audio)
         self.browse.grid(row=2, column=2, padx=(8, 0))
-        self.backend = tk.StringVar(
-            value="Machine learning" if self.ml else "Simple melody detector"
-        )
-        choices = ["Simple melody detector"] + (["Machine learning"] if self.ml else [])
+        choices = []
+        if self.ml:
+            choices.append("Machine learning")
         if self.guitar:
             choices.append(GUITAR_MODEL)
-        choices.append(SAVED_NOTES)
+        choices.extend(("Simple melody detector", SAVED_NOTES))
+        self.backend = tk.StringVar(value=choices[0])
         ttk.Label(frame, text="Method").grid(row=3, column=0, sticky="w", pady=12)
         self.method = ttk.Combobox(
             frame, textvariable=self.backend, values=choices, state="readonly"
