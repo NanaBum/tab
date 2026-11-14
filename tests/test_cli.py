@@ -188,6 +188,26 @@ def test_cli_handles_grid_collision_at_the_selected_grid(tmp_path, monkeypatch, 
     assert load_events(saved) == events
 
 
+def test_cli_reports_only_the_repairs_used_in_the_saved_score(tmp_path, monkeypatch, capsys):
+    source, output = tmp_path / "events.json", tmp_path / "score"
+    events = [Note(0, 0.06, 40, 0.8), Note(0.05, 0.1, 41, 0.2)]
+    save_events(events, source)
+    monkeypatch.setattr("sys.argv", ["tabber", "--events", str(source), "--output", str(output)])
+
+    main()
+
+    notices = [line for line in capsys.readouterr().out.splitlines()
+               if line.startswith("Fingering note:")]
+    assert len(notices) == 1
+    assert "after a collision on the 1/16 grid" in notices[0]
+    metadata = json.loads((output / "detected-notes.json").read_text())["metadata"]
+    audit = json.loads(Path(metadata["overlap_recovery"]["audit"]).read_text())
+    assert audit["score_grid"] == 16
+    assert [entry["source_index"] for entry in audit["omitted"]] == [1]
+    assert load_events(output / "detected-notes.json") == events
+    assert len(score_events(read_gp5(output / "tab.gp5"))) == 1
+
+
 @pytest.mark.parametrize("start,grid", [(0.05, 32), (0.023, 64)])
 def test_cli_can_retry_a_finer_grid_without_changing_detections(
     tmp_path, monkeypatch, capsys, start, grid

@@ -447,6 +447,8 @@ def main():
             )
         original_events = export_events
         original_options = assignment_options.copy()
+        retained = None
+        recovery_grid = None
         audit = args.output / "diagnostics" / f"overlap-recovery-{stamp}.json"
         print("Progress: Assigning notes to guitar strings.", flush=True)
         try:
@@ -457,9 +459,6 @@ def main():
             print("Progress: Resolving overlapping notes.", flush=True)
             notes, retained = recover_overlapping_notes(
                 export_events, tuning=tuning, **assignment_options
-            )
-            metadata["overlap_recovery"] = _record_overlap_recovery(
-                original_events, retained, audit
             )
             if "string_priors" in assignment_options:
                 priors = assignment_options["string_priors"]
@@ -489,9 +488,7 @@ def main():
                     score_grid=(int(bpm + 0.5), candidate),
                     **original_options,
                 )
-                metadata["overlap_recovery"] = _record_overlap_recovery(
-                    original_events, retained, audit, score_grid=candidate
-                )
+                recovery_grid = candidate
                 timing = write_outputs(
                     notes, args.output, bpm, candidate, tuning=tuning, meter=meter
                 )
@@ -499,6 +496,10 @@ def main():
                 break
             else:
                 break
+        if retained is not None:
+            metadata["overlap_recovery"] = _record_overlap_recovery(
+                original_events, retained, audit, score_grid=recovery_grid
+            )
         if refitted:
             metadata["score_grid_fingering_retry"] = True
         if candidate != grid:
