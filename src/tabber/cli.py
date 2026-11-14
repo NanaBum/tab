@@ -464,7 +464,7 @@ def main():
             except GridCollision:
                 if candidate != grids[-1]:
                     continue
-                if not args.retry_finer_grid or args.strict_overlaps or refit is None:
+                if args.strict_overlaps or refit is None:
                     raise
                 notes, retained = recover_overlapping_notes(
                     original_events,
