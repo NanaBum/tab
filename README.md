@@ -110,13 +110,12 @@ The GP5 and text preview share a score grid at the nearest integer BPM (1–999)
 JSON preserves the original timings, and MIDI uses the requested tempo and
 rounds times to its tick resolution. If notes land
 on the same string and score cell, polyphonic export tries another fingering
-using the chosen tuning and grid. An unresolved collision prompts
-you to choose a finer grid. For faster notes choose `--grid 32` or `--grid 64`
-(divisions per whole note).
-**Try a finer grid if notes collide** (`--retry-finer-grid`) is optional.
-It tries the selected grid first and uses the next finer grid only when a
-score collision prevents export. If a collision remains at 1/64, it can use
-audited overlap recovery. The app reports and saves the grid it used.
+using the chosen tuning and grid. If a collision remains, the exporter can
+shorten or omit conflicting notes and records each adjustment in its overlap
+audit. Use `--strict-overlaps` to require export without those adjustments.
+For faster notes choose `--grid 32` or `--grid 64` (divisions per whole note).
+**Try a finer grid if notes collide** (`--retry-finer-grid`) tries finer grids
+before applying overlap recovery. The app reports and saves the grid it used.
 Exports record score-timing movement in `notes.json` and show a notice if any
 note starts moved by over 50 ms. A finer grid can preserve timing better but
 make notation busier. Saved detections can be rebuilt without another ML pass.

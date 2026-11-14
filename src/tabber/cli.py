@@ -480,7 +480,7 @@ def main():
             except GridCollision:
                 if candidate != grids[-1]:
                     continue
-                if not args.retry_finer_grid or args.strict_overlaps or refit is None:
+                if args.strict_overlaps or refit is None:
                     raise
                 print("Progress: Resolving overlapping notes on the score grid.", flush=True)
                 notes, retained = recover_overlapping_notes(
