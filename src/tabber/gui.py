@@ -42,7 +42,8 @@ def conversion_command(
     interpreter = Path(interpreter)
     if interpreter.name.lower() == "pythonw.exe":
         interpreter = interpreter.with_name("python.exe")
-    command = [str(interpreter), "-m", "tabber"]
+    # Use the selected environment's installed package, even from another checkout.
+    command = [str(interpreter), "-I", "-u", "-m", "tabber"]
     parse_tuning(tuning)
     command.extend(("--tuning", tuning))
     if notes_only:

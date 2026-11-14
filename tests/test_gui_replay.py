@@ -1,4 +1,5 @@
 import queue
+import subprocess
 import sys
 import threading
 from types import SimpleNamespace
@@ -31,6 +32,26 @@ def test_guitar_method_uses_its_own_sensitivity_scale(tmp_path):
     assert "--min-confidence" not in command
     assert "--guitar-range" not in command
     assert "--max-span" not in command
+
+
+def test_desktop_conversion_ignores_another_checkout(tmp_path, monkeypatch):
+    checkout = tmp_path / "other-checkout"
+    package = checkout / "tabber"
+    package.mkdir(parents=True)
+    (package / "__init__.py").write_text("raise RuntimeError('wrong checkout')", encoding="utf-8")
+    monkeypatch.setenv("PYTHONPATH", str(checkout))
+    source = tmp_path / "events.json"
+    output = tmp_path / "output"
+    save_events([Note(0, 0.5, 64)], source)
+    command = conversion_command(
+        sys.executable, source, output, method=SAVED_NOTES,
+        tempo=120, grid=16, confidence=0.5, separate=False,
+    )
+
+    result = subprocess.run(command, cwd=checkout, capture_output=True, text=True, check=False)
+
+    assert result.returncode == 0, result.stderr
+    assert len(score_events(read_gp5(output / "tab.gp5"))) == 1
 
 
 def test_saved_note_rebuild_only_filters_when_explicitly_requested(tmp_path):
@@ -284,7 +305,7 @@ def test_app_rebuild_preserves_weak_notes_without_listening_again(tmp_path, monk
         confidence=0.7,
         separate=False,
     )
-    monkeypatch.setattr(sys, "argv", ["tabber", *command[3:]])
+    monkeypatch.setattr(sys, "argv", ["tabber", *command[command.index("-m") + 2:]])
 
     def unexpected_listening(*args, **kwargs):
         raise AssertionError("Saved-note rebuild must not transcribe audio")
