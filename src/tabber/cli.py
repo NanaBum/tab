@@ -1,6 +1,7 @@
 import argparse
 import json
 import math
+import os
 import subprocess
 from dataclasses import asdict
 from datetime import datetime
@@ -33,6 +34,15 @@ from .separate import separate_guitar
 from .tempo import estimate_tempo, parse_bpm, recorded_bpm
 from .transcribe import baseline_frequency_floor, transcribe
 from .tuning import parse_tuning, recorded_tuning
+
+
+def _extended_windows_path(path):
+    absolute = os.path.abspath(path)
+    if absolute.startswith(("\\\\?\\", "\\\\.\\")):
+        return Path(absolute)
+    if absolute.startswith("\\\\"):
+        return Path("\\\\?\\UNC\\" + absolute[2:])
+    return Path("\\\\?\\" + absolute)
 
 
 def _write_score_at_grid(notes, output, bpm, grid, tuning, meter, refit):
@@ -203,6 +213,18 @@ def main():
     ):
         parser.error("Guitar-model options need --backend guitar-gaps and audio input")
     try:
+        if os.name == "nt" and args.events:
+            longest_artifact = (
+                args.output / "diagnostics" / "overlap-recovery-20000101-000000-000000.json"
+            )
+            if any(
+                len(os.path.abspath(path).encode("utf-16-le")) >= 520
+                for path in (args.events, longest_artifact)
+            ):
+                # Saved-event rebuilds use Python file I/O throughout. Keep both
+                # paths in the same namespace for the input-overwrite checks.
+                args.events = _extended_windows_path(args.events)
+                args.output = _extended_windows_path(args.output)
         if args.attack_lead_ms and args.output.exists() and any(args.output.iterdir()):
             raise ValueError("Choose a fresh output folder for the timing comparison")
         if args.notes_only:

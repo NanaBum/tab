@@ -1,9 +1,11 @@
 import json
+import os
+from pathlib import Path
 
 import pytest
 
 from tabber.cli import main
-from tabber.events import load_events, save_events
+from tabber.events import load_event_document, load_events, save_events
 from tabber.gp5 import read_gp5, score_events
 from tabber.models import Note
 
@@ -55,6 +57,40 @@ def test_explicit_range_filter_keeps_boundaries_and_audits_every_exclusion(
     assert [item["note"]["pitch"] for item in report["excluded"]] == [39, 89]
     assert "Range note: Excluded 2 of 4" in capsys.readouterr().out
     assert len(score_events(read_gp5(output / "tab.gp5"))) == 2
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows legacy path-length boundary")
+def test_saved_event_rebuild_writes_long_diagnostic_paths(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    source = Path("input.json")
+    notes = [Note(0, 0.25, 39), Note(0.5, 0.75, 40)]
+    save_events(notes, source)
+    output = Path("d" * max(10, 212 - len(str(tmp_path))))
+    monkeypatch.setattr(
+        "sys.argv", ["tabber", "--events", str(source), "--output", str(output), "--guitar-range"]
+    )
+
+    main()
+
+    delivered = output / "detected-notes.json"
+    selected, metadata = load_event_document(delivered)
+    audit = Path(metadata["guitar_range_filter"]["audit_file"])
+    try:
+        assert len(str(audit).removeprefix("\\\\?\\")) >= 260
+        assert json.loads(audit.read_text())["excluded"][0]["source_index"] == 0
+        assert selected == [notes[1]]
+        assert len(score_events(read_gp5(output / "tab.gp5"))) == 1
+        saved = delivered.read_bytes()
+        monkeypatch.setattr(
+            "sys.argv", ["tabber", "--events", str(delivered), "--output", str(output)]
+        )
+        with pytest.raises(SystemExit) as error:
+            main()
+        assert error.value.code == 1
+        assert "preserve the input file" in capsys.readouterr().err
+        assert delivered.read_bytes() == saved
+    finally:
+        audit.unlink()
 
 
 def test_explicit_filter_excludes_pitches_between_disjoint_string_ranges(tmp_path, monkeypatch):
