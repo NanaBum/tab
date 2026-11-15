@@ -28,13 +28,13 @@ def write_outputs(
     song = build_song(notes, bpm, grid, tuning=tuning, meter=meter)
     payload = {"bpm": bpm, "string_order": "high E to low E", "notes": [asdict(n) for n in notes]}
     if tuning != STANDARD_TUNING:
-        payload["string_order"] = "string 1 to string 6"
+        payload["string_order"] = f"string 1 to string {len(tuning)}"
     payload["score_grid"] = grid
     payload["score_meter"] = meter
     payload["tuning_midi"] = list(tuning)
-    payload["tuning_string_order"] = "string 1 (thin) to string 6 (thick)"
+    payload["tuning_string_order"] = f"string 1 (thin) to string {len(tuning)} (thick)"
     cells = max((quantize(n.note.end, bpm, grid // 4) for n in notes), default=1) + 1
-    rows = [["----"] * cells for _ in range(6)]
+    rows = [["----"] * cells for _ in tuning]
     occupied = set()
     for n in notes:
         column = quantize(n.note.start, bpm, grid // 4)
@@ -53,7 +53,7 @@ def write_outputs(
         else tuple(pitch_name(p) for p in tuning)
     )
     if tuning != STANDARD_TUNING:
-        text.insert(1, "Open strings (1 to 6): " + " ".join(labels))
+        text.insert(1, f"Open strings (1 to {len(tuning)}): " + " ".join(labels))
     if meter != DEFAULT_METER:
         text.insert(1, f"Time signature: {meter}")
     for first in range(0, cells, 32):
@@ -71,8 +71,8 @@ def write_outputs(
             mido.MetaMessage("time_signature", numerator=numerator, denominator=denominator)
         )
     # One channel per string keeps overlapping unisons independently releasable.
-    # Channels 0-5 avoid the conventional percussion channel (9).
-    for channel in range(6):
+    # Channels 0-6 avoid the conventional percussion channel (9).
+    for channel in range(len(tuning)):
         track.append(mido.Message("program_change", program=24, channel=channel))
     events = []
     ends_by_string = {}

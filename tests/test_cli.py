@@ -140,20 +140,29 @@ def test_cli_retries_fingering_when_attacks_share_a_score_cell(tmp_path, monkeyp
     ) == [64, 65]
 
 
-def test_cli_keeps_grid_collision_if_there_is_only_one_eligible_string(
-    tmp_path, monkeypatch, capsys
-):
+@pytest.mark.parametrize("strict", [False, True])
+def test_cli_handles_grid_collision_at_the_selected_grid(tmp_path, monkeypatch, capsys, strict):
     source, output = tmp_path / "events.json", tmp_path / "score"
-    events = [Note(0, 0.04, 40), Note(0.05, 0.1, 41)]
+    events = [Note(0, 0.04, 40, 0.8), Note(0.05, 0.1, 41, 0.2)]
     save_events(events, source)
-    monkeypatch.setattr("sys.argv", ["tabber", "--events", str(source), "--output", str(output)])
+    args = ["tabber", "--events", str(source), "--output", str(output)]
+    monkeypatch.setattr("sys.argv", args + (["--strict-overlaps"] if strict else []))
 
-    with pytest.raises(SystemExit) as error:
+    if strict:
+        with pytest.raises(SystemExit) as error:
+            main()
+        assert error.value.code == 1
+        assert "collide on the GP5" in capsys.readouterr().err
+        assert not (output / "tab.gp5").exists()
+    else:
         main()
+        assert load_events(output / "detected-notes.json") == events
+        metadata = json.loads((output / "detected-notes.json").read_text())["metadata"]
+        audit = json.loads(Path(metadata["overlap_recovery"]["audit"]).read_text())
+        assert audit["score_grid"] == 16
+        assert audit["omitted"][0]["source_index"] == 1
+        assert score_events(read_gp5(output / "tab.gp5")) == [(960, 1200, 6, 0)]
 
-    assert error.value.code == 1
-    assert "collide on the GP5" in capsys.readouterr().err
-    assert not (output / "tab.gp5").exists()
     [saved] = (output / "diagnostics").glob("detected-*.json")
     assert load_events(saved) == events
 

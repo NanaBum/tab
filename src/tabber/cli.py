@@ -101,7 +101,7 @@ def main():
     parser.add_argument(
         "--tuning",
         type=parse_tuning,
-        help="A tuning preset or six MIDI pitches, string 1 to 6. Defaults to saved tuning or standard.",
+        help="A tuning preset or six or seven MIDI pitches, thin to thick. Defaults to saved tuning or standard.",
     )
     parser.add_argument(
         "--bpm",
@@ -299,7 +299,7 @@ def main():
             if args.audio and args.backend == "baseline"
             else None,
             "tuning_midi": list(tuning),
-            "tuning_string_order": "string 1 (thin) to string 6 (thick)",
+            "tuning_string_order": f"string 1 (thin) to string {len(tuning)} (thick)",
         }
         if args.backend == "guitar-gaps" and not args.events:
             from .guitar_gaps import (
@@ -464,7 +464,7 @@ def main():
             except GridCollision:
                 if candidate != grids[-1]:
                     continue
-                if not args.retry_finer_grid or args.strict_overlaps or refit is None:
+                if args.strict_overlaps or refit is None:
                     raise
                 notes, retained = recover_overlapping_notes(
                     original_events,
