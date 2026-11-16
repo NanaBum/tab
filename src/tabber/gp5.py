@@ -1,6 +1,7 @@
-"""Build editable GP5 scores on a sixteenth-note grid in 4/4."""
+"""Build editable GP5 scores on a fixed rhythm grid with a constant meter."""
 
 import itertools
+from bisect import bisect_right
 from collections import Counter
 from pathlib import Path
 from typing import BinaryIO
@@ -9,12 +10,54 @@ import guitarpro
 from guitarpro import models as gp
 
 from .models import STANDARD_TUNING, FrettedNote
-from .rhythm import quantize
+from .rhythm import DEFAULT_METER, SCORE_GRIDS, parse_meter, quantize, score_interval
 from .tuning import validate_tuning
 
 
+class GridCollision(ValueError):
+    """Two notes assigned to a string occupy the same score cell."""
+
+
+def _sustain_durations(offset, length, durations, grid, beat_boundaries):
+    """Spell one uninterrupted group with the fewest beats within its bar."""
+    costs = [(0, 0, 0)] * (length + 1)
+    choices = [None] * length
+    for index in range(length - 1, -1, -1):
+        best = None
+        for duration in durations:
+            cells, denominator, _ = duration
+            if index + cells > length:
+                continue
+            tail_beats, tail_offbeat, tail_penalty = costs[index + cells]
+            base_cells = grid // denominator
+            start = offset + index
+            end = start + cells
+            # Equally compact spellings should expose the meter.
+            offbeat = index + cells < length and end not in beat_boundaries
+            off_grid = start not in beat_boundaries and start % base_cells != 0
+            cost = (
+                1 + tail_beats,
+                tail_offbeat + offbeat,
+                tail_penalty + (base_cells if off_grid else 0),
+            )
+            if best is None or cost < best:
+                best = cost
+                choices[index] = duration
+        costs[index] = best
+    index = 0
+    while index < length:
+        duration = choices[index]
+        yield duration
+        index += duration[0]
+
+
 def build_song(
-    notes: list[FrettedNote], bpm: float, grid: int = 16, *, tuning=STANDARD_TUNING
+    notes: list[FrettedNote],
+    bpm: float,
+    grid: int = 16,
+    *,
+    tuning=STANDARD_TUNING,
+    meter=DEFAULT_METER,
 ) -> gp.Song:
     """Quantize a performance without changing the source records.
 
@@ -23,9 +66,32 @@ def build_song(
     """
     tuning = validate_tuning(tuning)
     quantize(0, bpm)
-    if grid not in (16, 32, 64):
+    if grid not in SCORE_GRIDS:
         raise ValueError("GP5 grid must be 16, 32, or 64 divisions per whole note")
+    numerator, unit = map(int, parse_meter(meter).split("/"))
     step = 3840 // grid
+    measure_cells = numerator * (grid // unit)
+    measure_ticks = measure_cells * step
+    beams = {
+        "2/2": [4, 4, 0, 0],
+        "2/4": [2, 2, 0, 0],
+        "3/4": [2, 2, 2, 0],
+        "4/4": [2, 2, 2, 2],
+        "5/4": [2, 2, 2, 4],
+        "5/8": [2, 3, 0, 0],
+        "6/8": [3, 3, 0, 0],
+        "7/8": [2, 2, 3, 0],
+        "9/8": [3, 3, 3, 0],
+        "12/8": [3, 3, 3, 3],
+    }.get(f"{numerator}/{unit}", [8 * numerator // unit, 0, 0, 0])
+    grouped_eighths = unit == 8 and numerator in (5, 6, 7, 9, 12)
+    pulse_lengths = (
+        [beam * (grid // 8) for beam in beams if beam]
+        if grouped_eighths
+        else [grid // unit] * numerator
+    )
+    pulses = tuple(itertools.accumulate(pulse_lengths, initial=0))
+    beat_boundaries = frozenset(pulses)
     durations = sorted(
         [
             (grid // denominator, denominator, False)
@@ -48,22 +114,19 @@ def build_song(
     for n in ordered:
         if (
             not isinstance(n.string, int)
-            or not 0 <= n.string < 6
+            or not 0 <= n.string < len(tuning)
             or not isinstance(n.fret, int)
             or not 0 <= n.fret <= 24
         ):
             raise ValueError("GP5 export needs a valid string and fret from 0 to 24")
         if tuning[n.string] + n.fret != n.note.pitch:
             raise ValueError("Fingering does not match the pitch in the selected tuning")
-        start = quantize(n.note.start, tempo, grid // 4)
-        end = max(start + 1, quantize(n.note.end, tempo, grid // 4))
+        start, end = score_interval(n.note, tempo, grid)
         previous = ends_by_string.get(n.string)
         if previous and n.note.start < previous[0] - 1e-6:
             raise ValueError("Overlapping notes cannot occupy the same guitar string")
         if previous and start < previous[1]:
-            raise ValueError(
-                f"Notes collide on the GP5 1/{grid} grid; choose --grid 32 or --grid 64"
-            )
+            raise GridCollision(f"Notes collide on the GP5 1/{grid} grid")
         events.append((start, end, n))
         ends_by_string[n.string] = (n.note.end, end)
 
@@ -76,45 +139,86 @@ def build_song(
     track.measures.clear()
     song.measureHeaders.clear()
     final_cell = max((event[1] for event in events), default=1)
-    measure_count = max(1, (final_cell + grid - 1) // grid)
+    measure_count = max(1, (final_cell + measure_cells - 1) // measure_cells)
     for index in range(measure_count):
-        header = gp.MeasureHeader(number=index + 1, start=960 + index * 3840)
+        header = gp.MeasureHeader(
+            number=index + 1,
+            start=960 + index * measure_ticks,
+            timeSignature=gp.TimeSignature(numerator, gp.Duration(value=unit), beams.copy()),
+        )
         song.measureHeaders.append(header)
         track.measures.append(gp.Measure(track, header))
 
-    def append_segment(start, end, sounding):
-        while start < end:
-            bar, offset = divmod(start, grid)
-            available = min(end - start, grid - offset)
-            for cells, denominator, dotted in durations:
-                base_cells = grid // denominator
-                if cells <= available and offset % base_cells == 0:
-                    break
-            voice = track.measures[bar].voices[0]
-            beat = gp.Beat(
-                voice,
-                start=960 + start * step,
-                duration=gp.Duration(value=denominator, isDotted=dotted),
-                status=gp.BeatStatus.normal if sounding else gp.BeatStatus.rest,
+    def rest_durations(offset, available):
+        if grouped_eighths and offset == 0 and available == measure_cells:
+            whole_bar = next(
+                (duration for duration in durations if duration[0] == measure_cells), None
             )
-            for onset, fretted in sorted(sounding, key=lambda item: item[1].string):
-                beat.notes.append(
-                    gp.Note(
-                        beat,
-                        value=fretted.fret,
-                        string=fretted.string + 1,
-                        type=gp.NoteType.normal if start == onset else gp.NoteType.tie,
-                    )
+            if whole_bar is not None:
+                yield whole_bar
+                return
+        while available:
+            if grouped_eighths:
+                pulse = bisect_right(pulses, offset) - 1
+                limit = min(available, pulses[pulse + 1] - offset)
+                alignment = offset - pulses[pulse]
+            else:
+                limit = available
+                alignment = offset
+            for duration in durations:
+                cells, denominator, _ = duration
+                if cells <= limit and alignment % (grid // denominator) == 0:
+                    yield duration
+                    offset += cells
+                    available -= cells
+                    break
+
+    def append_segment(start, end, sounding):
+        ordered_strings = sorted(sounding, key=lambda item: item[1].string)
+        while start < end:
+            bar, offset = divmod(start, measure_cells)
+            available = min(end - start, measure_cells - offset)
+            spelling = (
+                _sustain_durations(offset, available, durations, grid, beat_boundaries)
+                if ordered_strings
+                else rest_durations(offset, available)
+            )
+            voice = track.measures[bar].voices[0]
+            for cells, denominator, dotted in spelling:
+                beat = gp.Beat(
+                    voice,
+                    start=960 + start * step,
+                    duration=gp.Duration(value=denominator, isDotted=dotted),
+                    status=gp.BeatStatus.normal if ordered_strings else gp.BeatStatus.rest,
                 )
-            voice.beats.append(beat)
-            start += cells
+                for onset, fretted in ordered_strings:
+                    beat.notes.append(
+                        gp.Note(
+                            beat,
+                            value=fretted.fret,
+                            string=fretted.string + 1,
+                            type=gp.NoteType.normal if start == onset else gp.NoteType.tie,
+                        )
+                    )
+                voice.beats.append(beat)
+                start += cells
 
     # A single rhythmic voice can contain chord attacks mixed with tied notes.
     # Split at every attack/release, retaining held strings through those splits.
-    boundaries = sorted({0, measure_count * grid} | {t for a, b, _ in events for t in (a, b)})
+    attacks = {}
+    releases = {}
+    for onset, stop, fretted in events:
+        attacks.setdefault(onset, []).append(fretted)
+        releases.setdefault(stop, []).append(fretted.string)
+    boundaries = sorted({0, measure_count * measure_cells, *attacks, *releases})
+    sounding = {}
     for start, end in itertools.pairwise(boundaries):
-        sounding = [(onset, fretted) for onset, stop, fretted in events if onset <= start < stop]
-        append_segment(start, end, sounding)
+        # A release and the next attack on that string can share this cell.
+        for string in releases.get(start, ()):
+            del sounding[string]
+        for fretted in attacks.get(start, ()):
+            sounding[fretted.string] = (start, fretted)
+        append_segment(start, end, sounding.values())
     return song
 
 
@@ -152,17 +256,19 @@ def score_events(song: gp.Song) -> list[tuple[int, int, int, int]]:
     if len(song.tracks) != 1:
         raise ValueError("Expected a single guitar track in this export")
     events, active = [], {}
+    expected_start = 960
     for measure in song.tracks[0].measures:
-        if (
-            measure.timeSignature.numerator != 4
-            or measure.timeSignature.denominator.value != 4
-            or any(beat.notes for voice in measure.voices[1:] for beat in voice.beats)
-        ):
-            raise ValueError("Unexpected meter or extra sounding voice in the GP5 export")
+        if any(beat.notes for voice in measure.voices[1:] for beat in voice.beats):
+            raise ValueError("Unexpected extra sounding voice in the GP5 export")
         beats = measure.voices[0].beats
-        if sum(beat.duration.time for beat in beats) != 3840:
-            raise ValueError("GP5 export contains an incomplete or overfull 4/4 measure")
+        if measure.start != expected_start:
+            raise ValueError("GP5 export contains a misplaced measure")
+        expected_start += measure.length
+        cursor = measure.start
         for beat in beats:
+            if beat.start != cursor:
+                raise ValueError("GP5 export contains a misplaced beat")
+            cursor += beat.duration.time
             for note in beat.notes:
                 if note.type == gp.NoteType.normal:
                     event = [beat.start, beat.start + beat.duration.time, note.string, note.value]
@@ -175,20 +281,33 @@ def score_events(song: gp.Song) -> list[tuple[int, int, int, int]]:
                     previous[1] += beat.duration.time
                 else:
                     raise ValueError("Unexpected note type in the GP5 export")
+        if cursor != expected_start:
+            raise ValueError("GP5 export contains an incomplete or overfull measure")
     return [tuple(event) for event in events]
 
 
 def verify_export(
-    song: gp.Song, notes: list[FrettedNote], bpm: float, grid: int, *, tuning=STANDARD_TUNING
+    song: gp.Song,
+    notes: list[FrettedNote],
+    bpm: float,
+    grid: int,
+    *,
+    tuning=STANDARD_TUNING,
+    meter=DEFAULT_METER,
 ) -> None:
     tuning = validate_tuning(tuning)
     tempo = int(bpm + 0.5)
     if len(song.tracks) != 1 or tuple(s.value for s in song.tracks[0].strings) != tuning:
         raise ValueError("GP5 verification found an unexpected track or tuning")
+    meter = parse_meter(meter)
+    if not song.measureHeaders or any(
+        f"{header.timeSignature.numerator}/{header.timeSignature.denominator.value}" != meter
+        for header in song.measureHeaders
+    ):
+        raise ValueError("GP5 verification found an unexpected time signature")
     expected = []
     for note in notes:
-        first = quantize(note.note.start, tempo, grid // 4)
-        last = max(first + 1, quantize(note.note.end, tempo, grid // 4))
+        first, last = score_interval(note.note, tempo, grid)
         expected.append(
             (960 + first * (3840 // grid), 960 + last * (3840 // grid), note.string + 1, note.fret)
         )
@@ -201,7 +320,7 @@ def timing_summary(song: gp.Song, notes: list[FrettedNote]) -> dict:
     starts, ends = [], []
     tick_seconds = 60 / (song.tempo * 960)
     events = score_events(song)
-    for string in range(6):
+    for string in range(len(song.tracks[0].strings)):
         original = sorted((n.note for n in notes if n.string == string), key=lambda n: n.start)
         saved = sorted((e for e in events if e[2] == string + 1), key=lambda e: e[0])
         if len(original) != len(saved):

@@ -86,7 +86,21 @@ class WindowsJob:
             self.handle = None
 
 
-def run_conversion(command, *, cwd, log_path, cancel_event):
+def _latest_progress(log):
+    latest = None
+    for _ in range(256):
+        line = log.readline()
+        if not line:
+            break
+        if not line.endswith(b"\n"):
+            log.seek(-len(line), os.SEEK_CUR)
+            break
+        if line.startswith(b"Progress: "):
+            latest = line.removeprefix(b"Progress: ").decode("utf-8", errors="replace").strip()
+    return latest
+
+
+def run_conversion(command, *, cwd, log_path, cancel_event, on_progress=None):
     """Run one owned process tree; preserve partial outputs/logs on cancellation.
 
     Completion wins if the process has already exited when cancellation is
@@ -94,7 +108,7 @@ def run_conversion(command, *, cwd, log_path, cancel_event):
     The CLI waits for those children; POSIX runs in a private process session.
     """
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    with log_path.open("wb") as log:
+    with log_path.open("wb") as log, log_path.open("rb") as progress_log:
         if cancel_event.is_set():
             log.write(b"Cancelled before conversion started.\n")
             return RunResult(-1, True)
@@ -135,6 +149,8 @@ def run_conversion(command, *, cwd, log_path, cancel_event):
                             b"\nCancelled by user; saved diagnostics and partial outputs retained.\n"
                         )
                         return RunResult(code, True)
+                    if on_progress is not None and (message := _latest_progress(progress_log)):
+                        on_progress(message)
         finally:
             if job:
                 job.close()

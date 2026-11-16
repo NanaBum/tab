@@ -5,6 +5,7 @@ Torch and the model package are imported only when this backend is requested.
 """
 
 import hashlib
+import json
 import math
 from functools import lru_cache
 from pathlib import Path
@@ -29,6 +30,22 @@ def checkpoint_digest(path: Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def verified_release_weights(directory: Path) -> Path:
+    """Locate a release projection made for the pinned guitar network."""
+    weights = directory / "reg_offset_fc.pt"
+    receipt_path = directory / "checkpoint.json"
+    if not weights.is_file() or not receipt_path.is_file():
+        raise ValueError("Release model needs checkpoint.json and reg_offset_fc.pt")
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    if (
+        not isinstance(receipt, dict)
+        or receipt.get("source_checkpoint_sha256") != CHECKPOINT_SHA256
+        or receipt.get("projection_sha256") != checkpoint_digest(weights)
+    ):
+        raise ValueError("Release model checksum or source checkpoint differs")
+    return weights
 
 
 def _stitch_segments(values: np.ndarray) -> np.ndarray:
@@ -66,7 +83,7 @@ def _make_segments(audio: np.ndarray, segment_samples: int = 160000) -> np.ndarr
 
 
 @lru_cache(maxsize=1)
-def _load_model(checkpoint: Path):
+def _load_model(checkpoint: Path, release_model: Path | None = None):
     if not checkpoint.is_file():
         raise ValueError("Guitar model weights are missing; run scripts/download_guitar_model.py")
     if checkpoint_digest(checkpoint) != CHECKPOINT_SHA256:
@@ -96,15 +113,43 @@ def _load_model(checkpoint: Path):
         checkpoint_data = torch.load(checkpoint, map_location="cpu", weights_only=True)
     model = Regress_onset_offset_frame_velocity_CRNN(frames_per_second=100, classes_num=88)
     model.load_state_dict(checkpoint_data["model"], strict=True)
+    if release_model is not None:
+        weights = verified_release_weights(release_model)
+        state = torch.load(weights, map_location="cpu", weights_only=True)
+        projection = model.reg_offset_model.fc
+        expected = projection.state_dict()
+        if (
+            not isinstance(state, dict)
+            or state.keys() != expected.keys()
+            or any(
+                not torch.is_tensor(value)
+                or value.shape != expected[key].shape
+                or not torch.isfinite(value).all()
+                for key, value in state.items()
+            )
+        ):
+            raise ValueError("Release model has invalid projection weights")
+        projection.load_state_dict(state, strict=True)
     model.eval()
     return model
 
 
-def gaps_activations(path: Path, *, checkpoint: Path | None = None, input_gain: float = 1.0):
+def gaps_activations(
+    path: Path,
+    *,
+    checkpoint: Path | None = None,
+    input_gain: float = 1.0,
+    release_model: Path | None = None,
+):
     """Run the frozen network once for one or more decoder comparisons."""
     if not math.isfinite(input_gain) or not 0 < input_gain <= 1:
         raise ValueError("Guitar-model input gain must be above zero and at most one")
-    model = _load_model((checkpoint or default_checkpoint()).resolve())
+    checkpoint = (checkpoint or default_checkpoint()).resolve()
+    model = (
+        _load_model(checkpoint)
+        if release_model is None
+        else _load_model(checkpoint, release_model.resolve())
+    )
     import librosa
     from piano_transcription_inference.pytorch_utils import forward
 
@@ -128,12 +173,42 @@ def _validate_onset_threshold(onset_threshold):
         raise ValueError("Guitar-model onset threshold must be above zero and at most one")
 
 
+def _regression_peaks(regression, threshold, neighbor):
+    """Find local peaks in bulk, preserving the upstream scalar interpolation."""
+    binary = np.zeros_like(regression)
+    shifts = np.zeros_like(regression)
+    frames = len(regression) - 2 * neighbor
+    if frames <= 0:
+        return binary, shifts
+
+    center = regression[neighbor : neighbor + frames]
+    # Match a NumPy scalar compared against the Python threshold in the pinned decoder.
+    comparison_dtype = np.result_type(regression.dtype.type(0), threshold)
+    peaks = center.astype(comparison_dtype, copy=False) > threshold
+    for step in range(neighbor):
+        left = neighbor - step
+        right = neighbor + step
+        peaks &= ~(regression[left : left + frames] < regression[left - 1 : left - 1 + frames])
+        peaks &= ~(regression[right : right + frames] < regression[right + 1 : right + 1 + frames])
+
+    for row, pitch in zip(*np.nonzero(peaks), strict=True):
+        index = row + neighbor
+        left, middle, right = regression[index - 1 : index + 2, pitch]
+        binary[index, pitch] = 1
+        shifts[index, pitch] = (right - left) / (middle - min(left, right)) / 2
+    return binary, shifts
+
+
 def decode_gaps(output, duration, *, onset_threshold=0.3) -> list[Note]:
     """Decode one threshold without changing the stored network outputs."""
     _validate_onset_threshold(onset_threshold)
     from piano_transcription_inference.utilities import RegressionPostProcessor
 
-    processor = RegressionPostProcessor(100, 88, onset_threshold, 0.3, 0.1, 0.2)
+    class GuitarPostProcessor(RegressionPostProcessor):
+        def get_binarized_output_from_regression(self, reg_output, threshold, neighbour):
+            return _regression_peaks(reg_output, threshold, neighbour)
+
+    processor = GuitarPostProcessor(100, 88, onset_threshold, 0.3, 0.1, 0.2)
     events, _ = processor.output_dict_to_midi_events(dict(output))
     valid_frames = len(output["reg_onset_output"])
     notes = []
@@ -161,7 +236,13 @@ def transcribe_gaps(
     checkpoint: Path | None = None,
     onset_threshold: float = 0.3,
     input_gain: float = 1.0,
+    release_model: Path | None = None,
 ) -> list[Note]:
     _validate_onset_threshold(onset_threshold)
-    output, duration = gaps_activations(path, checkpoint=checkpoint, input_gain=input_gain)
+    output, duration = gaps_activations(
+        path,
+        checkpoint=checkpoint,
+        input_gain=input_gain,
+        **({"release_model": release_model} if release_model is not None else {}),
+    )
     return decode_gaps(output, duration, onset_threshold=onset_threshold)

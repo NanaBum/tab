@@ -24,36 +24,49 @@ def separate_guitar(path: Path, output: Path) -> Path:
         audio = np.repeat(audio.mean(axis=1, keepdims=True), 2, axis=1)
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=True)
+    stem = output / "htdemucs_6s" / path.stem / "guitar.wav"
+    residual = stem.with_name("no_guitar.wav")
+    if any(target.resolve() == path.resolve() for target in (stem, residual)):
+        raise ValueError("Choose a different output folder to preserve the input audio")
     # Demucs 4.0.1's mono tensor expansion aliases samples on modern PyTorch.
     # A real stereo file avoids the in-place normalization bug, and soundfile
     # also decodes supported inputs without requiring ffmpeg/ffprobe binaries.
     with tempfile.TemporaryDirectory(prefix="input-", dir=output) as directory:
-        normalized = Path(directory) / (path.stem + ".wav")
+        staging = Path(directory)
+        normalized = staging / (path.stem + ".wav")
         sf.write(normalized, audio, rate, subtype="FLOAT")
         del audio
-        subprocess.run(
-            [
-                str(python),
-                "-m",
-                "demucs",
-                "-n",
-                "htdemucs_6s",
-                "--two-stems",
-                "guitar",
-                "--device",
-                "cpu",
-                "--shifts",
-                "0",
-                "--segment",
-                "7",
-                "-o",
-                str(output),
-                str(normalized),
-            ],
-            check=True,
-            env=environment,
-        )
-    stem = output / "htdemucs_6s" / path.stem / "guitar.wav"
-    if not stem.exists():
-        raise ValueError("Demucs did not produce the expected guitar stem")
+        command = [
+            str(python),
+            "-I",
+            "-m",
+            "demucs",
+            "-n",
+            "htdemucs_6s",
+            "--two-stems",
+            "guitar",
+            "--device",
+            "cpu",
+            "--shifts",
+            "0",
+            "--segment",
+            "7",
+            "-o",
+            str(staging),
+            str(normalized),
+        ]
+        try:
+            subprocess.run(command, check=True, env=environment)
+        except subprocess.CalledProcessError as error:
+            raise RuntimeError(
+                f"Guitar separation failed (Demucs exit code {error.returncode}). "
+                "Check the conversion log and the optional Demucs setup in the README. "
+                "You can also turn off separation and retry with the original recording."
+            ) from error
+        fresh = staging / "htdemucs_6s" / path.stem
+        if not all((fresh / target.name).is_file() for target in (stem, residual)):
+            raise ValueError("Demucs did not produce the expected guitar and backing stems")
+        stem.parent.mkdir(parents=True, exist_ok=True)
+        for target in (residual, stem):
+            (fresh / target.name).replace(target)
     return stem

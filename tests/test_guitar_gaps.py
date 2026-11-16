@@ -1,10 +1,20 @@
+import json
 import sys
 from types import SimpleNamespace
 
 import numpy as np
 import pytest
 
-from tabber.guitar_gaps import _load_model, _make_segments, _stitch_segments, decode_gaps
+from tabber.guitar_gaps import (
+    CHECKPOINT_SHA256,
+    _load_model,
+    _make_segments,
+    _regression_peaks,
+    _stitch_segments,
+    checkpoint_digest,
+    decode_gaps,
+    verified_release_weights,
+)
 from tabber.models import Note
 from tabber.transcribe import transcribe
 
@@ -29,6 +39,38 @@ def test_unverified_checkpoint_is_rejected_before_loading_optional_code(tmp_path
     monkeypatch.setitem(sys.modules, "torch", None)
     with pytest.raises(ValueError, match="checksum"):
         _load_model(checkpoint)
+
+
+def test_release_checkpoint_requires_matching_parent_and_weight_digest(tmp_path):
+    weights = tmp_path / "reg_offset_fc.pt"
+    weights.write_bytes(b"projection")
+    receipt = {
+        "source_checkpoint_sha256": CHECKPOINT_SHA256,
+        "projection_sha256": checkpoint_digest(weights),
+    }
+    metadata = tmp_path / "checkpoint.json"
+    metadata.write_text(json.dumps(receipt))
+    assert verified_release_weights(tmp_path) == weights
+    with pytest.raises(ValueError, match="source"):
+        metadata.write_text(json.dumps({**receipt, "source_checkpoint_sha256": "different"}))
+        verified_release_weights(tmp_path)
+    metadata.write_text(json.dumps(receipt))
+    weights.write_bytes(b"changed")
+    with pytest.raises(ValueError, match="checksum"):
+        verified_release_weights(tmp_path)
+
+
+def test_release_option_routes_to_guitar_inference_only(monkeypatch, tmp_path):
+    calls = []
+    monkeypatch.setattr(
+        "tabber.guitar_gaps.transcribe_gaps",
+        lambda _path, **options: calls.append(options) or [],
+    )
+    audio = tmp_path / "guitar.wav"
+    assert transcribe(audio, "guitar-gaps", guitar_release_model=tmp_path) == []
+    assert calls[0]["release_model"] == tmp_path
+    with pytest.raises(ValueError, match="release model"):
+        transcribe(audio, "baseline", guitar_release_model=tmp_path)
 
 
 def test_guitar_route_keeps_low_activations_and_uses_attack_threshold(monkeypatch, tmp_path):
@@ -71,3 +113,21 @@ def test_redecode_keeps_shared_activations_and_applies_requested_threshold(monke
     assert decode_gaps(output, 0.1, onset_threshold=0.3) == [Note(0, 0.08, 60, 0.35)]
     assert decode_gaps(output, 0.1, onset_threshold=0.42) == []
     assert set(output) == {"reg_onset_output"}
+
+
+@pytest.mark.parametrize("neighbor", [2, 4])
+def test_regression_peaks_respect_neighbors_and_scalar_threshold(neighbor):
+    threshold = 0.3
+    values = np.zeros((2 * neighbor + 1, 4), dtype=np.float32)
+    values[0, 0] = 0.9  # Edges cannot be peaks.
+    values[neighbor, 1] = threshold
+    values[neighbor - 1 : neighbor + 2, 2] = [0.3, 0.7, 0.5]
+    values[neighbor : neighbor + 3, 3] = [0.7, 0.1, 0.2]  # A rising neighbor.
+
+    binary, shifts = _regression_peaks(values, threshold, neighbor)
+    expected = np.zeros_like(values)
+    expected[neighbor, 1] = values[neighbor, 1] > threshold
+    expected[neighbor, 2] = 1
+    np.testing.assert_array_equal(binary, expected)
+    assert shifts[neighbor, 2] == pytest.approx(0.25)
+    assert np.count_nonzero(shifts) == 1

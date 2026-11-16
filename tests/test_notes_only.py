@@ -126,3 +126,17 @@ def test_notes_only_refuses_overwriting_its_source_even_with_unusual_extension(
         main()
     assert error.value.code == 1
     assert source.read_bytes() == before
+
+
+@pytest.mark.parametrize("filename", ["detected-notes.json", "tab.gp5"])
+def test_editable_rebuild_refuses_to_overwrite_its_input(tmp_path, monkeypatch, filename, capsys):
+    source = tmp_path / filename
+    save_events([Note(0, 1, 64)], source)
+    before = source.read_bytes()
+    monkeypatch.setattr("sys.argv", ["tabber", "--events", str(source), "--output", str(tmp_path)])
+    with pytest.raises(SystemExit) as error:
+        main()
+    assert error.value.code == 1
+    assert "preserve the input file" in capsys.readouterr().err
+    assert source.read_bytes() == before
+    assert list(tmp_path.iterdir()) == [source]
