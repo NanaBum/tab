@@ -37,6 +37,7 @@ def transcribe(
     *,
     guitar_onset: float = 0.3,
     guitar_checkpoint: Path | None = None,
+    guitar_release_model: Path | None = None,
     baseline_min_pitch: int = 40,
 ) -> list[Note]:
     if not math.isfinite(min_confidence) or not 0 <= min_confidence <= 1:
@@ -44,12 +45,19 @@ def transcribe(
     low_frequency = baseline_frequency_floor(baseline_min_pitch)
     if backend != "baseline" and baseline_min_pitch != 40:
         raise ValueError("Baseline search-band options apply only to the simple melody detector")
+    if guitar_release_model is not None and backend != "guitar-gaps":
+        raise ValueError("The release model requires the experimental guitar detector")
     if backend == "guitar-gaps":
         if min_confidence != 0.5:
             raise ValueError("Guitar model uses --onset-threshold instead of --min-confidence")
         from .guitar_gaps import transcribe_gaps
 
-        return transcribe_gaps(path, checkpoint=guitar_checkpoint, onset_threshold=guitar_onset)
+        return transcribe_gaps(
+            path,
+            checkpoint=guitar_checkpoint,
+            onset_threshold=guitar_onset,
+            **({"release_model": guitar_release_model} if guitar_release_model is not None else {}),
+        )
     if backend == "basic-pitch":
         try:
             from basic_pitch.inference import predict

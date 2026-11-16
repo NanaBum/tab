@@ -47,6 +47,15 @@ Input is converted to 16 kHz mono. Half-overlapping ten-second windows are
 stitched using the upstream policy, then cropped in **frames** to the recording
 duration before decoding. Original source audio is unchanged.
 
+## Comparing note endings
+
+For a local release projection, add `--guitar-release-model PATH` to a
+`--backend guitar-gaps` conversion. The directory needs `checkpoint.json`
+and `reg_offset_fc.pt`, with a matching parent-model checksum and weights
+checksum. This updates the model's release and sustained-pitch predictions
+while leaving its attack branch in place. The selected weights are recorded
+with the saved note events.
+
 ## Adjusting attack timing
 
 To audition an earlier attack without running the detector again, rebuild
