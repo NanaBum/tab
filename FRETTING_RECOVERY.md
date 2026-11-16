@@ -40,6 +40,12 @@ an earlier release to the conflicting attack or omit a conflicting detection.
 The decision weighs the fraction of a release lost and the detector's confidence.
 The tab and its MIDI use the resulting notes. The original detections stay in
 the saved events, and `diagnostics/overlap-recovery-*.json` lists every change.
+When converting audio, Tabber also checks unusually wide chords for a
+likely late release. It shortens an earlier note to the chord change
+when its pitch energy has faded before the change and refitting
+substantially reduces the stretch. The audit records the evidence and
+the old and new note endings. Saved-event rebuilds use the saved timing
+because they have no audio to check.
 Use `--strict-overlaps` for editable exports that keep detected note lengths
 and counts even when a string conflict prevents export.
 With **Try a finer grid if notes collide**, the app tries the available grids

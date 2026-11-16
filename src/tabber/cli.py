@@ -58,7 +58,9 @@ def _write_score_at_grid(notes, output, bpm, grid, tuning, meter, refit):
         return write_outputs(fitted, output, bpm, grid, tuning=tuning, meter=meter), True
 
 
-def _record_overlap_recovery(original_events, retained, audit, *, score_grid=None):
+def _record_overlap_recovery(
+    original_events, retained, audit, *, score_grid=None, late_releases=()
+):
     shortened, omitted = [], []
     for index, original in enumerate(original_events):
         record = {"source_index": index, "original": asdict(original)}
@@ -73,6 +75,7 @@ def _record_overlap_recovery(original_events, retained, audit, *, score_grid=Non
                 "shortened": shortened,
                 "omitted": omitted,
                 "score_grid": score_grid,
+                **({"late_release_evidence": late_releases} if late_releases else {}),
             },
             indent=2,
         )
@@ -471,6 +474,7 @@ def main():
         original_options = assignment_options.copy()
         retained = None
         recovery_grid = None
+        late_releases = []
         audit = args.output / "diagnostics" / f"overlap-recovery-{stamp}.json"
         print("Progress: Assigning notes to guitar strings.", flush=True)
         try:
@@ -486,6 +490,20 @@ def main():
                 priors = assignment_options["string_priors"]
                 assignment_options["string_priors"] = [priors[index] for index in retained]
             export_events = list(retained.values())
+        if args.audio and args.fretting == "polyphonic" and not args.strict_overlaps:
+            from .late_release import repair_late_releases
+
+            notes, repaired, late_releases = repair_late_releases(
+                export_events, notes, path, tuning=tuning, **assignment_options
+            )
+            if late_releases:
+                source_indices = (
+                    list(retained) if retained is not None else range(len(original_events))
+                )
+                retained = dict(zip(source_indices, repaired, strict=True))
+                for edit in late_releases:
+                    edit["source_index"] = source_indices[edit["source_index"]]
+                export_events = repaired
         refit = (
             partial(assign_polyphonic_frets, export_events, tuning=tuning, **assignment_options)
             if args.fretting == "polyphonic"
@@ -510,6 +528,7 @@ def main():
                     score_grid=(int(bpm + 0.5), candidate),
                     **original_options,
                 )
+                late_releases = []
                 recovery_grid = candidate
                 timing = write_outputs(
                     notes, args.output, bpm, candidate, tuning=tuning, meter=meter
@@ -520,7 +539,11 @@ def main():
                 break
         if retained is not None:
             metadata["overlap_recovery"] = _record_overlap_recovery(
-                original_events, retained, audit, score_grid=recovery_grid
+                original_events,
+                retained,
+                audit,
+                score_grid=recovery_grid,
+                late_releases=late_releases,
             )
         if refitted:
             metadata["score_grid_fingering_retry"] = True
