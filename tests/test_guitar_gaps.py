@@ -4,7 +4,13 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from tabber.guitar_gaps import _load_model, _make_segments, _stitch_segments, decode_gaps
+from tabber.guitar_gaps import (
+    _load_model,
+    _make_segments,
+    _regression_peaks,
+    _stitch_segments,
+    decode_gaps,
+)
 from tabber.models import Note
 from tabber.transcribe import transcribe
 
@@ -71,3 +77,21 @@ def test_redecode_keeps_shared_activations_and_applies_requested_threshold(monke
     assert decode_gaps(output, 0.1, onset_threshold=0.3) == [Note(0, 0.08, 60, 0.35)]
     assert decode_gaps(output, 0.1, onset_threshold=0.42) == []
     assert set(output) == {"reg_onset_output"}
+
+
+@pytest.mark.parametrize("neighbor", [2, 4])
+def test_regression_peaks_respect_neighbors_and_scalar_threshold(neighbor):
+    threshold = 0.3
+    values = np.zeros((2 * neighbor + 1, 4), dtype=np.float32)
+    values[0, 0] = 0.9  # Edges cannot be peaks.
+    values[neighbor, 1] = threshold
+    values[neighbor - 1 : neighbor + 2, 2] = [0.3, 0.7, 0.5]
+    values[neighbor : neighbor + 3, 3] = [0.7, 0.1, 0.2]  # A rising neighbor.
+
+    binary, shifts = _regression_peaks(values, threshold, neighbor)
+    expected = np.zeros_like(values)
+    expected[neighbor, 1] = values[neighbor, 1] > threshold
+    expected[neighbor, 2] = 1
+    np.testing.assert_array_equal(binary, expected)
+    assert shifts[neighbor, 2] == pytest.approx(0.25)
+    assert np.count_nonzero(shifts) == 1

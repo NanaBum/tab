@@ -128,12 +128,42 @@ def _validate_onset_threshold(onset_threshold):
         raise ValueError("Guitar-model onset threshold must be above zero and at most one")
 
 
+def _regression_peaks(regression, threshold, neighbor):
+    """Find local peaks in bulk, preserving the upstream scalar interpolation."""
+    binary = np.zeros_like(regression)
+    shifts = np.zeros_like(regression)
+    frames = len(regression) - 2 * neighbor
+    if frames <= 0:
+        return binary, shifts
+
+    center = regression[neighbor : neighbor + frames]
+    # Match a NumPy scalar compared against the Python threshold in the pinned decoder.
+    comparison_dtype = np.result_type(regression.dtype.type(0), threshold)
+    peaks = center.astype(comparison_dtype, copy=False) > threshold
+    for step in range(neighbor):
+        left = neighbor - step
+        right = neighbor + step
+        peaks &= ~(regression[left : left + frames] < regression[left - 1 : left - 1 + frames])
+        peaks &= ~(regression[right : right + frames] < regression[right + 1 : right + 1 + frames])
+
+    for row, pitch in zip(*np.nonzero(peaks), strict=True):
+        index = row + neighbor
+        left, middle, right = regression[index - 1 : index + 2, pitch]
+        binary[index, pitch] = 1
+        shifts[index, pitch] = (right - left) / (middle - min(left, right)) / 2
+    return binary, shifts
+
+
 def decode_gaps(output, duration, *, onset_threshold=0.3) -> list[Note]:
     """Decode one threshold without changing the stored network outputs."""
     _validate_onset_threshold(onset_threshold)
     from piano_transcription_inference.utilities import RegressionPostProcessor
 
-    processor = RegressionPostProcessor(100, 88, onset_threshold, 0.3, 0.1, 0.2)
+    class GuitarPostProcessor(RegressionPostProcessor):
+        def get_binarized_output_from_regression(self, reg_output, threshold, neighbour):
+            return _regression_peaks(reg_output, threshold, neighbour)
+
+    processor = GuitarPostProcessor(100, 88, onset_threshold, 0.3, 0.1, 0.2)
     events, _ = processor.output_dict_to_midi_events(dict(output))
     valid_frames = len(output["reg_onset_output"])
     notes = []
