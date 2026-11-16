@@ -104,7 +104,9 @@ rest; exact durations are available in MIDI and JSON. GP5 defaults to 4/4 measur
 snaps starts and ends to sixteenth notes, with at least one cell per note. Gaps
 become rests. The GP5 exporter uses the fewest standard or dotted durations
 between changes in sounding notes and uses ties to carry sustains across those
-changes and barlines.
+changes and barlines. When two equally compact spellings are available, it
+prefers ties at beat boundaries. In grouped eighth-note meters such as 6/8
+and 7/8, rests also follow the meter's pulse groups.
 Set a known **Time signature** in the app or use `--meter 6/8` on the command
 line. The setting applies to the entire tab, starting at the beginning of the
 input. Tempo is still expressed in quarter-note BPM.

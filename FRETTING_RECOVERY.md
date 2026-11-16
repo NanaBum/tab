@@ -34,6 +34,7 @@ and preserves the raw diagnostics.
 Tabber prefers compact fingerings and permits wider spans. Open strings are
 excluded from the span calculation. The CLI accepts `--preferred-span` from
 0 through 24 (default 5), with `--max-span` as a compatibility alias.
+Very wide stretches cost progressively more during fingering search.
 
 When the initial polyphonic assignment fails on an overlap, Tabber can shorten
 an earlier release to the conflicting attack or omit a conflicting detection.

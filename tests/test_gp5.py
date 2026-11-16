@@ -85,6 +85,30 @@ def test_duration_spelling_respects_other_strings_attacks_and_releases(tmp_path)
     assert score_events(score) == [(1080, 2520, 1, 0), (1560, 1800, 2, 0)]
 
 
+def test_equally_compact_sustain_places_its_tie_on_the_beat(tmp_path):
+    path = tmp_path / "beat-aligned-tie.gp5"
+    write_gp5(build_song([FrettedNote(Note(0.5, 1.375, 64), 0, 0)], 120), path)
+    score = read_gp5(path)
+    sounding = [beat for beat in score.tracks[0].measures[0].voices[0].beats if beat.notes]
+    assert [(beat.start, beat.duration.time) for beat in sounding] == [(1920, 960), (2880, 720)]
+    assert score_events(score) == [(1920, 3600, 1, 0)]
+
+
+@pytest.mark.parametrize(("meter", "played"), [("6/8", 0.75), ("7/8", 1.0)])
+def test_rest_at_end_of_grouped_eighth_measure_fills_one_pulse(tmp_path, meter, played):
+    path = tmp_path / "grouped-rest.gp5"
+    write_gp5(build_song([FrettedNote(Note(0, played, 64), 0, 0)], 120, meter=meter), path)
+    score = read_gp5(path)
+    (rest,) = [
+        beat
+        for beat in score.tracks[0].measures[0].voices[0].beats
+        if beat.status == gp.BeatStatus.rest
+    ]
+    assert rest.start == 960 + int(played * 1920)
+    assert (rest.duration.value, rest.duration.isDotted) == (4, True)
+    assert score_events(score) == [(960, rest.start, 1, 0)]
+
+
 def test_empty_song_is_one_bar_of_rest(tmp_path):
     song = roundtrip(tmp_path, [])
     beats = song.tracks[0].measures[0].voices[0].beats

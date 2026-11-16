@@ -25,6 +25,26 @@ def test_sustained_notes_reserve_their_strings():
     assert [STANDARD_TUNING[n.string] + n.fret for n in assigned] == [40, 64, 65]
 
 
+def test_search_prefers_a_smaller_stretch_across_a_chord_change():
+    notes = [
+        Note(0, 1.2, 65),
+        Note(0, 1.1, 74),
+        Note(1, 2, 43),
+        Note(1, 2, 62),
+        Note(2, 3, 72),
+    ]
+    assigned = assign_polyphonic_frets(notes)
+    held = [n.fret for n in assigned if n.note.start <= 1 < n.note.end]
+    assert max(held) - min(held) <= 7
+    assert {n.note for n in assigned} == set(notes)
+
+
+def test_unavoidable_wide_span_still_preserves_both_notes():
+    notes = [Note(0, 1, 41), Note(0, 1, 88)]
+    assigned = assign_polyphonic_frets(notes)
+    assert {(n.fret, n.note) for n in assigned} == {(1, notes[0]), (24, notes[1])}
+
+
 def test_repeated_strummed_shape_uses_adjacent_strings_without_editing_notes():
     notes = [
         Note(start + index * 0.012, start + 0.3, pitch)

@@ -250,6 +250,9 @@ def assign_polyphonic_frets(
                 movement = abs(position - hand) if hand and position else 0
                 new_cost = cost + movement + span * 0.3 + position_cost * 0.04
                 new_cost += excess * 1.5
+                # A small reach beyond the preference is common. Make much
+                # wider stretches increasingly costly without excluding them.
+                new_cost += 0.8 * max(0, excess - 2) ** 2
                 if last_string is not None:
                     new_cost += abs(string - last_string) * 0.15
                 if chord_strings:

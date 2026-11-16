@@ -1,6 +1,7 @@
 """Build editable GP5 scores on a fixed rhythm grid with a constant meter."""
 
 import itertools
+from bisect import bisect_right
 from collections import Counter
 from pathlib import Path
 from typing import BinaryIO
@@ -17,9 +18,9 @@ class GridCollision(ValueError):
     """Two notes assigned to a string occupy the same score cell."""
 
 
-def _sustain_durations(offset, length, durations, grid):
+def _sustain_durations(offset, length, durations, grid, beat_boundaries):
     """Spell one uninterrupted group with the fewest beats within its bar."""
-    costs = [(0, 0)] * (length + 1)
+    costs = [(0, 0, 0)] * (length + 1)
     choices = [None] * length
     for index in range(length - 1, -1, -1):
         best = None
@@ -27,11 +28,18 @@ def _sustain_durations(offset, length, durations, grid):
             cells, denominator, _ = duration
             if index + cells > length:
                 continue
-            tail_beats, tail_penalty = costs[index + cells]
+            tail_beats, tail_offbeat, tail_penalty = costs[index + cells]
             base_cells = grid // denominator
-            # Prefer conventional alignment between equally short spellings.
-            off_grid = (offset + index) % base_cells != 0
-            cost = (1 + tail_beats, tail_penalty + (base_cells if off_grid else 0))
+            start = offset + index
+            end = start + cells
+            # Equally compact spellings should expose the meter.
+            offbeat = index + cells < length and end not in beat_boundaries
+            off_grid = start not in beat_boundaries and start % base_cells != 0
+            cost = (
+                1 + tail_beats,
+                tail_offbeat + offbeat,
+                tail_penalty + (base_cells if off_grid else 0),
+            )
             if best is None or cost < best:
                 best = cost
                 choices[index] = duration
@@ -76,6 +84,14 @@ def build_song(
         "9/8": [3, 3, 3, 0],
         "12/8": [3, 3, 3, 3],
     }.get(f"{numerator}/{unit}", [8 * numerator // unit, 0, 0, 0])
+    grouped_eighths = unit == 8 and numerator in (5, 6, 7, 9, 12)
+    pulse_lengths = (
+        [beam * (grid // 8) for beam in beams if beam]
+        if grouped_eighths
+        else [grid // unit] * numerator
+    )
+    pulses = tuple(itertools.accumulate(pulse_lengths, initial=0))
+    beat_boundaries = frozenset(pulses)
     durations = sorted(
         [
             (grid // denominator, denominator, False)
@@ -134,10 +150,24 @@ def build_song(
         track.measures.append(gp.Measure(track, header))
 
     def rest_durations(offset, available):
+        if grouped_eighths and offset == 0 and available == measure_cells:
+            whole_bar = next(
+                (duration for duration in durations if duration[0] == measure_cells), None
+            )
+            if whole_bar is not None:
+                yield whole_bar
+                return
         while available:
+            if grouped_eighths:
+                pulse = bisect_right(pulses, offset) - 1
+                limit = min(available, pulses[pulse + 1] - offset)
+                alignment = offset - pulses[pulse]
+            else:
+                limit = available
+                alignment = offset
             for duration in durations:
                 cells, denominator, _ = duration
-                if cells <= available and offset % (grid // denominator) == 0:
+                if cells <= limit and alignment % (grid // denominator) == 0:
                     yield duration
                     offset += cells
                     available -= cells
@@ -149,7 +179,7 @@ def build_song(
             bar, offset = divmod(start, measure_cells)
             available = min(end - start, measure_cells - offset)
             spelling = (
-                _sustain_durations(offset, available, durations, grid)
+                _sustain_durations(offset, available, durations, grid, beat_boundaries)
                 if ordered_strings
                 else rest_durations(offset, available)
             )
