@@ -102,7 +102,9 @@ changing tempo. The app keeps manual BPM as the default.
 One text-tab cell is a sixteenth note by default. Dashes mean no new onset, not a measured
 rest; exact durations are available in MIDI and JSON. GP5 defaults to 4/4 measures and
 snaps starts and ends to sixteenth notes, with at least one cell per note. Gaps
-become rests, and sustained notes split into tied durations across measures.
+become rests. The GP5 exporter uses the fewest standard or dotted durations
+between changes in sounding notes and uses ties to carry sustains across those
+changes and barlines.
 Set a known **Time signature** in the app or use `--meter 6/8` on the command
 line. The setting applies to the entire tab, starting at the beginning of the
 input. Tempo is still expressed in quarter-note BPM.

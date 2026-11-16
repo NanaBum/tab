@@ -3,7 +3,7 @@ import pytest
 from guitarpro import models as gp
 
 from tabber.export import write_outputs
-from tabber.gp5 import build_song, read_gp5, write_gp5
+from tabber.gp5 import build_song, read_gp5, score_events, write_gp5
 from tabber.models import FrettedNote, Note
 
 
@@ -54,6 +54,35 @@ def test_dotted_duration_and_integer_tempo(tmp_path):
     assert song.tempo == 120
     assert beat.duration.isDotted
     assert beat.duration.value == 8
+
+
+@pytest.mark.parametrize(
+    ("length", "value", "dotted"),
+    [(0.25, 8, False), (0.5, 4, False), (0.75, 4, True)],
+)
+def test_offbeat_sustain_uses_one_duration(tmp_path, length, value, dotted):
+    onset = 0.0625
+    notes = [FrettedNote(Note(onset, onset + length, 64), 0, 0)]
+    path = tmp_path / "sustain.gp5"
+    write_gp5(build_song(notes, 120, grid=32), path)
+    score = read_gp5(path)
+    sounding = [beat for beat in score.tracks[0].measures[0].voices[0].beats if beat.notes]
+    (beat,) = sounding
+    assert (beat.duration.value, beat.duration.isDotted) == (value, dotted)
+    assert score_events(score) == [(1080, 1080 + int(length * 1920), 1, 0)]
+
+
+def test_duration_spelling_respects_other_strings_attacks_and_releases(tmp_path):
+    notes = [
+        FrettedNote(Note(0.0625, 0.8125, 64), 0, 0),
+        FrettedNote(Note(0.3125, 0.4375, 59), 1, 0),
+    ]
+    path = tmp_path / "overlap.gp5"
+    write_gp5(build_song(notes, 120, grid=32), path)
+    score = read_gp5(path)
+    sounding = [beat for beat in score.tracks[0].measures[0].voices[0].beats if beat.notes]
+    assert [beat.duration.time for beat in sounding] == [480, 240, 720]
+    assert score_events(score) == [(1080, 2520, 1, 0), (1560, 1800, 2, 0)]
 
 
 def test_empty_song_is_one_bar_of_rest(tmp_path):

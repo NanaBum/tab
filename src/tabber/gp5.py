@@ -17,6 +17,32 @@ class GridCollision(ValueError):
     """Two notes assigned to a string occupy the same score cell."""
 
 
+def _sustain_durations(offset, length, durations, grid):
+    """Spell one uninterrupted group with the fewest beats within its bar."""
+    costs = [(0, 0)] * (length + 1)
+    choices = [None] * length
+    for index in range(length - 1, -1, -1):
+        best = None
+        for duration in durations:
+            cells, denominator, _ = duration
+            if index + cells > length:
+                continue
+            tail_beats, tail_penalty = costs[index + cells]
+            base_cells = grid // denominator
+            # Prefer conventional alignment between equally short spellings.
+            off_grid = (offset + index) % base_cells != 0
+            cost = (1 + tail_beats, tail_penalty + (base_cells if off_grid else 0))
+            if best is None or cost < best:
+                best = cost
+                choices[index] = duration
+        costs[index] = best
+    index = 0
+    while index < length:
+        duration = choices[index]
+        yield duration
+        index += duration[0]
+
+
 def build_song(
     notes: list[FrettedNote],
     bpm: float,
@@ -107,32 +133,45 @@ def build_song(
         song.measureHeaders.append(header)
         track.measures.append(gp.Measure(track, header))
 
+    def rest_durations(offset, available):
+        while available:
+            for duration in durations:
+                cells, denominator, _ = duration
+                if cells <= available and offset % (grid // denominator) == 0:
+                    yield duration
+                    offset += cells
+                    available -= cells
+                    break
+
     def append_segment(start, end, sounding):
+        ordered_strings = sorted(sounding, key=lambda item: item[1].string)
         while start < end:
             bar, offset = divmod(start, measure_cells)
             available = min(end - start, measure_cells - offset)
-            for cells, denominator, dotted in durations:
-                base_cells = grid // denominator
-                if cells <= available and offset % base_cells == 0:
-                    break
-            voice = track.measures[bar].voices[0]
-            beat = gp.Beat(
-                voice,
-                start=960 + start * step,
-                duration=gp.Duration(value=denominator, isDotted=dotted),
-                status=gp.BeatStatus.normal if sounding else gp.BeatStatus.rest,
+            spelling = (
+                _sustain_durations(offset, available, durations, grid)
+                if ordered_strings
+                else rest_durations(offset, available)
             )
-            for onset, fretted in sorted(sounding, key=lambda item: item[1].string):
-                beat.notes.append(
-                    gp.Note(
-                        beat,
-                        value=fretted.fret,
-                        string=fretted.string + 1,
-                        type=gp.NoteType.normal if start == onset else gp.NoteType.tie,
-                    )
+            voice = track.measures[bar].voices[0]
+            for cells, denominator, dotted in spelling:
+                beat = gp.Beat(
+                    voice,
+                    start=960 + start * step,
+                    duration=gp.Duration(value=denominator, isDotted=dotted),
+                    status=gp.BeatStatus.normal if ordered_strings else gp.BeatStatus.rest,
                 )
-            voice.beats.append(beat)
-            start += cells
+                for onset, fretted in ordered_strings:
+                    beat.notes.append(
+                        gp.Note(
+                            beat,
+                            value=fretted.fret,
+                            string=fretted.string + 1,
+                            type=gp.NoteType.normal if start == onset else gp.NoteType.tie,
+                        )
+                    )
+                voice.beats.append(beat)
+                start += cells
 
     # A single rhythmic voice can contain chord attacks mixed with tied notes.
     # Split at every attack/release, retaining held strings through those splits.
