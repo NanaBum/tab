@@ -132,8 +132,8 @@ def assign_polyphonic_frets(
                 priors[id(note)] = tuple(p / total for p in row)
     ordered = sorted(notes, key=lambda n: (n.start, -n.pitch))
     cells = {id(note): score_interval(note, *score_grid) for note in ordered} if score_grid else {}
-    # cost, complete history, active positions, last hand position, last string
-    states = [(0.0, (), (), 0.0, 0)]
+    # Each history links the latest assignment to its previous history.
+    states = [(0.0, None, (), 0.0, 0)]
     for index, note in enumerate(ordered):
         candidates = [
             (s, note.pitch - p) for s, p in enumerate(tuning) if 0 <= note.pitch - p <= max_fret
@@ -176,9 +176,8 @@ def assign_polyphonic_frets(
                     position,
                     string,
                 )
-                state = (new_cost, history + (fretted,), current, position, string)
                 if key not in expanded or new_cost < expanded[key][0]:
-                    expanded[key] = state
+                    expanded[key] = (new_cost, (fretted, history), current, position, string)
         if not expanded:
             sounding = [
                 prior
@@ -188,7 +187,13 @@ def assign_polyphonic_frets(
             ]
             raise StringAssignmentConflict(note, sounding, index + 1, tuning, max_fret)
         states = sorted(expanded.values(), key=lambda state: state[0])[:beam_width]
-    return list(states[0][1]) if ordered else []
+    assignments = []
+    history = states[0][1]
+    while history is not None:
+        fretted, history = history
+        assignments.append(fretted)
+    assignments.reverse()
+    return assignments
 
 
 def recover_overlapping_notes(notes, *, tuning, max_span, string_priors=None, score_grid=None):
