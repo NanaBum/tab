@@ -12,7 +12,8 @@ class UnplayablePitch(ValueError):
     def __init__(self, note, tuning, max_fret):
         super().__init__(
             f"MIDI pitch {note.pitch} at {note.start:.3f}s cannot be played on a string "
-            f"in the selected tuning (playable range {min(tuning)}-{max(tuning) + max_fret}); "
+            f"in the selected tuning at frets 0-{max_fret} "
+            f"(overall playable range {min(tuning)}-{max(tuning) + max_fret}); "
             "no notes were dropped"
         )
 
@@ -33,6 +34,15 @@ class StringAssignmentConflict(ValueError):
         self.sounding = sounding
 
 
+def fret_positions(pitch, tuning, max_fret=24):
+    """List physical string and fret choices for one MIDI pitch."""
+    return [
+        (string, pitch - open_pitch)
+        for string, open_pitch in enumerate(tuning)
+        if 0 <= pitch - open_pitch <= max_fret
+    ]
+
+
 def assign_frets(notes: list[Note], tuning=STANDARD_TUNING, max_fret=24) -> list[FrettedNote]:
     if max_fret < 0 or not tuning:
         raise ValueError("Provide a tuning and nonnegative maximum fret")
@@ -43,14 +53,7 @@ def assign_frets(notes: list[Note], tuning=STANDARD_TUNING, max_fret=24) -> list
         )
     if not notes:
         return []
-    positions = [
-        [
-            (s, n.pitch - open_pitch)
-            for s, open_pitch in enumerate(tuning)
-            if 0 <= n.pitch - open_pitch <= max_fret
-        ]
-        for n in notes
-    ]
+    positions = [fret_positions(note.pitch, tuning, max_fret) for note in notes]
     for note, candidates in zip(notes, positions):
         if not candidates:
             raise UnplayablePitch(note, tuning, max_fret)
@@ -131,15 +134,14 @@ def assign_polyphonic_frets(
             if max(row) - min(row) > 1e-12:
                 priors[id(note)] = tuple(p / total for p in row)
     ordered = sorted(notes, key=lambda n: (n.start, -n.pitch))
+    positions = [fret_positions(note.pitch, tuning, max_fret) for note in ordered]
+    for note, candidates in zip(ordered, positions, strict=True):
+        if not candidates:
+            raise UnplayablePitch(note, tuning, max_fret)
     cells = {id(note): score_interval(note, *score_grid) for note in ordered} if score_grid else {}
     # cost, complete history, active positions, last hand position, last string
     states = [(0.0, (), (), 0.0, 0)]
-    for index, note in enumerate(ordered):
-        candidates = [
-            (s, note.pitch - p) for s, p in enumerate(tuning) if 0 <= note.pitch - p <= max_fret
-        ]
-        if not candidates:
-            raise UnplayablePitch(note, tuning, max_fret)
+    for index, (note, candidates) in enumerate(zip(ordered, positions, strict=True)):
         expanded = {}
         for cost, history, active, hand, last_string in states:
             sounding = tuple(n for n in active if n.note.end > note.start + 1e-6)
